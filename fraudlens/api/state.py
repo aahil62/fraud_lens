@@ -11,6 +11,7 @@ from fraudlens.runtime import FraudLensRuntime
 
 class AppState:
     runtime: FraudLensRuntime | None = None
+    operations = None
 
 
 state = AppState()

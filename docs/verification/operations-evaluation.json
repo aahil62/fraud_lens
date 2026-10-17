@@ -1,0 +1,4495 @@
+{
+  "schema_version": 1,
+  "detector_version": "showcase-policy-1.1",
+  "generated_at": "2026-10-17T11:53:38.354311+00:00",
+  "simulation": true,
+  "method": "Independent controlled fixtures; one terminal attempted payment per incident; chronological prior context only.",
+  "seeds": [
+    101,
+    211,
+    307,
+    419,
+    523,
+    631,
+    743,
+    857
+  ],
+  "corpus_sha256": "bc5a1604f00abfe6034eee7b5f6040d44c81e8dab8cbda3be8061240343925a2",
+  "reference_model": "Cached model trained by detector on separate synthetic seed 173; no evaluation labels supplied to inference.",
+  "initialization_ms": 116.092,
+  "warm_scoring_latency_ms": {
+    "mean": 0.23,
+    "p95": 0.28
+  },
+  "overall": {
+    "review": {
+      "threshold": 0.5,
+      "samples": 312,
+      "true_positive": 152,
+      "false_positive": 64,
+      "true_negative": 64,
+      "false_negative": 32,
+      "precision": 0.7037,
+      "recall": 0.8261,
+      "false_positive_rate": 0.5,
+      "f1": 0.76
+    },
+    "protection": {
+      "threshold": 0.8,
+      "samples": 312,
+      "true_positive": 144,
+      "false_positive": 32,
+      "true_negative": 96,
+      "false_negative": 40,
+      "precision": 0.8182,
+      "recall": 0.7826,
+      "false_positive_rate": 0.25,
+      "f1": 0.8
+    }
+  },
+  "channels": {
+    "upi": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 80,
+        "true_positive": 40,
+        "false_positive": 16,
+        "true_negative": 16,
+        "false_negative": 8,
+        "precision": 0.7143,
+        "recall": 0.8333,
+        "false_positive_rate": 0.5,
+        "f1": 0.7692
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 80,
+        "true_positive": 40,
+        "false_positive": 8,
+        "true_negative": 24,
+        "false_negative": 8,
+        "precision": 0.8333,
+        "recall": 0.8333,
+        "false_positive_rate": 0.25,
+        "f1": 0.8333
+      }
+    },
+    "net_banking": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 72,
+        "true_positive": 32,
+        "false_positive": 16,
+        "true_negative": 16,
+        "false_negative": 8,
+        "precision": 0.6667,
+        "recall": 0.8,
+        "false_positive_rate": 0.5,
+        "f1": 0.7273
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 72,
+        "true_positive": 32,
+        "false_positive": 8,
+        "true_negative": 24,
+        "false_negative": 8,
+        "precision": 0.8,
+        "recall": 0.8,
+        "false_positive_rate": 0.25,
+        "f1": 0.8
+      }
+    },
+    "card": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 72,
+        "true_positive": 32,
+        "false_positive": 16,
+        "true_negative": 16,
+        "false_negative": 8,
+        "precision": 0.6667,
+        "recall": 0.8,
+        "false_positive_rate": 0.5,
+        "f1": 0.7273
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 72,
+        "true_positive": 32,
+        "false_positive": 8,
+        "true_negative": 24,
+        "false_negative": 8,
+        "precision": 0.8,
+        "recall": 0.8,
+        "false_positive_rate": 0.25,
+        "f1": 0.8
+      }
+    },
+    "atm": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 88,
+        "true_positive": 48,
+        "false_positive": 16,
+        "true_negative": 16,
+        "false_negative": 8,
+        "precision": 0.75,
+        "recall": 0.8571,
+        "false_positive_rate": 0.5,
+        "f1": 0.8
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 88,
+        "true_positive": 40,
+        "false_positive": 8,
+        "true_negative": 24,
+        "false_negative": 16,
+        "precision": 0.8333,
+        "recall": 0.7143,
+        "false_positive_rate": 0.25,
+        "f1": 0.7692
+      }
+    }
+  },
+  "families": {
+    "authorized_unusual": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 64,
+        "true_positive": 0,
+        "false_positive": 64,
+        "true_negative": 0,
+        "false_negative": 0,
+        "precision": 0.0,
+        "recall": null,
+        "false_positive_rate": 1.0,
+        "f1": 0.0
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 64,
+        "true_positive": 0,
+        "false_positive": 32,
+        "true_negative": 32,
+        "false_negative": 0,
+        "precision": 0.0,
+        "recall": null,
+        "false_positive_rate": 0.5,
+        "f1": 0.0
+      }
+    },
+    "ordinary_benign": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 64,
+        "true_positive": 0,
+        "false_positive": 0,
+        "true_negative": 64,
+        "false_negative": 0,
+        "precision": null,
+        "recall": null,
+        "false_positive_rate": 0.0,
+        "f1": null
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 64,
+        "true_positive": 0,
+        "false_positive": 0,
+        "true_negative": 64,
+        "false_negative": 0,
+        "precision": null,
+        "recall": null,
+        "false_positive_rate": 0.0,
+        "f1": null
+      }
+    },
+    "supported_fraud": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 152,
+        "true_positive": 152,
+        "false_positive": 0,
+        "true_negative": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "false_positive_rate": null,
+        "f1": 1.0
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 152,
+        "true_positive": 144,
+        "false_positive": 0,
+        "true_negative": 0,
+        "false_negative": 8,
+        "precision": 1.0,
+        "recall": 0.9474,
+        "false_positive_rate": null,
+        "f1": 0.973
+      }
+    },
+    "unobservable_fraud": {
+      "review": {
+        "threshold": 0.5,
+        "samples": 32,
+        "true_positive": 0,
+        "false_positive": 0,
+        "true_negative": 0,
+        "false_negative": 32,
+        "precision": null,
+        "recall": 0.0,
+        "false_positive_rate": null,
+        "f1": 0.0
+      },
+      "protection": {
+        "threshold": 0.8,
+        "samples": 32,
+        "true_positive": 0,
+        "false_positive": 0,
+        "true_negative": 0,
+        "false_negative": 32,
+        "precision": null,
+        "recall": 0.0,
+        "false_positive_rate": null,
+        "f1": 0.0
+      }
+    }
+  },
+  "limitations": [
+    "Constructed scenario frequencies are not real fraud prevalence; precision and recall apply only to this corpus.",
+    "Supported scenarios intentionally exercise documented policy; variations are not an independent unseen-fraud benchmark.",
+    "Unobservable fraud and authorized suspicious activity expose false negatives and false positives deliberately.",
+    "No real customer data, bank/network authorization, monetary loss avoided, or regulatory compliance is validated.",
+    "Scores prioritize review and are not calibrated fraud probabilities; latency excludes networking, persistence and UI."
+  ],
+  "records": [
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.821,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0584,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.259,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.217,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.225,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.216,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.581,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.211,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.199,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.196,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.211,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0584,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.199,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.196,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.214,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.206,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.195,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.197,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.197,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.194,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.198,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0584,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.197,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.197,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.241,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.24,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.234,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.224,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.218,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.225,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0584,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": []
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.244,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.233,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.234,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.224,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.241,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 101,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.219,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9292.41)"
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.22,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.24,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.223,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.206,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.352,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.2,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9292.41)"
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.2,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.223,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.213,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.201,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.205,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.214,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9292.41)"
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.201,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.223,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.216,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.214,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.208,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.208,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.232,
+      "reasons": []
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.232,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9292.41)"
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.228,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.253,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.253,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.241,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.233,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.242,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.231,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.229,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 211,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.232,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.228,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.229,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9282.27)"
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.328,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.348,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.28,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.249,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.384,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.241,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.215,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.203,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9282.27)"
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.202,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.219,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.201,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.202,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9282.27)"
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.201,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.215,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.219,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.206,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": []
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.126,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.203,
+      "reasons": [
+        "Amount is 4.7x the account's average (\u20b9282.27)"
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.199,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.254,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.26,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.25,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.257,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.247,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.247,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 307,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.243,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.255,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0604,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.246,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.247,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.272,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.261,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.251,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.377,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.253,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.247,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.245,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.256,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0604,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.243,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.227,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.212,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.201,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.201,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.2,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0604,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.202,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.2,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.227,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.21,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.214,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.205,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.201,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.203,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0604,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.199,
+      "reasons": []
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.203,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.22,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.212,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.219,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.489,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.412,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.27,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 419,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.232,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.216,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0603,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.21,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.21,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.233,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.252,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.363,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.21,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.209,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0603,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.216,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.206,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.206,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0603,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.202,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.225,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.216,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.22,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.209,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.207,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.206,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0603,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.201,
+      "reasons": []
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.216,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.223,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.214,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.209,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.215,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.206,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.204,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 523,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.202,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.205,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": [
+        "Amount is 5.1x the account's average (\u20b9259.41)"
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.212,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.253,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.23,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.217,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.431,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.222,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.217,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.214,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": [
+        "Amount is 5.1x the account's average (\u20b9259.41)"
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.214,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.231,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.231,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.217,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.215,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.212,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.277,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Amount is 5.1x the account's average (\u20b9259.41)"
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.217,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.23,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.22,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.208,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": []
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": [
+        "Amount is 5.1x the account's average (\u20b9259.41)"
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.271,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.255,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.231,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.229,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.327,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.227,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.214,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.22,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 631,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.214,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.211,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.213,
+      "reasons": [
+        "Amount is 5.0x the account's average (\u20b9241.51)"
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.209,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.225,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.213,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.352,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.224,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.218,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.231,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Amount is 5.0x the account's average (\u20b9241.51)"
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.219,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.238,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.229,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.217,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.221,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.216,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.218,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.223,
+      "reasons": [
+        "Amount is 5.0x the account's average (\u20b9241.51)"
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.218,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.244,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.229,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.238,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.221,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": []
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.1786,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.219,
+      "reasons": [
+        "Amount is 5.0x the account's average (\u20b9241.51)"
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.235,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.227,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.236,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.229,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.228,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.227,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.224,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 743,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0585,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.221,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.215,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.236,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.228,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "new_device_large_beneficiary",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.219,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "shared_device_beneficiary_transfer",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.342,
+      "reasons": [
+        "Large new-beneficiary payment from a device shared by three or more accounts."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "upi",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.217,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.216,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0585,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.21,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.207,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.22,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.221,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "beneficiary_after_auth_failures",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.95,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.208,
+      "reasons": [
+        "New beneficiary payment after repeated net-banking authentication failures."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.212,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "net_banking",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.22,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.209,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0585,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.21,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.209,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.222,
+      "reasons": [
+        "5 attempted payments from this account within five minutes.",
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.215,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "card_testing",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.92,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.224,
+      "reasons": [
+        "Four or more small attempts on the same card suggest card testing."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.31,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.28,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "card",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.234,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "routine_payment",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0602,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.222,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "known_device_new_payee",
+      "family": "ordinary_benign",
+      "is_fraud": false,
+      "score": 0.0585,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.214,
+      "reasons": []
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "credential_takeover",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.94,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.229,
+      "reasons": [
+        "Repeated authentication failures followed by payment from a new device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "account_payment_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.87,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.234,
+      "reasons": [
+        "5 attempted payments from this account within five minutes."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "cross_channel_anomaly",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.93,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.222,
+      "reasons": [
+        "Rapid activity across three or more channels with device or authentication anomalies."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "withdrawal_burst",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.9,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.214,
+      "reasons": [
+        "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "new_terminal_withdrawal",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.88,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.2,
+      "reasons": [
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "rapid_location_change",
+      "family": "supported_fraud",
+      "is_fraud": true,
+      "score": 0.62,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.204,
+      "reasons": [
+        "ATM withdrawal at a changed location within five minutes; amount determines protection versus review."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "authorized_new_device",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.58,
+      "review": true,
+      "protect": false,
+      "latency_ms": 0.296,
+      "reasons": [
+        "New-device payment requires analyst review; protective threshold not reached."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "authorized_large_new_beneficiary",
+      "family": "authorized_unusual",
+      "is_fraud": false,
+      "score": 0.91,
+      "review": true,
+      "protect": true,
+      "latency_ms": 0.277,
+      "reasons": [
+        "Large transfer to a new beneficiary from a new device.",
+        "High-value withdrawal at a new test terminal/device."
+      ]
+    },
+    {
+      "seed": 857,
+      "channel": "atm",
+      "scenario": "telemetry_invisible_fraud",
+      "family": "unobservable_fraud",
+      "is_fraud": true,
+      "score": 0.0605,
+      "review": false,
+      "protect": false,
+      "latency_ms": 0.277,
+      "reasons": []
+    }
+  ]
+}

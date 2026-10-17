@@ -19,6 +19,8 @@ def _now_iso() -> str:
 
 
 def _seed_accounts() -> list[AnalystAccount]:
+    if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
+        return []
     now = _now_iso()
     return [
         AnalystAccount(
@@ -41,6 +43,10 @@ class AnalystStore:
         self._path = path
         self._accounts: dict[str, AnalystAccount] = {}
         self._load_or_seed()
+        if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
+            for account in self._accounts.values():
+                if verify_password("fraudlens123", account.password_hash):
+                    raise ValueError("Public demo credentials must be removed before non-demo startup")
 
     def get(self, username: str) -> Optional[AnalystAccount]:
         return self._accounts.get(username)

@@ -8,7 +8,8 @@ import { AuthApiError, login } from "@/lib/auth";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const requestedNext = searchParams.get("next") || "/dashboard";
+  const next = requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\") ? requestedNext : "/dashboard";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +58,7 @@ function LoginForm() {
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            aria-label="Username"
             placeholder="Username"
             autoComplete="username"
             required
@@ -67,6 +69,7 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
+            aria-label="Password"
             placeholder="Password"
             autoComplete="current-password"
             required

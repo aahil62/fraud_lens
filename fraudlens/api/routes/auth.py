@@ -4,6 +4,7 @@ is usable immediately; signup lets a new analyst create their own account.
 """
 
 from __future__ import annotations
+import os
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -17,6 +18,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=TokenResponse)
 def signup(payload: SignupRequest) -> TokenResponse:
+    if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
+        raise HTTPException(403, "Self-service analyst registration is available only in the local demonstration")
     store = state.runtime.analyst_store
     username = payload.username.strip().lower()
     if not username or not payload.password:

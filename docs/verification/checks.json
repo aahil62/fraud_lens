@@ -1,0 +1,37 @@
+{
+  "verified_on": "2026-10-17",
+  "backend": {
+    "tests_run": 330,
+    "skipped": 1,
+    "result": "OK",
+    "seconds": 280.581
+  },
+  "frontend": {
+    "tests_passed": 23,
+    "lint": "passed",
+    "production_build": "passed"
+  },
+  "launcher": {
+    "checks_passed": 4
+  },
+  "live_http": {
+    "checks_passed": 8,
+    "evidence": "live-http.json"
+  },
+  "scenario_evaluation": {
+    "terminal_incidents": 312,
+    "evidence": "operations-evaluation.json"
+  },
+  "npm_audit": {
+    "production_advisories": 0,
+    "remaining_high_development_advisory_paths": 5
+  },
+  "screenshots": [
+    "../screenshots/overview.png",
+    "../screenshots/case-reversal.png",
+    "../screenshots/mobile.png"
+  ],
+  "remote_ci_run_verified": false,
+  "real_bank_integration": false,
+  "regulatory_certification": false
+}

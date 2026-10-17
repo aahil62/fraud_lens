@@ -1,0 +1,33 @@
+{
+  "checked_at": "2026-10-17T11:57:03.025447+00:00",
+  "simulation": true,
+  "checks": [
+    "Restrict request acknowledged by separate bank process",
+    "Subsequent payment actually declined while restricted",
+    "Analyst reversal acknowledged; subsequent payment actually posted",
+    "Duplicate input does not create another payment or inflate counts",
+    "All four channels create evidence-backed cases and enforce simulated protection",
+    "JSON and PDF reports reflect the same persisted analyst verdict",
+    "Authenticated event stream delivers the persisted audit cursor over HTTP",
+    "Overall and channel counts reconcile"
+  ],
+  "case_id": "CASE-058E3CF86E23",
+  "case_version": 4,
+  "counts": {
+    "transactions": 35,
+    "pending_payments": 0,
+    "posted": 15,
+    "declined": 20,
+    "cases": 9,
+    "pending_review": 8,
+    "investigating": 0,
+    "escalated": 0,
+    "resolved": 1,
+    "confirmed_fraud": 0,
+    "false_positives": 1,
+    "pending_actions": 0,
+    "failed_actions": 0,
+    "restricted_accounts": 4,
+    "restricted_cards": 4
+  }
+}

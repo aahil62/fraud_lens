@@ -28,3 +28,7 @@ fraudlens/data/external/
 .idea/
 
 .env
+var/
+work/
+frontend/work-report.md
+*.tsbuildinfo

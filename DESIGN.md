@@ -69,6 +69,8 @@ components:
 
 # Design System: FraudLens
 
+> Historical design reference. The current operational console is implemented in `frontend/app/globals.css` and `frontend/components/operations/`; see [README.md](README.md) for its verified scope.
+
 ## 1. Overview
 
 **Creative North Star: "The Forensic Terminal, Rebuilt for Trust"**

@@ -1,5 +1,7 @@
 # Product
 
+> Historical product notes. The current four-channel operational showcase, supported behavior and evidence boundaries are documented in [README.md](README.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## Register
 
 product
