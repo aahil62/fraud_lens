@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/mona-sans";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "FraudLens | Financial crime operations",

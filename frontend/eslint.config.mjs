@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Verbatim third-party Scrollcraft engine; retain its upstream source.
+    "components/landing/scrollcraft.js",
   ]),
 ]);
 

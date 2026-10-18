@@ -5,6 +5,7 @@ import { type Case, channelName, human } from "@/lib/operations";
 import { useOperations } from "./OperationsProvider";
 import { Empty, Loading, PageHeading } from "./Primitives";
 export function EvidenceGraph({ cases }: { cases: Case[] }) {
+  const [selectedNode, setSelectedNode] = useState("");
   const nodes = new Map<string, { id: string; kind: string }>();
   const edges: { from: string; to: string; label: string }[] = [];
   cases.slice(0, 8).forEach((item) => {
@@ -37,70 +38,73 @@ export function EvidenceGraph({ cases }: { cases: Case[] }) {
     });
   });
   const list = [...nodes.values()].slice(0, 16);
-  const columns = Math.min(4, list.length);
-  const rows = Math.ceil(list.length / columns);
-  const positions = new Map(
-    list.map((node, i) => [
-      node.id,
-      {
-        x: ((i % columns) + 0.5) * (520 / columns),
-        y: 185 + (Math.floor(i / columns) - (rows - 1) / 2) * 85,
-      },
-    ]),
-  );
+  const group = (kind: string) => kind === "case" || kind === "account" ? kind : "reference";
+  const maxRows = Math.max(1, ...["case", "account", "reference"].map(kind => list.filter(node=>group(node.kind)===kind).length));
+  const graphHeight = Math.max(380, 110 + maxRows * 65);
+  const positions = new Map(list.map((node, i) => {
+    const peers = list.filter(x => group(x.kind) === group(node.kind));
+    const index = peers.findIndex(x => x.id === node.id);
+    const column = node.kind === "case" ? 92 : node.kind === "account" ? 253 : 428;
+    return [node.id, { x: column + (i % 2 ? 8 : -8), y: 55 + (index + .5) * ((graphHeight - 110) / peers.length) }];
+  }));
+  const selected = list.find(x => x.id === selectedNode);
+  const linked = new Set(edges.filter(x => x.from === selectedNode || x.to === selectedNode).flatMap(x=>[x.from,x.to]));
   if (!list.length) return <Empty>No evidence connections yet.</Empty>;
   return (
     <figure className="evidence-graph">
       <svg
-        viewBox="0 0 520 380"
-        role="img"
+        viewBox={`0 0 520 ${graphHeight}`}
+        role="group"
         aria-label="Evidence graph connecting accounts, investigations, beneficiaries and payment instruments"
       >
+        <text x="85" y="28" textAnchor="middle" fill="#626d80" fontSize="9">INVESTIGATIONS</text>
+        <text x="253" y="28" textAnchor="middle" fill="#626d80" fontSize="9">ACCOUNTS</text>
+        <text x="425" y="28" textAnchor="middle" fill="#626d80" fontSize="9">CONNECTED REFERENCES</text>
         <g>
           {edges.map((edge, i) => {
             const a = positions.get(edge.from),
               b = positions.get(edge.to);
             return a && b ? (
-              <line
+              <path
                 key={i}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="#456858"
-                strokeWidth="1.3"
+                d={`M${a.x},${a.y} C${(a.x+b.x)/2},${a.y} ${(a.x+b.x)/2},${b.y} ${b.x},${b.y}`}
+                fill="none"
+                stroke={selected && (edge.from === selectedNode || edge.to === selectedNode) ? "#7187dc" : "#d9e0f1"}
+                strokeWidth="1.4"
+                opacity={selected && edge.from !== selectedNode && edge.to !== selectedNode ? .3 : 1}
               >
                 <title>
                   {edge.from} → {edge.to}: {edge.label}
                 </title>
-              </line>
+              </path>
             ) : null;
           })}
         </g>
         {list.map((node) => {
           const p = positions.get(node.id)!;
           return (
-            <g key={node.id}>
+            <g key={node.id} role="button" tabIndex={0} aria-label={`Inspect ${node.kind} ${node.id}`} onClick={()=>setSelectedNode(selectedNode===node.id?"":node.id)} onKeyDown={event=>{if(event.key==="Enter" || event.key===" "){event.preventDefault();setSelectedNode(selectedNode===node.id?"":node.id);}}} style={{cursor:"pointer",opacity:selected && !linked.has(node.id) && node.id!==selectedNode? .35:1}}>
+              <circle cx={p.x} cy={p.y} r={node.kind==="account"?22:16} fill="white" stroke={selectedNode===node.id?"#637bd5":"#e0e6f3"} strokeWidth="1.4"/>
               <circle
                 cx={p.x}
                 cy={p.y}
                 r={node.kind === "account" ? 13 : 8}
                 fill={
                   node.kind === "case"
-                    ? "#e89a71"
+                    ? "#d8a051"
                     : node.kind === "account"
-                      ? "#75d5ac"
-                      : "#80968b"
+                      ? "#677fce"
+                      : "#92a2be"
                 }
               />
               <text
                 x={p.x}
-                y={p.y + 28}
+                y={p.y + 35}
                 textAnchor="middle"
-                fill="#d9e4df"
-                fontSize="10"
+                fill="#596b8c"
+                fontSize="9"
               >
-                {node.id.length > 19 ? node.id.slice(0, 16) + "…" : node.id}
+                {node.id.length > 16 ? node.id.slice(0, 12) + "…" : node.id}
               </text>
               <title>
                 {node.kind}: {node.id}
@@ -109,6 +113,7 @@ export function EvidenceGraph({ cases }: { cases: Case[] }) {
           );
         })}
       </svg>
+      {selected && <div className="graph-node-detail" role="status"><strong>{human(selected.kind)}</strong><span>{selected.id}</span><small>{edges.filter(x=>x.from===selected.id||x.to===selected.id).length} evidence links</small></div>}
       <figcaption>
         ● Account <span>● Investigation</span> ● Beneficiary / instrument
         {nodes.size > 16 ? " · Showing 16 nodes" : ""}
@@ -153,7 +158,7 @@ export function NetworkView() {
         </div>
         <div className="network-workspace">
           <EvidenceGraph cases={cases} />
-          <div className="network-index">
+          <div className="graph-case-list">
             {cases.map((item) => (
               <Link
                 key={item.case_id}

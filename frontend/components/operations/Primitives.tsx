@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { ArrowsLeftRight, Bank, CreditCard, DownloadSimple, Tray, Money } from "@phosphor-icons/react";
 import {
   type AuditEvent,
   type BankAction,
@@ -33,12 +34,13 @@ export function PageHeading({
   );
 }
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="empty-state">{children}</div>;
+  return <div className="empty-state"><Tray size={28} weight="duotone"/>{children}</div>;
 }
 export function Loading() {
   return (
-    <div className="empty-state" role="status">
-      Loading the operational ledger…
+    <div className="loading-skeleton" role="status">
+      <span aria-hidden="true"/><span aria-hidden="true"/><span aria-hidden="true"/><span aria-hidden="true"/>
+      <p className="sr-only">Loading the operational ledger…</p>
     </div>
   );
 }
@@ -50,7 +52,11 @@ export function Status({ value }: { value: string }) {
     : ["confirmed", "resolved", "posted", "released"].includes(value)
       ? "good"
       : "";
-  return <span className={`status ${risk}`}>{human(value)}</span>;
+  return <span className={`status ${value} ${risk}`}>{human(value)}</span>;
+}
+export function ChannelLabel({channel}:{channel:string}) {
+  const Icon = channel === "upi" ? ArrowsLeftRight : channel === "net_banking" ? Bank : channel === "card" ? CreditCard : Money;
+  return <span className="channel-label"><Icon size={15} weight="duotone"/>{channelName(channel)}</span>;
 }
 export function CaseLink({ id }: { id: string }) {
   return (
@@ -84,12 +90,12 @@ export function CaseTable({ cases }: { cases: Case[] }) {
                 <CaseLink id={item.case_id} />
                 <small className="record-sub">{item.account_id}</small>
               </td>
-              <td>{channelName(item.channel)}</td>
+              <td><ChannelLabel channel={item.channel}/></td>
               <td className="numeric">{money(item.amount_minor)}</td>
               <td>
-                <span className={`risk-score ${item.severity}`}>
+                <div className="risk-cell"><span className={`risk-score ${item.severity}`}>
                   {(item.score * 100).toFixed(1)}
-                </span>
+                </span><meter min="0" max="100" value={item.score*100} aria-label="Risk score"/></div>
               </td>
               <td>
                 <Status value={item.status} />
@@ -136,7 +142,7 @@ export function TransactionTable({
                 <span className="identifier">{item.txn_id}</span>
                 <small className="record-sub">{item.account_id}</small>
               </td>
-              <td>{channelName(item.channel)}</td>
+              <td><ChannelLabel channel={item.channel}/></td>
               <td className="numeric">{money(item.amount_minor)}</td>
               <td className="numeric">{(item.score * 100).toFixed(1)}</td>
               <td>
@@ -298,12 +304,13 @@ export function ReportButtons({ caseId }: { caseId: string }) {
         {(["pdf", "markdown", "json"] as const).map((format) => (
           <button
             key={format}
+            aria-label={`Download ${format.toUpperCase()} report for ${caseId}`}
             disabled={busy}
             onClick={() => {
               void download(format);
             }}
           >
-            {format.toUpperCase()}
+            {format === "pdf" && <DownloadSimple size={13}/>} {format === "markdown" ? "MD" : format.toUpperCase()}
           </button>
         ))}
       </div>

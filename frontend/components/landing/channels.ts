@@ -1,0 +1,58 @@
+export type ChannelKey = "upi" | "netbanking" | "card" | "atm";
+
+export const channels = [
+  {
+    key: "upi" as const,
+    name: "UPI",
+    detail: "Follow the transfer, not just the transaction.",
+    description: "A payment can look ordinary on its own. Connected recipients, timing and repeated activity give it context.",
+    scenario: "A familiar account. An unfamiliar pattern.",
+    amount: "₹24,800",
+    account: "ACCT •• 4821",
+    event: "Rapid transfers to a new beneficiary",
+    signals: ["A new beneficiary appears", "Transfers cluster in a short window", "Linked recipients share activity"],
+    scope: "Linked account debits",
+    verdict: "Confirmed suspicious",
+  },
+  {
+    key: "netbanking" as const,
+    name: "Net banking",
+    detail: "Put the session beside the payment.",
+    description: "Changes in device, location and transfer behavior belong in the same investigation, with a timeline an analyst can follow.",
+    scenario: "A new session. A different destination.",
+    amount: "₹86,000",
+    account: "ACCT •• 7163",
+    event: "New device followed by a high-value transfer",
+    signals: ["An unfamiliar device signs in", "A new beneficiary is added", "A transfer follows the session change"],
+    scope: "Linked account debits",
+    verdict: "Confirmed suspicious",
+  },
+  {
+    key: "card" as const,
+    name: "Cards",
+    detail: "Small attempts can tell a bigger story.",
+    description: "Read merchant activity, payment attempts and the surrounding history together before deciding what needs protection.",
+    scenario: "Small attempts. A pattern worth reviewing.",
+    amount: "₹1,250",
+    account: "CARD •• 0932",
+    event: "Repeated attempts at unfamiliar merchants",
+    signals: ["Multiple payment attempts appear", "The merchants are new to this card", "The attempt pattern is inconsistent"],
+    scope: "Linked test card",
+    verdict: "Confirmed suspicious",
+  },
+  {
+    key: "atm" as const,
+    name: "ATMs",
+    detail: "See where the cash trail changes.",
+    description: "Withdrawal context and account history help separate a routine cash withdrawal from an incident that deserves review.",
+    scenario: "One account. An unusual cash trail.",
+    amount: "₹20,000",
+    account: "ACCT •• 2846",
+    event: "Unusual withdrawal sequence",
+    signals: ["Withdrawals occur close together", "The location differs from recent activity", "The sequence departs from account history"],
+    scope: "Linked test instrument",
+    verdict: "Confirmed suspicious",
+  },
+];
+
+export type LandingChannel = (typeof channels)[number];

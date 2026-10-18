@@ -6,6 +6,7 @@ import {
   type Case,
   type Transaction,
   type Guidance,
+  type Snapshot,
   channelName,
   dateTime,
   human,
@@ -24,147 +25,61 @@ import {
   TransactionTable,
 } from "./Primitives";
 import ScenarioControls from "./ScenarioControls";
+import { ArrowRight, ArrowUpRight, Bank, ChartBar, CheckCircle, Clock, CreditCard, FileText, MagnifyingGlass, ShieldCheck, WarningCircle } from "@phosphor-icons/react";
+import "@/app/workspace-views.css";
+function ChannelChart({ snapshot }: { snapshot: Snapshot }) {
+  const max = Math.max(1, ...snapshot.channels.map((row) => row.transactions));
+  return <section className="ops-section channel-chart-panel">
+    <div className="section-heading"><div><h2>Payment channels</h2><p>All recorded attempts, by channel</p></div><ChartBar size={22} aria-hidden="true" /></div>
+    <div className="channel-chart" role="img" aria-label={snapshot.channels.map((row) => `${channelName(row.channel)}: ${row.transactions} payment attempts`).join("; ")}>
+      {CHANNELS.map((channel) => {
+        const row = snapshot.channels.find((item) => item.channel === channel);
+        const count = row?.transactions ?? 0;
+        return <div className="channel-chart-row" key={channel}><div><strong>{channelName(channel)}</strong><span>{count.toLocaleString("en-IN")}</span></div><div className="channel-bar-track"><span style={{ width: `${count / max * 100}%` }} /></div><small>{row?.cases ?? 0} cases <span>·</span> {row?.pending_review ?? 0} awaiting review <span>·</span> {row?.resolved ?? 0} resolved <span>·</span> {row?.declined ?? 0} declined</small></div>;
+      })}
+    </div>
+    <Link href="/live" className="panel-footer-link">Explore transaction ledger <ArrowRight size={16} /></Link>
+  </section>;
+}
+function ActivityChart({ snapshot }: { snapshot: Snapshot }) {
+  const end = new Date(snapshot.as_of).getTime();
+  const duration = 5 * 60 * 1000;
+  const bins = Array.from({ length: 6 }, (_, i) => {
+    const start = end - (6 - i) * duration;
+    return { start, count: snapshot.transactions.filter((txn) => { const at = new Date(txn.timestamp).getTime(); return at > start && at <= start + duration; }).length };
+  });
+  const max = Math.max(1, ...bins.map((bin) => bin.count));
+  const label = (time: number) => new Date(time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+  const total = bins.reduce((sum, bin) => sum + bin.count, 0);
+  return <section className="ops-section activity-chart-panel"><div className="section-heading"><div><h2>Recent payment activity</h2><p>Last 30 minutes · five-minute intervals · IST</p></div><span className="chart-total"><strong>{total}</strong> sampled attempts</span></div>
+    <div className="activity-chart" role="img" aria-label={bins.map((bin) => `${label(bin.start)} to ${label(bin.start + duration)}: ${bin.count} attempts`).join("; ")}>
+      <div className="activity-bars">{bins.map((bin) => <div className="activity-column" key={bin.start}><strong>{bin.count}</strong><div className="activity-column-track"><span style={{ height: `${bin.count / max * 100}%` }} /></div><time>{label(bin.start)}</time></div>)}</div>
+    </div><p className="chart-scope">Calculated from the latest {snapshot.transactions.length} transactions in this snapshot. Older records outside the snapshot are excluded.</p>
+  </section>;
+}
 export function DashboardView() {
   const { snapshot } = useOperations();
   if (!snapshot) return <Loading />;
   const c = snapshot.counts;
-  return (
-    <>
-      <PageHeading
-        title="Operations overview"
-        description="One ledger. Every payment, protective action and analyst decision."
-      >
-        <Link href="/cases" className="primary-button">
-          Open investigation queue
-        </Link>
-      </PageHeading>
-      <div className="metric-strip">
-        {[
-          [
-            "Payment attempts",
-            c.transactions,
-            `${c.posted} posted · ${c.declined} declined · ${c.pending_payments} pending`,
-          ],
-          [
-            "Awaiting review",
-            c.pending_review,
-            `${c.investigating} investigating · ${c.escalated} escalated`,
-          ],
-          [
-            "Resolved cases",
-            c.resolved,
-            `${c.confirmed_fraud} confirmed fraud · ${c.false_positives} false positives`,
-          ],
-          [
-            "Active restrictions",
-            c.restricted_accounts + c.restricted_cards,
-            `${c.restricted_accounts} accounts · ${c.restricted_cards} cards`,
-          ],
-        ].map(([label, value, detail]) => (
-          <div key={label}>
-            <span>{label}</span>
-            <strong>{Number(value).toLocaleString("en-IN")}</strong>
-            <small>{detail}</small>
-          </div>
-        ))}
-      </div>
-      {(c.failed_actions > 0 || c.pending_actions > 0) && (
-        <Link className="attention-line" href="/bank">
-          <strong>
-            {c.failed_actions} failed · {c.pending_actions} pending bank actions
-          </strong>
-          <span>Review delivery and acknowledgement →</span>
-        </Link>
-      )}
-      <section className="ops-section">
-        <div className="section-heading">
-          <div>
-            <h2>Coverage across payment channels</h2>
-            <p>
-              Database totals, updated with the shared operational snapshot.
-            </p>
-          </div>
-          <Link href="/live">Inspect payments →</Link>
-        </div>
-        <div className="channel-ledger">
-          <div className="channel-ledger-header">
-            <span>Channel</span>
-            <span>Payments</span>
-            <span>Cases</span>
-            <span>Awaiting review</span>
-            <span>Resolved</span>
-            <span>Declined</span>
-          </div>
-          {snapshot.channels.map((row) => (
-            <div className="channel-ledger-row" key={row.channel}>
-              <strong>{channelName(row.channel)}</strong>
-              <span>{row.transactions}</span>
-              <span>{row.cases}</span>
-              <span>{row.pending_review}</span>
-              <span>{row.resolved}</span>
-              <span>{row.declined}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-      <div className="overview-split">
-        <section className="ops-section">
-          <div className="section-heading">
-            <div>
-              <h2>Investigation priority</h2>
-              <p>Highest scores among the latest 200 cases.</p>
-            </div>
-          </div>
-          {snapshot.cases
-            .filter((x) => x.status !== "resolved")
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 5)
-            .map((item) => (
-              <Link
-                key={item.case_id}
-                className="priority-row"
-                href={`/case?case_id=${encodeURIComponent(item.case_id)}`}
-              >
-                <span className={`risk-score ${item.severity}`}>
-                  {(item.score * 100).toFixed(1)}
-                </span>
-                <span>
-                  <strong>{item.account_id}</strong>
-                  <small>
-                    {channelName(item.channel)} ·{" "}
-                    {item.reasons[0] ?? "Review detection evidence"}
-                  </small>
-                </span>
-                <span>
-                  {money(item.amount_minor)}
-                  <small>{human(item.status)}</small>
-                </span>
-              </Link>
-            ))}
-          {!snapshot.cases.some((x) => x.status !== "resolved") && (
-            <Empty>The investigation queue is clear.</Empty>
-          )}
-        </section>
-        <section className="ops-section">
-          <div className="section-heading">
-            <div>
-              <h2>Latest operational events</h2>
-              <p>Payment, protection and review in one sequence.</p>
-            </div>
-          </div>
-          <Timeline events={snapshot.events.slice(0, 5)} />
-        </section>
-      </div>
-      <section className="boundary-note">
-        <strong>Evidence boundary</strong>
-        <p>
-          These figures describe synthetic local activity. Detection scores are
-          risk signals, not probabilities. Real-bank performance and regulatory
-          certification have not been established.
-        </p>
-      </section>
-    </>
-  );
+  const priority = snapshot.cases.filter((item) => item.status !== "resolved").sort((a, b) => b.score - a.score).slice(0, 5);
+  return <div className="workspace-view dashboard-view">
+    <PageHeading title="Your operations, in focus." description="Monitor payments and move the right investigations forward."><Link href="/cases" className="primary-button">Review investigations <ArrowRight size={17} /></Link></PageHeading>
+    <div className="overview-metrics">
+      {[
+        { label: "Payment attempts", value: c.transactions, detail: `${c.posted} posted · ${c.declined} declined`, icon: CreditCard },
+        { label: "Awaiting review", value: c.pending_review, detail: `${c.investigating} investigating · ${c.escalated} escalated`, icon: Clock },
+        { label: "Resolved cases", value: c.resolved, detail: `${c.confirmed_fraud} fraud · ${c.false_positives} false positives`, icon: CheckCircle },
+        { label: "Active restrictions", value: c.restricted_accounts + c.restricted_cards, detail: `${c.restricted_accounts} accounts · ${c.restricted_cards} cards`, icon: ShieldCheck },
+      ].map(({ label, value, detail, icon: Icon }) => <div className="overview-metric" key={label}><div><span>{label}</span><Icon size={19} aria-hidden="true" /></div><strong>{value.toLocaleString("en-IN")}</strong><small>{detail}</small></div>)}
+    </div>
+    {(c.failed_actions > 0 || c.pending_actions > 0) && <Link className="delivery-notice" href="/bank"><WarningCircle size={22} /><span><strong>Bank deliveries need attention</strong><small>{c.failed_actions} failed · {c.pending_actions} pending actions</small></span><span>Review deliveries <ArrowRight size={16} /></span></Link>}
+    <div className="dashboard-charts"><ActivityChart snapshot={snapshot} /><ChannelChart snapshot={snapshot} /></div>
+    <div className="dashboard-worklists"><section className="ops-section priority-panel"><div className="section-heading"><div><h2>Next to investigate</h2><p>Highest risk scores among the latest {snapshot.cases.length} cases</p></div><Link href="/cases" className="section-text-link">View queue <ArrowUpRight size={15} /></Link></div>
+      {priority.map((item) => <Link key={item.case_id} className="focus-case-row" href={`/case?case_id=${encodeURIComponent(item.case_id)}`}><span className={`risk-score ${item.severity}`}>{(item.score * 100).toFixed(1)}</span><span className="focus-case-main"><strong>{item.account_id}<small>{channelName(item.channel)}</small></strong><span>{item.reasons[0] ?? "Review detection evidence"}</span><small className="identifier">{item.case_id}</small></span><span className="focus-case-value"><strong>{money(item.amount_minor)}</strong><small>{human(item.status)}</small></span><ArrowUpRight size={17} /></Link>)}
+      {!priority.length && <Empty>The investigation queue is clear. New alerts will appear here.</Empty>}
+    </section><section className="ops-section recent-events-panel"><div className="section-heading"><div><h2>Latest activity</h2><p>Payments, protection and review</p></div><Link href="/audit" className="section-text-link">Audit trail <ArrowUpRight size={15} /></Link></div><Timeline events={snapshot.events.slice(0, 4)} /></section></div>
+    <div className="evidence-footnote"><ShieldCheck size={18} /><p>Synthetic local activity. Risk scores are signals, not probabilities. Real-bank performance and regulatory certification have not been established.</p><time>Snapshot {dateTime(snapshot.as_of)} IST</time></div>
+  </div>;
 }
 export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
   const { snapshot } = useOperations();
@@ -201,7 +116,7 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
     };
   }, [kind, channel, status, offset, snapshot?.cursor]);
   return (
-    <>
+    <div className="workspace-view ledger-view">
       <PageHeading
         title={kind === "cases" ? "Investigation queue" : "Transaction ledger"}
         description={
@@ -211,7 +126,15 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
         }
       />
       {kind === "transactions" && <ScenarioControls />}
-      <section className="ops-section">
+      {kind === "cases" && <div className="queue-status-strip" aria-label="Filter investigation status">{[
+        { value: "", label: "All investigations", count: snapshot?.counts.cases },
+        { value: "new", label: "Awaiting review", count: snapshot?.counts.pending_review },
+        { value: "investigating", label: "Investigating", count: snapshot?.counts.investigating },
+        { value: "escalated", label: "Escalated", count: snapshot?.counts.escalated },
+        { value: "resolved", label: "Resolved", count: snapshot?.counts.resolved },
+      ].map((item) => <button key={item.value} aria-pressed={status === item.value} onClick={() => { setStatus(item.value); setOffset(0); }}><span>{item.label}</span><strong>{item.count?.toLocaleString("en-IN") ?? "…"}</strong></button>)}</div>}
+      {kind === "transactions" && snapshot && <div className="ledger-context"><span><span className={`connection-dot ${snapshot.simulation_state.running ? "running" : ""}`} />Stream {snapshot.simulation_state.running ? "running" : "paused"}</span><span><strong>{snapshot.counts.posted}</strong> posted</span><span><strong>{snapshot.counts.declined}</strong> declined</span><span><strong>{snapshot.counts.pending_payments}</strong> pending</span></div>}
+      <section className="ops-section ledger-panel">
         <div className="filter-bar">
           <label>
             Channel
@@ -287,7 +210,7 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
           </button>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 export function BankView() {
@@ -299,23 +222,17 @@ export function BankView() {
         title="Bank action ledger"
         description="A request is not an enforced restriction. Confirmation comes from the separate bank simulator."
       />
-      <div className="bank-summary">
-        <span>
-          Simulator connection{" "}
+      <div className="bank-status-board">
+        <div className="bank-connection"><Bank size={30} aria-hidden="true" /><span><small>Simulator connection</small>
           <strong className={snapshot.bank.connected ? "good" : "bad"}>
             {snapshot.bank.connected ? "Available" : "Unavailable"}
           </strong>
-        </span>
-        <span>
-          Mode <strong>{human(snapshot.bank.mode)}</strong>
-        </span>
-        <span>
-          Pending <strong>{snapshot.counts.pending_actions}</strong>
-        </span>
-        <span>
-          Failed <strong>{snapshot.counts.failed_actions}</strong>
-        </span>
+        </span></div>
+        <div><small>Delivery mode</small><strong>{human(snapshot.bank.mode)}</strong></div>
+        <div><small>Awaiting acknowledgement</small><strong>{snapshot.counts.pending_actions}</strong></div>
+        <div><small>Failed deliveries</small><strong className={snapshot.counts.failed_actions ? "bad" : ""}>{snapshot.counts.failed_actions}</strong></div>
       </div>
+      <div className="bank-process-note"><ShieldCheck size={18} /><p>A protective request becomes an enforced restriction only after the bank simulator acknowledges it. Failed deliveries can be retried below.</p></div>
       {snapshot.bank.last_error && (
         <p className="form-error" role="alert">
           {snapshot.bank.last_error}
@@ -376,21 +293,19 @@ export function BankView() {
 export function AuditView() {
   const { snapshot } = useOperations();
   const [query, setQuery] = useState("");
+  const [eventType, setEventType] = useState("");
   if (!snapshot) return <Loading />;
-  const events = snapshot.events.filter((x) =>
-    `${x.event_type} ${x.message} ${x.case_id} ${x.actor}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
+  const eventTypes = [...new Set(snapshot.events.map((event) => event.event_type))];
+  const events = snapshot.events.filter((event) => `${event.id} ${event.event_type} ${event.message} ${event.case_id ?? ""} ${event.actor}`.toLowerCase().includes(query.toLowerCase()) && (!eventType || event.event_type === eventType));
   return (
     <>
       <PageHeading
         title="Audit trail"
         description="Persisted event history with authenticated actors and ordered event identifiers."
       />
-      <section className="ops-section">
+      <section className="ops-section audit-panel">
         <div className="filter-bar">
-          <label>
+          <label className="audit-search">
             Search recent events
             <input
               placeholder="Case, event, message or analyst"
@@ -398,58 +313,26 @@ export function AuditView() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <p>Latest {snapshot.events.length} events · all times IST</p>
+          <label>Event type<select value={eventType} onChange={(e) => setEventType(e.target.value)}><option value="">All event types</option>{eventTypes.map((type) => <option key={type} value={type}>{human(type)}</option>)}</select></label>
+          <p aria-live="polite">{events.length} of latest {snapshot.events.length} events · IST</p>
         </div>
-        <Timeline events={events} />
+        {events.length ? <Timeline events={events} /> : <Empty>No events match these filters. Try a different case, actor or event type.</Empty>}
       </section>
     </>
   );
 }
 export function ReportsView() {
   const { snapshot } = useOperations();
+  const [query, setQuery] = useState("");
+  const [verdict, setVerdict] = useState("");
   if (!snapshot) return <Loading />;
-  return (
-    <>
-      <PageHeading
-        title="Investigation reports"
-        description="Export timestamped evidence, decisions and bank acknowledgements from the current case record."
-      />
-      <section className="ops-section">
-        <div className="section-heading">
-          <h2>Recent investigations</h2>
-          <Link href="/cases">Find any case →</Link>
-        </div>
-        {snapshot.cases.map((item) => (
-          <div key={item.case_id} className="report-row">
-            <div>
-              <Link
-                className="record-link"
-                href={`/case?case_id=${encodeURIComponent(item.case_id)}`}
-              >
-                {item.case_id}
-              </Link>
-              <p>
-                {channelName(item.channel)} · {human(item.verdict)} · version{" "}
-                {item.version}
-              </p>
-              <small className="muted">
-                Updated {dateTime(item.updated_at)} IST
-              </small>
-            </div>
-            <ReportButtons caseId={item.case_id} />
-          </div>
-        ))}
-        {!snapshot.cases.length && (
-          <Empty>Open a case before exporting an investigation report.</Empty>
-        )}
-      </section>
-      <p className="fine-print">
-        Reports capture a point in time; later decisions do not alter an already
-        downloaded report. For older cases, use the paginated investigation
-        queue.
-      </p>
-    </>
-  );
+  const reports = snapshot.cases.filter((item) => `${item.case_id} ${item.account_id} ${channelName(item.channel)}`.toLowerCase().includes(query.toLowerCase()) && (!verdict || item.verdict === verdict));
+  const verdicts = [...new Set(snapshot.cases.map((item) => item.verdict))];
+  return <div className="workspace-view reports-view"><PageHeading title="Investigation reports" description="A portable record of the evidence, decisions and bank acknowledgements."><Link href="/cases" className="secondary-button">Find an investigation <ArrowUpRight size={16} /></Link></PageHeading>
+    <div className="report-library-intro"><FileText size={32} aria-hidden="true" /><div><h2>Your evidence library</h2><p>Export a case as PDF for review, Markdown for notes, or JSON for structured evidence.</p></div><span><strong>{snapshot.cases.length}</strong> recent case records</span></div>
+    <section className="ops-section report-library"><div className="filter-bar"><label className="search-field">Search recent case records<span><MagnifyingGlass size={18} aria-hidden="true" /><input placeholder="Case ID, account or channel" value={query} onChange={(e) => setQuery(e.target.value)} /></span></label><label>Verdict<select value={verdict} onChange={(e) => setVerdict(e.target.value)}><option value="">All verdicts</option>{verdicts.map((value) => <option key={value} value={value}>{human(value)}</option>)}</select></label><p aria-live="polite">{reports.length} matching records</p></div>
+    {reports.map((item) => <article key={item.case_id} className="library-report-row"><FileText size={23} aria-hidden="true" /><div className="library-report-main"><Link className="record-link" href={`/case?case_id=${encodeURIComponent(item.case_id)}`}>{item.case_id}</Link><p>{item.account_id} · {channelName(item.channel)}</p></div><div className="library-report-meta"><strong>{human(item.verdict)}</strong><small>Version {item.version} · {dateTime(item.updated_at)} IST</small></div><ReportButtons caseId={item.case_id} /></article>)}
+    {!reports.length && <Empty>{snapshot.cases.length ? "No recent case records match your search. Try another account or clear the filters." : "Open a case before exporting an investigation report."}</Empty>}</section><p className="fine-print report-library-note">Reports capture a point in time. Later decisions do not alter a downloaded report. This library shows the latest {snapshot.cases.length} cases; use the investigation queue to find older records.</p></div>;
 }
 export function GuidanceView() {
   const { snapshot } = useOperations();
@@ -494,10 +377,11 @@ export function GuidanceView() {
             </p>
           </div>
         </div>
-        <div className="coverage-list">
+        <div className="coverage-list coverage-disclosures">
           {snapshot?.detection.coverage.map((row, i) => (
-            <div key={i}>
-              {Object.entries(row).map(([key, value]) => (
+            <details key={i}>
+              <summary><span>{typeof row.channel === "string" ? channelName(row.channel) : `Detection coverage ${i + 1}`}</span><span>View supported signals</span></summary>
+              <div>{Object.entries(row).map(([key, value]) => (
                 <p key={key}>
                   <strong>{human(key)}: </strong>
                   {Array.isArray(value)
@@ -506,8 +390,8 @@ export function GuidanceView() {
                       ? JSON.stringify(value)
                       : String(value)}
                 </p>
-              ))}
-            </div>
+              ))}</div>
+            </details>
           ))}
         </div>
       </section>
@@ -523,24 +407,17 @@ export function GuidanceView() {
         {guidance ? (
           <div className="guidance-list">
             {guidance.references.map((row) => (
-              <article key={row.id}>
-                <div>
-                  <a href={row.source_url} target="_blank" rel="noreferrer">
-                    {row.title} ↗
-                  </a>
-                  <small>
-                    {row.source_date} · {row.status}
-                  </small>
-                </div>
-                <dl>
+              <details key={row.id} className="guidance-disclosure">
+                <summary><span><strong>{row.title}</strong><small>{row.source_date} · {row.status}</small></span><span>Read control & evidence</span></summary>
+                <div className="guidance-detail"><a href={row.source_url} target="_blank" rel="noreferrer" className="guidance-source">Open source reference <ArrowUpRight size={15} /></a><dl>
                   <dt>Applicability</dt>
                   <dd>{row.applicability}</dd>
                   <dt>Control</dt>
                   <dd>{row.control}</dd>
                   <dt>Evidence</dt>
                   <dd>{row.test_evidence.join("; ") || "Not yet verified"}</dd>
-                </dl>
-              </article>
+                </dl></div>
+              </details>
             ))}
           </div>
         ) : (

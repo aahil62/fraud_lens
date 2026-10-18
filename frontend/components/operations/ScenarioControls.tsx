@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { CaretDown, Flask, Pause, Play, SlidersHorizontal } from "@phosphor-icons/react";
 import { CHANNELS, channelName, type Channel } from "@/lib/operations";
 import { useOperations } from "./OperationsProvider";
 export default function ScenarioControls() {
@@ -24,18 +25,12 @@ export default function ScenarioControls() {
     }
   }
   return (
-    <section className="scenario-panel">
-      <div className="section-heading">
-        <div>
-          <h2>Simulation desk</h2>
-          <p>
-            Generate new payments. Detection never receives the scenario label.
-          </p>
-        </div>
-        <span className="simulation-label">Test accounts only</span>
+    <section className="scenario-desk">
+      <div className="scenario-desk-heading">
+        <Flask size={21} aria-hidden="true" /><h2>Simulation desk</h2><span>Test accounts only</span><p>Scenario labels are hidden from detection.</p>
       </div>
-      <div className="scenario-columns">
-        <form
+      <div className="scenario-command-strip">
+        <form className="scenario-generate-form"
           onSubmit={(e) => {
             e.preventDefault();
             void execute(
@@ -45,7 +40,7 @@ export default function ScenarioControls() {
             );
           }}
         >
-          <div className="field-pair">
+          <div className="scenario-inputs">
             <label>
               Payment channel
               <select
@@ -76,12 +71,9 @@ export default function ScenarioControls() {
               </select>
             </label>
           </div>
-          <button className="primary-button" disabled={busy}>
-            Generate scenario
-          </button>
+          <button className="primary-button" disabled={busy}>{busy ? "Processing…" : "Generate scenario"}<Play size={14} weight="fill" aria-hidden="true" /></button>
         </form>
-        <div>
-          <div className="control-line">
+        <div className="scenario-stream">
             <span>
               <strong>Continuous stream</strong>
               <small>
@@ -100,11 +92,11 @@ export default function ScenarioControls() {
                 );
               }}
             >
-              {snapshot?.simulation_state.running
-                ? "Pause stream"
-                : "Resume stream"}
+              {snapshot?.simulation_state.running ? <Pause size={14} /> : <Play size={14} />}{snapshot?.simulation_state.running ? "Pause stream" : "Resume stream"}
             </button>
-          </div>
+        </div>
+      </div>
+      <details className="scenario-advanced"><summary><SlidersHorizontal size={17} aria-hidden="true" />Stream & delivery settings<CaretDown size={15} aria-hidden="true" /></summary><div className="scenario-advanced-content">
           <form
             className="control-line"
             onSubmit={(e) => {
@@ -129,8 +121,7 @@ export default function ScenarioControls() {
             </label>
             <button disabled={busy}>Apply interval</button>
           </form>
-        </div>
-        <div>
+        <div className="scenario-bank-control">
           <label>
             Bank delivery mode
             <select
@@ -154,7 +145,7 @@ export default function ScenarioControls() {
           <p className="fine-print">
             Failure modes exercise pending requests, reconciliation and retries.
           </p>
-          <button
+        </div><div className="scenario-process"><button
             disabled={busy}
             onClick={() => {
               void execute(
@@ -167,7 +158,7 @@ export default function ScenarioControls() {
             Process pending jobs
           </button>
         </div>
-      </div>
+      </div></details>
       {message && (
         <p className="success-message" role="status">
           {message}

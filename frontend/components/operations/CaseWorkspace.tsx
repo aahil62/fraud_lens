@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowLeft, CheckCircle, ShieldCheck } from "@phosphor-icons/react";
 import {
   type Case,
   type Decision,
@@ -75,7 +76,7 @@ export function DecisionPanel({
         <div>
           <h2>Analyst decision</h2>
           <p>
-            Acting on case version {item.version}. Your identity is recorded.
+            Case version {item.version}. Every decision carries your identity.
           </p>
         </div>
       </div>
@@ -195,12 +196,12 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
   return (
     <>
       <div className="case-back">
-        <Link href="/cases">← Investigation queue</Link>
+          <Link href="/cases"><ArrowLeft size={12}/>Investigation queue</Link>
         <span>Updated {dateTime(item.updated_at)} IST</span>
       </div>
       <PageHeading
-        title={item.case_id}
-        description={`${channelName(item.channel)} · ${item.account_id} · ${money(item.amount_minor)}`}
+        title={`${channelName(item.channel)} investigation`}
+        description={`${item.case_id} · ${item.account_id} · ${money(item.amount_minor)}`}
       >
         <ReportButtons caseId={item.case_id} />
       </PageHeading>
@@ -235,8 +236,9 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
       </div>
       <section className="recommendation">
         <strong>
+          {item.status === "resolved" ? <CheckCircle size={18} weight="duotone"/> : <ShieldCheck size={18} weight="duotone"/>}
           {item.verdict === "false_positive"
-            ? "Verify release acknowledgement"
+            ? item.status === "resolved" ? "False positive resolved" : "Awaiting release acknowledgement"
             : item.verdict === "fraud"
               ? "Fraud confirmed by analyst"
               : "Review the detected pattern"}

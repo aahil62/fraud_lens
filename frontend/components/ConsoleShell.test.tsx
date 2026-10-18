@@ -1,0 +1,22 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { expect, it, vi } from "vitest";
+import ConsoleShell from "./ConsoleShell";
+vi.mock("next/navigation",()=>({usePathname:()=>"/dashboard",useRouter:()=>({push:vi.fn(),refresh:vi.fn()})}));
+vi.mock("@/lib/auth",()=>({clearSession:vi.fn(),getStoredAnalyst:()=>null}));
+vi.mock("./operations/OperationsProvider",()=>({OperationsProvider:({children}:{children:React.ReactNode})=>children,useOperations:()=>({snapshot:null,error:null,connected:true,refresh:vi.fn()})}));
+it("moves focus into mobile navigation, contains Tab, and restores focus on Escape",()=>{
+ render(<ConsoleShell><h1>Operational evidence</h1></ConsoleShell>);
+ const trigger=screen.getByRole("button",{name:"Open navigation"});
+ fireEvent.click(trigger);
+ const first=screen.getByRole("link",{name:"FraudLens Fraud intelligence"});
+ const last=screen.getByRole("link",{name:"Controls & guidance"});
+ expect(first).toHaveFocus();
+ expect(screen.getByRole("heading",{name:"Operational evidence"}).closest(".ops-main")).toHaveAttribute("inert");
+ fireEvent.keyDown(window,{key:"Tab",shiftKey:true});
+ expect(last).toHaveFocus();
+ fireEvent.keyDown(window,{key:"Tab"});
+ expect(first).toHaveFocus();
+ fireEvent.keyDown(window,{key:"Escape"});
+ expect(trigger).toHaveFocus();
+ expect(screen.getByRole("heading",{name:"Operational evidence"}).closest(".ops-main")).not.toHaveAttribute("inert");
+});
