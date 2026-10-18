@@ -41,3 +41,24 @@ One API worker is supported. Application locking coordinates ingestion, decision
 The bank is a different process/database. It posts allowed payments once, durably declines restricted/insufficient-funds attempts, and owns per-case restrictions. Test modes reject requests or lose an acknowledgement after committing an action. Health identifies the service as simulated; banking endpoints require a key.
 
 This does not implement genuine payment authentication, network authorization, credit-card settlement, KYC, statutory reporting or actual account freezes.
+
+
+The simulator enforces this ladder; API permissions come from the shared analyst role table:
+
+| Action | Requesting role | Reversal |
+|---|---|---|
+| Amount-specific lien | L1+ | L2+ may release this case's lien |
+| Debit freeze | L2+ (or detector policy) | L2+ may record false positive and release this case's protection |
+| Final account close | Supervisor, after confirmed fraud | Final in the simulator |
+
+Balances and available balances are integer paise. Available = balance minus active liens.
+Liens allow incoming credits, but block debits above available funds. Payments debit and credit
+known active beneficiaries in one bank transaction; incoming payments to a closed beneficiary
+are declined before any sender debit. Unknown beneficiaries represent external recipients.
+Account status is persisted as active/closed; frozen is derived from restrictions. Existing
+SQLite account tables migrate without resetting balances, and old payment payloads still replay.
+Concurrent liens that exceed available funds return 409. Lien release preserves other cases'
+holds. Closing a card-fraud case always targets its account; card restrictions remain distinct.
+The operations outbox carries lien amounts and reconciles uncertain acknowledgements by action id.
+A false-positive reversal releases both freezes and liens and resolves only after all releases
+are confirmed. Once final closure is requested, contradictory verdicts are blocked pending reconciliation.

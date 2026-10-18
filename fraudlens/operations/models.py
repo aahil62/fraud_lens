@@ -41,13 +41,18 @@ class TransactionInput(BaseModel):
 
 class DecisionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["investigate", "escalate", "confirm_fraud", "false_positive", "restrict", "release_lien", "close_account", "file_ncrp_report"]
+    action: Literal["investigate", "escalate", "confirm_fraud", "false_positive", "restrict", "place_lien", "release_lien", "close_account", "file_ncrp_report"]
     expected_version: Annotated[StrictInt, Field(ge=1)]
     notes: str = Field(default="", max_length=3000)
+    amount_minor: Annotated[StrictInt, Field(gt=0, le=100_000_000)] | None = None
 
     @model_validator(mode="after")
     def require_rationale(self):
         self.notes = self.notes.strip()
+        if self.action == "place_lien" and self.amount_minor is None:
+            raise ValueError("A positive lien amount is required")
+        if self.action != "place_lien" and self.amount_minor is not None:
+            raise ValueError("amount_minor is only valid for place_lien")
         if self.action in {"confirm_fraud", "false_positive"} and not self.notes:
             raise ValueError("A rationale is required for a final analyst verdict")
         return self

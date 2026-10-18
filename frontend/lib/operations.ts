@@ -31,7 +31,8 @@ export type Transaction = {
 export type BankAction = {
   action_id: string;
   case_id: string;
-  operation: "restrict" | "release";
+  operation: "restrict" | "release" | "lien" | "lien_release" | "close";
+  amount_minor?: number;
   target_type: "account" | "card";
   target_id: string;
   status: "pending" | "confirmed" | "failed" | "superseded";
@@ -114,6 +115,9 @@ export type Snapshot = {
     accounts: {
       account_id: string;
       balance_minor: number;
+      available_minor: number;
+      status: "active" | "frozen" | "closed";
+      liens: { lien_id: string; case_id: string; amount_minor: number }[];
       restricted: boolean;
       active_restrictions: number;
     }[];

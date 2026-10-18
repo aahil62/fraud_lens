@@ -56,7 +56,7 @@ version updates, bank outbox jobs and audit records:
 The decision endpoint also accepts `restrict`, `release_lien`, `close_account` and
 `file_ncrp_report`; the central permission table is enforced before any mutation. Closure requires
 an existing fraud verdict. Report recording is simulated and never files anything externally.
-Bank support for liens/closure follows in Task 3; queued requests are not confirmed protection.
+Bank liens and closure are enforced by the separate simulator; queued requests are not confirmed protection.
 
 Insufficient role: **403** `{detail:string,required_role:"l2_analyst"|"supervisor"}`.
 Stale version or competing claim: **409** `{detail:string,version:number,assignee:string|null}`.
@@ -67,3 +67,19 @@ Cases add `assignee` (username), `assigned_at`, `pending_approval` (or null) and
 `handled_by` usernames from human case audit events. `assigned_to` remains the display label.
 Snapshots add `team` (role label, online, last seen, current case, open assigned, resolved today)
 and `approvals` (pending request fields plus case_id). All events use the existing live cursor.
+
+
+### Bank ladder payloads (v3)
+
+`POST /bank/actions` accepts `restrict|release|lien|lien_release|close`. Lien requires a strict
+positive integer `amount_minor`; other actions forbid that field. Lien/release-lien/close require
+an account target. Liens are owned by case; replaying an action id cannot add another hold.
+`GET /bank/accounts` adds `available_minor`, `status:active|frozen|closed`, and
+`liens:[{lien_id,case_id,amount_minor}]`. Existing restriction fields remain available.
+Payments accept optional `beneficiary_id`; known beneficiaries are credited atomically.
+Closed-debit reason is `account_closed`; closed-beneficiary reason is `beneficiary_closed`.
+
+Operational `place_lien` decisions require `amount_minor`; other decisions reject an amount.
+Bank actions carry that amount through the durable outbox. Closure requests require supervisor
+permission and a fraud verdict, target the account even for card/ATM cases, and remain pending
+until the bank acknowledges them. Report recording remains simulation-only.

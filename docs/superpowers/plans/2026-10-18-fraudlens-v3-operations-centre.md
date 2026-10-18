@@ -207,7 +207,7 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 - `GET /accounts` returns per account: `account_id, balance_minor, available_minor, status ('active'|'frozen'|'closed'), liens: [{lien_id, case_id, amount_minor}]` (`frozen` = active with a restriction).
 - Ops service: `BankAction.operation` widened to the same five values; `amount_minor` carried on lien actions; snapshot `accounts` view includes `available_minor`, `status`, `liens`.
 
-- [ ] **Step 1: Write failing tests** in `tests/test_bank_ladder.py` using `create_app(tmp_path/...)` + FastAPI `TestClient`:
+- [x] **Step 1: Write failing tests** in `tests/test_bank_ladder.py` using `create_app(tmp_path/...)` + FastAPI `TestClient`:
   - `test_lien_blocks_debit_above_available` (balance ₹10,000, lien ₹8,000, debit ₹3,000 → declined `lien_hold`; debit ₹1,500 → posted).
   - `test_lien_release_restores_available`.
   - `test_credit_posts_to_known_beneficiary` (A→B ₹2,000; B balance +200000 paise).
@@ -215,9 +215,9 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
   - `test_close_blocks_debits_and_incoming` (debit → `account_closed`; payment into it → `beneficiary_closed`, sender not debited).
   - `test_lien_requires_amount` (422) and `test_close_requires_account_target` (422).
   - `test_action_idempotent_same_id` (existing guarantee preserved for new operations).
-- [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Run full suite → PASS.
-- [ ] **Step 5:** Update `docs/ARCHITECTURE.md` "bank" section with the ladder table: lien (L1, reversible by L2) → debit freeze (L2) → close (Supervisor, final).
-- [ ] **Step 6:** Commit `feat(bank): lien, credit posting and account closure`.
+- [x] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Run full suite → PASS.
+- [x] **Step 5:** Update `docs/ARCHITECTURE.md` "bank" section with the ladder table: lien (L1, reversible by L2) → debit freeze (L2) → close (Supervisor, final).
+- [x] **Step 6:** Commit `feat(bank): lien, credit posting and account closure`.
 
 ---
 

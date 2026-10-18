@@ -71,14 +71,18 @@ class OperationsService:
             case = self._case(db, case_id) if case_id else None
             return {"transaction": txn, "case": case, "duplicate": False}
 
-    def _queue_action(self, db, case, operation, actor="system"):
+    def _queue_action(self, db, case, operation, actor="system", *, amount_minor=None, target_id=None, target_type=None):
         txn = self.store.get(db, "transactions", case["txn_id"])
-        target_type = "card" if txn["channel"] in {"card", "atm"} else "account"
-        target_id = txn["instrument_id"] if target_type == "card" else txn["account_id"]
+        if target_type is None:
+            target_type = "account" if operation in {"lien", "lien_release", "close"} or target_id else "card" if txn["channel"] in {"card", "atm"} else "account"
+        if target_id is None:
+            target_id = txn["instrument_id"] if target_type == "card" else txn["account_id"]
         action_id = f"ACT-{uuid4().hex}"
         action = dict(action_id=action_id, case_id=case["case_id"], operation=operation, target_type=target_type,
                       target_id=target_id, status="pending", attempts=0, bank_reference=None, last_error=None,
                       created_at=now(), updated_at=now())
+        if operation == "lien":
+            action["amount_minor"] = amount_minor
         db.execute("INSERT INTO actions VALUES(?,?,?)", (action_id, case["case_id"], dump(action)))
         db.execute("INSERT INTO jobs(id,kind,resource_id) VALUES(?,?,?)", (action_id, "action", action_id))
         self.store.event(db, f"{operation}_requested", f"{operation.capitalize()} requested for simulated {target_type} {target_id}.",
@@ -125,6 +129,10 @@ class OperationsService:
 
     def _apply_decision(self, db, case, request, actor):
         case_id = case["case_id"]
+        if request.action in {"false_positive", "close_account"} and any(
+                a["case_id"] == case_id and a["operation"] == "close" and a["status"] != "superseded"
+                for a in self.store.records(db, "actions")):
+            raise ConflictError("Final account closure has already been requested; reconcile its bank result")
         if case["verdict"] == "false_positive" and request.action != "file_ncrp_report":
             raise ConflictError("A false-positive verdict is already recorded; its release must finish without a contradictory decision.")
         if case["status"] == "resolved" and request.action != "file_ncrp_report" and not (request.action in {"false_positive", "close_account"} and case["verdict"] == "fraud"):
@@ -134,32 +142,37 @@ class OperationsService:
             case["status"] = "investigating" if request.action == "investigate" else "escalated"
         elif request.action == "confirm_fraud":
             case.update(verdict="fraud", status="investigating")
-            actions = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id and a["operation"] == "restrict"]
-            if not actions:
+            case_actions = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id]
+            restrictions = [a for a in case_actions if a["operation"] == "restrict"]
+            if not restrictions:
                 self._queue_action(db, case, "restrict", actor.username)
-            elif any(a["status"] == "confirmed" for a in actions):
+            elif any(a["status"] == "confirmed" for a in restrictions) and not any(
+                    a["status"] in {"pending", "failed"} for a in case_actions):
                 case["status"] = "resolved"
         elif request.action == "false_positive":
             case.update(verdict="false_positive", status="investigating")
-            restricted = False
-            for action in self.store.records(db, "actions"):
-                if action["case_id"] == case_id and action["operation"] == "restrict":
-                    restricted = True
-                    if action["status"] in {"pending", "failed"}:
-                        action.update(status="superseded", updated_at=now())
-                        self.store.update(db, "actions", action["action_id"], action)
-                        db.execute("UPDATE jobs SET done=1 WHERE id=?", (action["action_id"],))
-            # Release is sent even for uncertain previous delivery. Bank
-            # restriction ownership makes this safe for other open cases.
-            if restricted:
-                self._queue_action(db, case, "release", actor.username)
-            else:
+            protections = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id
+                           and a["operation"] in {"restrict", "lien"}]
+            releases = set()
+            for action in protections:
+                if action["status"] in {"pending", "failed"}:
+                    action.update(status="superseded", updated_at=now())
+                    self.store.update(db, "actions", action["action_id"], action)
+                    db.execute("UPDATE jobs SET done=1 WHERE id=?", (action["action_id"],))
+                releases.add(("release" if action["operation"] == "restrict" else "lien_release",
+                              action["target_type"], action["target_id"]))
+            # Release uncertain deliveries too; bank ownership protects other cases.
+            for operation, target_type, target_id in sorted(releases):
+                self._queue_action(db, case, operation, actor.username, target_type=target_type, target_id=target_id)
+            if not releases:
                 case["status"] = "resolved"
         elif request.action == "close_account":
             if case["verdict"] != "fraud":
                 raise ConflictError("Confirm fraud before requesting final account closure")
             self._queue_action(db, case, "close", actor.username)
             case["status"] = "investigating"
+        elif request.action == "place_lien":
+            self._queue_action(db, case, "lien", actor.username, amount_minor=request.amount_minor)
         elif request.action in {"restrict", "release_lien"}:
             self._queue_action(db, case, "restrict" if request.action == "restrict" else "lien_release", actor.username)
         elif request.action == "file_ncrp_report":
@@ -319,11 +332,15 @@ class OperationsService:
             response = self.bank.get(f"/bank/actions/{action['action_id']}")
             if response.status_code == 404:
                 payload = {k: action[k] for k in ("action_id", "case_id", "operation", "target_type", "target_id")}
+                if action["operation"] == "lien":
+                    payload["amount_minor"] = action["amount_minor"]
                 response = self.bank.post("/bank/actions", json=payload)
             response.raise_for_status()
             ack = response.json()
             if ack.get("action_id") != action["action_id"] or ack.get("status") != "confirmed" or not ack.get("bank_reference"):
                 raise ValueError("Bank returned an invalid acknowledgement")
+            if action["operation"] == "lien" and ack.get("amount_minor") != action["amount_minor"]:
+                raise ValueError("Bank acknowledged a different lien amount")
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             # Timeout means unknown outcome. Reconciliation remains pending;
             # explicit rejection is visible as failed while still retryable.
@@ -339,7 +356,10 @@ class OperationsService:
             self.store.update(db, "actions", action["action_id"], action)
             db.execute("UPDATE jobs SET done=1 WHERE id=?", (job["id"],))
             case = self.store.get(db, "cases", action["case_id"])
-            if (action["operation"] == "release" and case["verdict"] == "false_positive") or (action["operation"] == "restrict" and case["verdict"] == "fraud"):
+            outstanding = any(a["case_id"] == case["case_id"] and a["status"] in {"pending", "failed"}
+                              for a in self.store.records(db, "actions"))
+            if not outstanding and ((action["operation"] in {"release", "lien_release"} and case["verdict"] == "false_positive")
+                                    or (action["operation"] in {"restrict", "close", "lien"} and case["verdict"] == "fraud")):
                 case["status"] = "resolved"
             if case["status"] == "resolved":
                 case.setdefault("resolved_at", now())
@@ -357,6 +377,8 @@ class OperationsService:
                     if action["case_id"] == txn["case_id"] and action["status"] in {"pending", "failed"}:
                         return
         payload = {k: txn[k] for k in ("txn_id", "account_id", "channel", "amount_minor", "instrument_id")}
+        if txn.get("beneficiary_id"):
+            payload["beneficiary_id"] = txn["beneficiary_id"]
         try:
             response = self.bank.post("/bank/transactions", json=payload)
             response.raise_for_status()
@@ -398,7 +420,7 @@ class OperationsService:
                     key = (action["case_id"], action["target_type"], action["target_id"])
                     if action["operation"] == "restrict":
                         active[key] = True
-                    else:
+                    elif action["operation"] == "release":
                         active.pop(key, None)
             counts["restricted_accounts"] = len({k[2] for k in active if k[1] == "account"})
             counts["restricted_cards"] = len({k[2] for k in active if k[1] == "card"})
