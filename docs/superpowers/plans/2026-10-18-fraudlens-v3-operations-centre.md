@@ -130,17 +130,17 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 | `kmehta` | K. Mehta | l1_analyst |
 | `pnair` | P. Nair | l1_analyst |
 
-- [ ] **Step 1: Write failing tests** in `tests/test_roles.py`:
+- [x] **Step 1: Write failing tests** in `tests/test_roles.py`:
   - `test_can_respects_rank`: `can("l1_analyst","place_lien") is True`; `can("l1_analyst","restrict") is False`; `can("l2_analyst","close_account") is False`; `can("supervisor","close_account") is True`.
   - `test_unknown_action_is_denied`: `can("supervisor","drop_tables") is False`.
   - `test_seed_roles`: with `FRAUDLENS_MODE=demo` and a temp store path, `store.get("asharma").role == "supervisor"`, `store.get("kmehta").role == "l1_analyst"`.
   - `test_legacy_json_without_role_loads_as_l1`: write a JSON file containing one account without `role`, load store, assert role `l1_analyst` (except seeded usernames, which keep the table role).
   - `test_signup_creates_l1`: `store.create("newbie","N. Ewbie","pw12345678").role == "l1_analyst"`.
-- [ ] **Step 2:** Run `.venv/bin/python -m pytest tests/test_roles.py -v`. Expected: FAIL (module missing).
-- [ ] **Step 3:** Implement `roles.py`; add `role` to the schemas; in the store, add missing seed accounts on load (do not duplicate existing ones) and set seeded accounts' roles from the table.
-- [ ] **Step 4:** Make `/auth/login`, `/auth/me` (or whichever endpoint returns the profile) include `role`. Update `frontend/lib/auth.ts` `AnalystProfile` type with `role: "l1_analyst" | "l2_analyst" | "supervisor"`.
-- [ ] **Step 5:** Run the full backend suite. Expected: all pass.
-- [ ] **Step 6:** Commit `feat(auth): analyst role hierarchy and permission table`.
+- [x] **Step 2:** Run `.venv/bin/python -m pytest tests/test_roles.py -v`. Expected: FAIL (module missing).
+- [x] **Step 3:** Implement `roles.py`; add `role` to the schemas; in the store, add missing seed accounts on load (do not duplicate existing ones) and set seeded accounts' roles from the table.
+- [x] **Step 4:** Make `/auth/login`, `/auth/me` (or whichever endpoint returns the profile) include `role`. Update `frontend/lib/auth.ts` `AnalystProfile` type with `role: "l1_analyst" | "l2_analyst" | "supervisor"`.
+- [x] **Step 5:** Run the full backend suite. Expected: all pass.
+- [x] **Step 6:** Commit `feat(auth): analyst role hierarchy and permission table`.
 
 ---
 

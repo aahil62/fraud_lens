@@ -23,4 +23,4 @@ def get_current_analyst(authorization: str | None = Header(default=None)) -> Ana
     account = state.runtime.analyst_store.get(username)
     if account is None:
         raise HTTPException(status_code=401, detail="Analyst account no longer exists.")
-    return AnalystProfile(username=account.username, display_name=account.display_name)
+    return AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)

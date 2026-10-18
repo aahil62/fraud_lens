@@ -26,6 +26,7 @@ class AuthTests(unittest.TestCase):
         self.assertTrue(data["access_token"])
         self.assertEqual(data["analyst"]["username"], "asharma")
         self.assertEqual(data["analyst"]["display_name"], "A. Sharma")
+        self.assertEqual(data["analyst"]["role"], "supervisor")
 
     def test_login_with_wrong_password_rejected(self) -> None:
         resp = self.client.post("/auth/login", json={"username": "asharma", "password": "wrong"})
@@ -38,10 +39,11 @@ class AuthTests(unittest.TestCase):
     def test_signup_creates_a_real_account_that_can_then_log_in(self) -> None:
         signup = self.client.post(
             "/auth/signup",
-            json={"username": "newanalyst", "display_name": "N. Verma", "password": "supersecret1"},
+            json={"username": "newanalyst", "display_name": "N. Verma", "password": "supersecret1", "role": "supervisor"},
         )
         self.assertEqual(signup.status_code, 200)
         self.assertEqual(signup.json()["analyst"]["display_name"], "N. Verma")
+        self.assertEqual(signup.json()["analyst"]["role"], "l1_analyst")
 
         login = self.client.post("/auth/login", json={"username": "newanalyst", "password": "supersecret1"})
         self.assertEqual(login.status_code, 200)
@@ -73,6 +75,7 @@ class AuthTests(unittest.TestCase):
         resp = self.client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["username"], "riyer")
+        self.assertEqual(resp.json()["role"], "l2_analyst")
 
     def test_submit_decision_without_auth_is_rejected(self) -> None:
         txn_id = self.client.get("/transactions/recent?limit=1").json()["transactions"][0]["txn_id"]

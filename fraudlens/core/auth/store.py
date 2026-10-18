@@ -1,5 +1,5 @@
 """Analyst account store — persists to JSON like FraudDNAStore, auto-seeded
-with a couple of real accounts on first use so the console is usable
+with four fictional demonstration accounts so the console is usable
 immediately, without requiring signup before anyone can log in.
 """
 
@@ -18,24 +18,20 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+DEMO_ANALYSTS = {
+    "asharma": ("A. Sharma", "supervisor"),
+    "riyer": ("R. Iyer", "l2_analyst"),
+    "kmehta": ("K. Mehta", "l1_analyst"),
+    "pnair": ("P. Nair", "l1_analyst"),
+}
+
+
 def _seed_accounts() -> list[AnalystAccount]:
     if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
         return []
-    now = _now_iso()
-    return [
-        AnalystAccount(
-            username="asharma",
-            display_name="A. Sharma",
-            password_hash=hash_password("fraudlens123"),
-            created_at=now,
-        ),
-        AnalystAccount(
-            username="riyer",
-            display_name="R. Iyer",
-            password_hash=hash_password("fraudlens123"),
-            created_at=now,
-        ),
-    ]
+    return [AnalystAccount(username=username, display_name=display_name, role=role,
+                           password_hash=hash_password("fraudlens123"), created_at=_now_iso())
+            for username, (display_name, role) in DEMO_ANALYSTS.items()]
 
 
 class AnalystStore:
@@ -80,10 +76,13 @@ class AnalystStore:
                 accounts = {item["username"]: AnalystAccount(**item) for item in data}
                 if accounts:
                     self._accounts = accounts
-                    return
             except (json.JSONDecodeError, KeyError, TypeError):
                 pass
-        self._accounts = {a.username: a for a in _seed_accounts()}
+        for seed in _seed_accounts():
+            if seed.username in self._accounts:
+                self._accounts[seed.username].role = seed.role
+            else:
+                self._accounts[seed.username] = seed
         self._persist()
 
     def _persist(self) -> None:

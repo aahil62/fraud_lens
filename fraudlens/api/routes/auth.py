@@ -32,7 +32,7 @@ def signup(payload: SignupRequest) -> TokenResponse:
         raise HTTPException(status_code=409, detail=str(exc))
 
     token = create_access_token(account.username)
-    profile = AnalystProfile(username=account.username, display_name=account.display_name)
+    profile = AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
     return TokenResponse(access_token=token, analyst=profile)
 
 
@@ -44,7 +44,7 @@ def login(payload: LoginRequest) -> TokenResponse:
         raise HTTPException(status_code=401, detail="Invalid username or password.")
 
     token = create_access_token(account.username)
-    profile = AnalystProfile(username=account.username, display_name=account.display_name)
+    profile = AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
     return TokenResponse(access_token=token, analyst=profile)
 
 
