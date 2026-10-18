@@ -614,9 +614,17 @@ class OperationsService:
         return self.snapshot()
 
     def run_scenario(self, channel, scenario, actor="simulation"):
-        from .scenarios import scenario_transactions
-        results = [self.ingest(t, actor) for t in scenario_transactions(channel, scenario)]
-        self.process_jobs()
+        from .scenarios import TYPOLOGIES, scenario_transactions, typology_accounts
+        rows = scenario_transactions(channel, scenario)
+        if scenario in TYPOLOGIES:
+            response = self.bank.post("/bank/accounts/seed", json={"accounts": typology_accounts(rows)})
+            response.raise_for_status()
+            with self.store.connect(write=True) as db:
+                self.store.event(db, "scenario_accounts_seeded", "Fictional typology accounts provisioned before payment posting.", actor=actor)
+        results = []
+        for txn in rows:
+            results.append(self.ingest(txn, actor))
+            self.process_jobs()
         ids = [r["transaction"]["txn_id"] for r in results]
         with self.store.connect() as db:
             return {"transactions": [self.store.get(db, "transactions", identifier) for identifier in ids],

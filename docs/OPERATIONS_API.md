@@ -92,3 +92,20 @@ until the bank acknowledges them. Report recording remains simulation-only.
 Case detail adds `case_type:"complaint"`, `complaint`, `trace`, `default_target_account_id`, `traced_total_minor`, `held_total_minor`, `funds_moved_total_minor`. Each trace row has hop, account_id, inbound_txn_ids, traced_minor, moved_minor, available_minor, lien_minor, lien_status and outcome. A chronological FIFO pass attributes each posted outgoing payment once, after funds arrive, within 24 hours and at most four hops; cycles and converging paths cannot duplicate funds. Only confirmed, unreleased bank liens count as held. Pending/failed acknowledgements show outcome `pending` and their actual lien_status; returned funds show `returned_to_victim`, and released holds show `released`. Cash-outs are moved amounts on the sending hop, not invented bank accounts. Bank outages leave a durable complaint awaiting balance reconciliation; the worker prepares holds after reconnection.
 
 Decision and approval-request bodies accept optional `target_account_id`. On complaint cases, close/restrict/place_lien must target a traced non-victim account. An explicit victim target returns **400** `{"detail":"This is the complainant's account."}`. Untraced targets return **400**. Omitting the target selects the first-hop recipient. The chosen target persists through approval into the bank action and its audit event. Close requires supervisor role and an existing fraud verdict; different traced accounts can close independently. The UI offers closure per fund-trail hop, shows its account reference explicitly, and the agent defaults its recommendation to the first-hop mule. The complainant is never automatically liened, including when traced money returns to their account. No external complaint is filed by this endpoint.
+
+
+### Telemetry typologies (showcase-policy-1.2)
+
+Scenario input also accepts `mule_layering`, `sim_swap_takeover`, `card_testing`, and `atm_cashout`.
+These define their own channels; the required `channel` field is ignored for them. The detector
+sees transaction/device/authentication/beneficiary telemetry, never the scenario name.
+Mule scoring uses posted prior credits and cumulative posted outgoing transfers plus the current
+attempt. Detection remains a suspicion signal; the current attempt may subsequently be declined.
+The mule sequence flags M1's second outgoing transfer (93.75% attempted pass-through), before M2's
+later ATM cash-out (66.7% of M2's incoming credit). It does not falsely label that ATM leg an 80% pass-through.
+
+The API provisions fictional `SIM-` accounts through private, demo-only
+`POST /bank/accounts/seed {accounts:[{account_id,balance_minor}]}` before executing new typologies.
+The bank key is required; non-demo requests return 404. Existing account balances are never reset
+by seed replay. Recipients start at zero so credits, freezes and cash-outs reconcile to bank balances.
+Payments are ingested and reconciled sequentially so prior posted credits are visible to detection.

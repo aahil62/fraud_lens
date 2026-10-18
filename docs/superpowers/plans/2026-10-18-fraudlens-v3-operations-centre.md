@@ -279,11 +279,14 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
   - **ATM burst across terminals:** ≥ 3 ATM withdrawals on one instrument across ≥ 2 device_ids within 15 min → 0.88.
 - Thresholds stay: review ≥ 0.5, automatic protection ≥ 0.8 (existing `showcase-policy`); bump policy version string to `showcase-policy-1.2`.
 
-- [ ] **Step 1: Write failing tests**: one test per typology asserting (a) the final fraudulent attempt scores ≥ 0.8, (b) the reason text contains the rule's key phrase, (c) a benign control (same shape, known beneficiary / known device / single small card payment) scores < 0.5.
-- [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Full suite → PASS (update any old test whose expected policy string changed).
-- [ ] **Step 5:** Commit `feat(detector): mule, SIM-swap, card-testing and ATM cash-out typologies`.
+- [x] **Step 1: Write failing tests**: one test per typology asserting (a) the final fraudulent attempt scores ≥ 0.8, (b) the reason text contains the rule's key phrase, (c) a benign control (same shape, known beneficiary / known device / single small card payment) scores < 0.5.
+- [x] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Full suite → PASS (update any old test whose expected policy string changed).
+- [x] **Step 5:** Commit `feat(detector): mule, SIM-swap, card-testing and ATM cash-out typologies`.
 
 ---
+
+
+**Execution clarification:** The fixed mule sequence's final ATM leg moves only 66.7% of M2's incoming credit. Assert the pass-through signal on M1's last outgoing attempt (93.75%), preserving the specified amounts and later cash-out. Provision fictional recipients with zero balances through authenticated demo-only bank seeding before sequential ingestion; seed replay must not reset balances.
 
 ### Task 6: Public attack console API
 

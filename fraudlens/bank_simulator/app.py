@@ -56,6 +56,15 @@ class ActionInput(StrictInput):
         return self
 
 
+class SeedAccountInput(StrictInput):
+    account_id: Annotated[str, Field(max_length=80, pattern=r"^SIM-[A-Za-z0-9_.:@-]+$")]
+    balance_minor: Annotated[int, Field(ge=0, le=100_000_000)]
+
+
+class SeedInput(StrictInput):
+    accounts: Annotated[list[SeedAccountInput], Field(min_length=1, max_length=20)]
+
+
 class ControlInput(StrictInput):
     mode: Mode
 
@@ -272,6 +281,16 @@ def create_app(db_path=None, api_key=None):
     @bank.get("/accounts")
     def accounts():
         return ledger.accounts()
+
+    @bank.post("/accounts/seed")
+    def seed(request: SeedInput):
+        if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
+            raise HTTPException(404, "Not found")
+        with ledger.connection(write=True) as db:
+            for account in request.accounts:
+                db.execute("INSERT OR IGNORE INTO accounts(account_id,balance_minor) VALUES(?,?)",
+                           (account.account_id, account.balance_minor))
+        return {"simulation": True, "accounts": [a.account_id for a in request.accounts]}
 
     @bank.post("/control")
     def control(request: ControlInput):

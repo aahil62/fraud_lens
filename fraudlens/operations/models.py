@@ -62,7 +62,7 @@ class DecisionInput(BaseModel):
 class ScenarioInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     channel: Channel
-    scenario: Literal["normal", "fraud", "false_positive", "cross_channel"]
+    scenario: Literal["normal", "fraud", "false_positive", "cross_channel", "mule_layering", "sim_swap_takeover", "card_testing", "atm_cashout"]
 
 
 class ControlInput(BaseModel):

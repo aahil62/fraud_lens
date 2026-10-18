@@ -14,17 +14,18 @@ from fraudlens.core.scoring.rule_agent import RuleAgent
 from fraudlens.core.scoring.velocity_agent import VelocityAgent
 from fraudlens.data.synthetic_generator import generate_synthetic_transactions
 from fraudlens.models.schemas import Transaction
+from .money import inr
 
-VERSION = "showcase-policy-1.1"
+VERSION = "showcase-policy-1.2"
 CHANNELS = ("upi", "net_banking", "card", "atm")
 COVERAGE = [
-    {"channel": "upi", "scenarios": ["New-device beneficiary transfer", "Payment burst", "Shared-device network"],
+    {"channel": "upi", "scenarios": ["New-device beneficiary transfer", "Payment burst", "Shared-device network", "Mule pass-through"],
      "limitations": "No intent, PIN or scam-message visibility; social-engineering detection is incomplete."},
-    {"channel": "net_banking", "scenarios": ["Failed-authentication takeover", "New beneficiary transfer", "Cross-channel burst"],
+    {"channel": "net_banking", "scenarios": ["Failed-authentication takeover", "New beneficiary transfer", "Cross-channel burst", "SIM-swap takeover pattern"],
      "limitations": "Authentication and device novelty are supplied test telemetry, not collected from a real bank."},
-    {"channel": "card", "scenarios": ["Card-testing burst", "Credential anomalies", "Unusual spending"],
+    {"channel": "card", "scenarios": ["Card-testing burst", "Credential anomalies", "Unusual spending", "Small tests followed by larger payment"],
      "limitations": "Linked simulated payment instruments, not production credit-card accounts or network authorization."},
-    {"channel": "atm", "scenarios": ["Rapid withdrawals", "New-device withdrawal", "Location change"],
+    {"channel": "atm", "scenarios": ["Rapid withdrawals", "New-device withdrawal", "Location change", "Burst across terminals"],
      "limitations": "Transaction telemetry only; no ATM camera, physical-skimmer, or hardware compromise detection."},
 ]
 
@@ -96,6 +97,29 @@ def detect(txn, history):
             flag(0.88, "High-value withdrawal at a new test terminal/device.")
     if txn["new_device"] and txn["amount_minor"] >= 500_000 and policy < 0.8:
         flag(0.58, "New-device payment requires analyst review; protective threshold not reached.")
+
+    fifteen = [t for t in prior if current_time - timedelta(minutes=15) <= datetime.fromisoformat(t["timestamp"])]
+    if txn["new_beneficiary"]:
+        credits = [t for t in fifteen if t.get("beneficiary_id") == txn["account_id"] and t.get("payment_status", "posted") == "posted"]
+        for credit in credits:
+            outgoing = sum(t["amount_minor"] for t in fifteen if t["account_id"] == txn["account_id"] and
+                           t.get("payment_status", "posted") == "posted" and
+                           datetime.fromisoformat(t["timestamp"]) >= datetime.fromisoformat(credit["timestamp"])) + txn["amount_minor"]
+            if outgoing * 100 >= credit["amount_minor"] * 80:
+                percentage = min(100, outgoing * 100 / credit["amount_minor"])
+                flag(.86, f"Pass-through: received {inr(credit['amount_minor'])} and moved {percentage:.1f}% out within 15 minutes to a new beneficiary (including this attempt).")
+                break
+    if txn["new_device"] and txn["failed_auth_attempts"] >= 3 and txn["new_beneficiary"]:
+        flag(.92, "SIM-swap takeover pattern: new device, repeated authentication failures and a new beneficiary.")
+    if txn["channel"] == "card":
+        small = [t for t in prior if t["channel"] == "card" and t.get("instrument_id") == txn["instrument_id"] and
+                 t["amount_minor"] < 20000 and current_time-timedelta(minutes=10) <= datetime.fromisoformat(t["timestamp"])]
+        if len(small) >= 5 and txn["amount_minor"] > 500000:
+            flag(.91, "Card testing: five or more sub-₹200 attempts on one instrument followed by a larger payment.")
+    if txn["channel"] == "atm":
+        withdrawals = [t for t in fifteen if t["channel"] == "atm" and t.get("instrument_id") == txn["instrument_id"]] + [txn]
+        if len(withdrawals) >= 3 and len({t["device_id"] for t in withdrawals}) >= 2:
+            flag(.88, "ATM burst across terminals: three or more withdrawals on one instrument across multiple terminals within 15 minutes.")
 
     signals.append({"agent_name": "channel_policy", "score": policy, "reasons": reasons or ["No supported channel-control pattern matched."]})
     score = round(max(policy, sum(s["score"] * w for s, w in zip(signals[:5], (.15, .15, .15, .1, .1)))), 4)
