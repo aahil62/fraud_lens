@@ -33,6 +33,8 @@ def signup(payload: SignupRequest) -> TokenResponse:
 
     token = create_access_token(account.username)
     profile = AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
+    if state.operations is not None:
+        state.operations.record_session(profile, True)
     return TokenResponse(access_token=token, analyst=profile)
 
 
@@ -45,9 +47,18 @@ def login(payload: LoginRequest) -> TokenResponse:
 
     token = create_access_token(account.username)
     profile = AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
+    if state.operations is not None:
+        state.operations.record_session(profile, True)
     return TokenResponse(access_token=token, analyst=profile)
 
 
 @router.get("/me", response_model=AnalystProfile)
 def me(current: AnalystProfile = Depends(get_current_analyst)) -> AnalystProfile:
     return current
+
+
+@router.post("/logout")
+def logout(current: AnalystProfile = Depends(get_current_analyst)):
+    if state.operations is not None:
+        state.operations.record_session(current, False)
+    return {"ok": True}

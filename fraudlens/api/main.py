@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
         all_cases(state.runtime)
     state.operations = OperationsService(os.environ.get("FRAUDLENS_OPS_DB", "var/operations.sqlite3"),
         bank_url=os.environ.get("FRAUDLENS_BANK_URL", "http://127.0.0.1:8002"),
-        bank_key=os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator"))
+        bank_key=os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator"), analysts=state.runtime.analyst_store)
     if os.environ.get("FRAUDLENS_SEED_DEMO") == "1":
         await asyncio.to_thread(state.operations.seed_baseline)
         with state.operations.store.connect(write=True) as db:

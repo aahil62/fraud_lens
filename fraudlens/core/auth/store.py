@@ -47,6 +47,9 @@ class AnalystStore:
     def get(self, username: str) -> Optional[AnalystAccount]:
         return self._accounts.get(username)
 
+    def list(self) -> list[AnalystAccount]:
+        return list(self._accounts.values())
+
     def create(self, username: str, display_name: str, password: str) -> AnalystAccount:
         if username in self._accounts:
             raise ValueError(f"Username {username!r} is already taken")

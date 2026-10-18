@@ -172,7 +172,7 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
   - Approval decision: approver needs `can(approver.role, action)` and must not be the requester (403). Approve executes the action as the approver, audit message names both: "Approved by R. Iyer (requested by K. Mehta)". Reject clears `pending_approval` and records notes.
   - Login and logout record audit events `analyst_signed_in` / `analyst_signed_out` (add a `POST /auth/logout` that records the event; frontend calls it from the account menu).
 
-- [ ] **Step 1: Write failing tests** in `tests/test_team.py` (use the existing service fixtures/pattern from `tests/test_operations.py`):
+- [x] **Step 1: Write failing tests** in `tests/test_team.py` (use the existing service fixtures/pattern from `tests/test_operations.py`):
   - `test_l1_cannot_confirm_fraud_directly` → 403 with `required_role == "l2_analyst"`, no action job queued, case version unchanged.
   - `test_l1_requests_approval_l2_approves`: L1 requests `confirm_fraud` with notes; L2 approves; case verdict `fraud`; audit contains requester and approver names.
   - `test_requester_cannot_approve_own_request` → 403.
@@ -181,10 +181,10 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
   - `test_claim_assigned_to_other_is_409`.
   - `test_presence_online_window`: heartbeat at t, snapshot at t+44 s online True, at t+46 s False (inject clock).
   - `test_handled_by_lists_distinct_actors_in_order`.
-- [ ] **Step 2:** Run tests → FAIL.
-- [ ] **Step 3:** Implement `team.py` helpers and the service methods; add routes; extend snapshot.
-- [ ] **Step 4:** Run full suite → PASS. Update `docs/OPERATIONS_API.md` with the five routes and the 403/409 shapes.
-- [ ] **Step 5:** Commit `feat(ops): case ownership, presence and approval workflow`.
+- [x] **Step 2:** Run tests → FAIL.
+- [x] **Step 3:** Implement `team.py` helpers and the service methods; add routes; extend snapshot.
+- [x] **Step 4:** Run full suite → PASS. Update `docs/OPERATIONS_API.md` with the five routes and the 403/409 shapes.
+- [x] **Step 5:** Commit `feat(ops): case ownership, presence and approval workflow`.
 
 ---
 

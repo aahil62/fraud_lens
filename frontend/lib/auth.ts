@@ -102,3 +102,19 @@ export async function signup(
   setSession(result.access_token, result.analyst);
   return result;
 }
+
+export async function logout(): Promise<void> {
+  const token = getToken();
+  try {
+    if (token) await fetch(`${API_BASE}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // Local sign-out still works while the API is unavailable.
+  } finally {
+    clearSession();
+  }
+}

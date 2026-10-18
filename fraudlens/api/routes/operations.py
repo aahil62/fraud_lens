@@ -6,16 +6,18 @@ from typing import Literal
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.routing import APIRoute
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from fraudlens.api.deps import get_current_analyst
 from fraudlens.api.state import state
 from fraudlens.core.auth.security import decode_access_token
 from fraudlens.models.schemas import AnalystProfile
 from fraudlens.operations.guidance import guidance_response
-from fraudlens.operations.models import Channel, ControlInput, DecisionInput, ScenarioInput, TransactionInput
+from fraudlens.operations.models import (Channel, ControlInput, DecisionInput, ScenarioInput, TransactionInput,
+                                         ClaimInput, AssignInput, ApprovalRequestInput, ApprovalDecisionInput, PresenceInput)
+from fraudlens.operations.team import OperationError
 from fraudlens.operations.reports import markdown, pdf, report
-from fraudlens.operations.service import ConflictError, NotFoundError
+from fraudlens.operations.service import NotFoundError
 
 
 class OperationsRoute(APIRoute):
@@ -27,8 +29,8 @@ class OperationsRoute(APIRoute):
                 response = await handler(request)
                 response.headers["Cache-Control"] = "no-store"
                 return response
-            except ConflictError as exc:
-                raise HTTPException(409, str(exc)) from exc
+            except OperationError as exc:
+                return JSONResponse(exc.payload, status_code=exc.status_code, headers={"Cache-Control": "no-store"})
             except NotFoundError as exc:
                 raise HTTPException(404, str(exc)) from exc
             except httpx.HTTPError as exc:
@@ -76,12 +78,38 @@ def case_detail(case_id: str):
 
 @router.post("/cases/{case_id}/decision")
 def decide(case_id: str, payload: DecisionInput, current: AnalystProfile = Depends(get_current_analyst)):
-    return service().decide(case_id, payload, current.display_name)
+    return service().decide(case_id, payload, current)
+
+
+@router.post("/cases/{case_id}/claim")
+def claim(case_id: str, payload: ClaimInput, current: AnalystProfile = Depends(get_current_analyst)):
+    return service().claim(case_id, payload, current)
+
+
+@router.post("/cases/{case_id}/assign")
+def assign(case_id: str, payload: AssignInput, current: AnalystProfile = Depends(get_current_analyst)):
+    return service().assign(case_id, payload, current)
+
+
+@router.post("/cases/{case_id}/approval-request")
+def request_approval(case_id: str, payload: ApprovalRequestInput, current: AnalystProfile = Depends(get_current_analyst)):
+    return service().request_approval(case_id, payload, current)
+
+
+@router.post("/cases/{case_id}/approval")
+def decide_approval(case_id: str, payload: ApprovalDecisionInput, current: AnalystProfile = Depends(get_current_analyst)):
+    return service().decide_approval(case_id, payload, current)
+
+
+@router.post("/presence/heartbeat")
+def heartbeat(payload: PresenceInput, current: AnalystProfile = Depends(get_current_analyst)):
+    service().heartbeat(current, payload.current_case_id)
+    return {"ok": True}
 
 
 @router.post("/actions/{action_id}/retry")
 def retry(action_id: str, current: AnalystProfile = Depends(get_current_analyst)):
-    return service().retry_action(action_id, current.display_name)
+    return service().retry_action(action_id, current)
 
 
 @router.get("/cases/{case_id}/report")

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from fraudlens.bank_simulator.main import create_app
 from fraudlens.operations.models import DecisionInput, TransactionInput
+from fraudlens.models.schemas import AnalystProfile
 from fraudlens.operations.service import ConflictError, OperationsService
 
 
@@ -48,7 +49,7 @@ class OperationsTests(unittest.TestCase):
         self.service.process_jobs()
         case = self.service.get_case(result["case"]["case_id"])
         decided = self.service.decide(case["case_id"], DecisionInput(action="false_positive", expected_version=case["version"],
-                                        notes="Customer confirmed legitimate purchase."), "analyst-one")
+                                        notes="Customer confirmed legitimate purchase."), AnalystProfile(username="analyst-one", display_name="analyst-one", role="l2_analyst"))
         self.assertNotEqual(decided["status"], "resolved")
         self.service.process_jobs()
         case = self.service.get_case(case["case_id"])
@@ -71,16 +72,16 @@ class OperationsTests(unittest.TestCase):
 
     def test_optimistic_decisions_reject_stale_version(self):
         case = self.service.ingest(self.transaction(risky=True))["case"]
-        self.service.decide(case["case_id"], DecisionInput(action="investigate", expected_version=case["version"], notes="Reviewing"), "first")
+        self.service.decide(case["case_id"], DecisionInput(action="investigate", expected_version=case["version"], notes="Reviewing"), AnalystProfile(username="first", display_name="first", role="l2_analyst"))
         with self.assertRaises(ConflictError):
-            self.service.decide(case["case_id"], DecisionInput(action="escalate", expected_version=case["version"], notes="Stale"), "second")
+            self.service.decide(case["case_id"], DecisionInput(action="escalate", expected_version=case["version"], notes="Stale"), AnalystProfile(username="second", display_name="second", role="l2_analyst"))
 
     def test_one_reversal_does_not_release_other_case(self):
         one = self.service.ingest(self.transaction(risky=True))["case"]
         two = self.service.ingest(self.transaction(txn_id="TX-2", risky=True))["case"]
         self.service.process_jobs()
         one = self.service.get_case(one["case_id"])
-        self.service.decide(one["case_id"], DecisionInput(action="false_positive", expected_version=one["version"], notes="Legitimate"), "analyst")
+        self.service.decide(one["case_id"], DecisionInput(action="false_positive", expected_version=one["version"], notes="Legitimate"), AnalystProfile(username="analyst", display_name="analyst", role="l2_analyst"))
         self.service.process_jobs()
         self.assertEqual(self.service.snapshot()["counts"]["restricted_accounts"], 1)
         self.assertEqual(self.service.get_case(two["case_id"])["verdict"], "unreviewed")
@@ -98,7 +99,7 @@ class OperationsTests(unittest.TestCase):
         self.assertEqual(snap["counts"]["pending_payments"], 1)
         self.bank.post("/bank/control", json={"mode": "normal"})
         action = self.service.get_case(case["case_id"])["actions"][0]
-        self.service.retry_action(action["action_id"], "analyst")
+        self.service.retry_action(action["action_id"], AnalystProfile(username="analyst", display_name="analyst", role="l2_analyst"))
         self.service.process_jobs()
         self.assertEqual(self.service.snapshot()["counts"]["restricted_accounts"], 1)
 
@@ -113,7 +114,7 @@ class OperationsTests(unittest.TestCase):
 
     def test_pending_restriction_reversed_before_delivery_does_not_resurrect(self):
         case = self.service.ingest(self.transaction(risky=True))["case"]
-        self.service.decide(case["case_id"], DecisionInput(action="false_positive", expected_version=case["version"], notes="Verified customer"), "analyst")
+        self.service.decide(case["case_id"], DecisionInput(action="false_positive", expected_version=case["version"], notes="Verified customer"), AnalystProfile(username="analyst", display_name="analyst", role="l2_analyst"))
         self.service.process_jobs()
         self.assertEqual(self.service.snapshot()["counts"]["restricted_accounts"], 0)
         self.assertEqual(self.service.get_case(case["case_id"])["status"], "resolved")
@@ -122,9 +123,9 @@ class OperationsTests(unittest.TestCase):
         case = self.service.ingest(self.transaction(risky=True))["case"]
         self.service.process_jobs()
         case = self.service.get_case(case["case_id"])
-        case = self.service.decide(case["case_id"], DecisionInput(action="false_positive", expected_version=case["version"], notes="Legitimate"), "analyst")
+        case = self.service.decide(case["case_id"], DecisionInput(action="false_positive", expected_version=case["version"], notes="Legitimate"), AnalystProfile(username="analyst", display_name="analyst", role="l2_analyst"))
         with self.assertRaises(ConflictError):
-            self.service.decide(case["case_id"], DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Conflicting action"), "other")
+            self.service.decide(case["case_id"], DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Conflicting action"), AnalystProfile(username="other", display_name="other", role="l2_analyst"))
         self.service.process_jobs()
         self.assertEqual(self.service.get_case(case["case_id"])["verdict"], "false_positive")
 

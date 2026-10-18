@@ -41,7 +41,7 @@ class TransactionInput(BaseModel):
 
 class DecisionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["investigate", "escalate", "confirm_fraud", "false_positive"]
+    action: Literal["investigate", "escalate", "confirm_fraud", "false_positive", "restrict", "release_lien", "close_account", "file_ncrp_report"]
     expected_version: Annotated[StrictInt, Field(ge=1)]
     notes: str = Field(default="", max_length=3000)
 
@@ -64,3 +64,42 @@ class ControlInput(BaseModel):
     running: bool | None = None
     interval_seconds: float | None = Field(default=None, ge=2, le=60)
     bank_mode: Literal["normal", "reject", "timeout_after_commit"] | None = None
+
+
+class ClaimInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: Annotated[StrictInt, Field(ge=1)]
+
+
+class AssignInput(ClaimInput):
+    username: Identifier
+
+
+class ApprovalRequestInput(ClaimInput):
+    action: Literal["restrict", "confirm_fraud", "false_positive", "close_account", "file_ncrp_report", "release_lien"]
+    notes: str = Field(min_length=1, max_length=3000)
+
+    @field_validator("notes")
+    @classmethod
+    def nonempty_notes(cls, value):
+        if not value.strip():
+            raise ValueError("Notes are required")
+        return value.strip()
+
+
+class ApprovalDecisionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    approve: bool
+    notes: str = Field(default="", max_length=3000)
+
+    @model_validator(mode="after")
+    def rejection_notes(self):
+        self.notes = self.notes.strip()
+        if not self.approve and not self.notes:
+            raise ValueError("Rejection notes are required")
+        return self
+
+
+class PresenceInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    current_case_id: Identifier | None = None

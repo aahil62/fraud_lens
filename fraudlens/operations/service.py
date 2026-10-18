@@ -4,16 +4,22 @@ import json
 import threading
 import time
 from uuid import uuid4
+from datetime import datetime, timedelta, timezone
+
+from fraudlens.core.auth.roles import can, required_role
+from fraudlens.models.schemas import AnalystProfile
 
 import httpx
 
 from .detector import CHANNELS, COVERAGE, VERSION, detect
 from .models import DecisionInput, TransactionInput
 from .store import Store, dump, now
+from .team import OperationError, require, team_snapshot
 
 
-class ConflictError(ValueError):
-    pass
+class ConflictError(OperationError):
+    def __init__(self, detail, **fields):
+        super().__init__(detail, status_code=409, **fields)
 
 
 class NotFoundError(ValueError):
@@ -21,8 +27,10 @@ class NotFoundError(ValueError):
 
 
 class OperationsService:
-    def __init__(self, db_path, bank_client=None, *, bank_url="http://127.0.0.1:8002", bank_key="fraudlens-local-simulator"):
+    def __init__(self, db_path, bank_client=None, *, bank_url="http://127.0.0.1:8002", bank_key="fraudlens-local-simulator", analysts=None, clock=None):
         self.store = Store(db_path)
+        self.analysts = analysts
+        self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.bank = bank_client or httpx.Client(base_url=bank_url, headers={"X-Bank-Key": bank_key}, timeout=2, trust_env=False)
         self._owns_client = bank_client is None
         self._lock = threading.RLock()
@@ -52,7 +60,7 @@ class OperationsService:
                 case = dict(case_id=case_id, txn_id=request.txn_id, account_id=request.account_id, channel=request.channel,
                             amount_minor=request.amount_minor, score=result["score"], severity="critical" if result["score"] >= .9 else "high" if result["score"] >= .8 else "medium",
                             status="new", verdict="unreviewed", version=1, created_at=now(), updated_at=now(),
-                            assigned_to=None, notes="", signals=result["signals"], reasons=result["reasons"],
+                            assigned_to=None, assignee=None, assigned_at=None, pending_approval=None, notes="", signals=result["signals"], reasons=result["reasons"],
                             related_accounts=result["related_accounts"], policy_version=VERSION)
                 db.execute("INSERT INTO cases VALUES(?,?,?)", (case_id, request.txn_id, dump(case)))
                 self.store.event(db, "case_opened", "Detection opened an investigation; analyst verdict pending.",
@@ -87,6 +95,11 @@ class OperationsService:
         txns = self.store.records(db, "transactions")
         case["related_transactions"] = [t for t in txns if t["account_id"] == case["account_id"] or
                                          t["account_id"] in case["related_accounts"]][:100]
+        case.setdefault("assignee", None)
+        case.setdefault("assigned_at", None)
+        case.setdefault("pending_approval", None)
+        case["handled_by"] = list(dict.fromkeys(e["actor"] for e in events if e["actor"] not in
+                                  {"system", "agent", "simulation", "attack-simulator"}))
         case["actions"] = actions
         case["timeline"] = events
         return case
@@ -95,60 +108,173 @@ class OperationsService:
         with self.store.connect() as db:
             return self._case(db, case_id)
 
-    def decide(self, case_id, request: DecisionInput, actor):
+    def _editable(self, db, case_id, expected_version):
+        case = self.store.get(db, "cases", case_id)
+        if not case:
+            raise NotFoundError("Case not found")
+        if case["version"] != expected_version:
+            raise ConflictError("Case changed since you opened it. Refresh and review the latest version.",
+                                version=case["version"], assignee=case.get("assignee"))
+        return case
+
+    def decide(self, case_id, request: DecisionInput, actor: AnalystProfile):
+        require(actor, request.action)
+        with self._lock, self.store.connect(write=True) as db:
+            case = self._editable(db, case_id, request.expected_version)
+            return self._apply_decision(db, case, request, actor)
+
+    def _apply_decision(self, db, case, request, actor):
+        case_id = case["case_id"]
+        if case["verdict"] == "false_positive" and request.action != "file_ncrp_report":
+            raise ConflictError("A false-positive verdict is already recorded; its release must finish without a contradictory decision.")
+        if case["status"] == "resolved" and request.action != "file_ncrp_report" and not (request.action in {"false_positive", "close_account"} and case["verdict"] == "fraud"):
+            raise ConflictError("This case is resolved; its final verdict is already recorded.")
+        case.update(version=case["version"] + 1, updated_at=now(), assigned_to=case.get("assigned_to") or actor.display_name, notes=request.notes)
+        if request.action in {"investigate", "escalate"}:
+            case["status"] = "investigating" if request.action == "investigate" else "escalated"
+        elif request.action == "confirm_fraud":
+            case.update(verdict="fraud", status="investigating")
+            actions = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id and a["operation"] == "restrict"]
+            if not actions:
+                self._queue_action(db, case, "restrict", actor.username)
+            elif any(a["status"] == "confirmed" for a in actions):
+                case["status"] = "resolved"
+        elif request.action == "false_positive":
+            case.update(verdict="false_positive", status="investigating")
+            restricted = False
+            for action in self.store.records(db, "actions"):
+                if action["case_id"] == case_id and action["operation"] == "restrict":
+                    restricted = True
+                    if action["status"] in {"pending", "failed"}:
+                        action.update(status="superseded", updated_at=now())
+                        self.store.update(db, "actions", action["action_id"], action)
+                        db.execute("UPDATE jobs SET done=1 WHERE id=?", (action["action_id"],))
+            # Release is sent even for uncertain previous delivery. Bank
+            # restriction ownership makes this safe for other open cases.
+            if restricted:
+                self._queue_action(db, case, "release", actor.username)
+            else:
+                case["status"] = "resolved"
+        elif request.action == "close_account":
+            if case["verdict"] != "fraud":
+                raise ConflictError("Confirm fraud before requesting final account closure")
+            self._queue_action(db, case, "close", actor.username)
+            case["status"] = "investigating"
+        elif request.action in {"restrict", "release_lien"}:
+            self._queue_action(db, case, "restrict" if request.action == "restrict" else "lien_release", actor.username)
+        elif request.action == "file_ncrp_report":
+            case["ncrp_report"] = {"status": "recorded_in_simulation", "recorded_by": actor.username, "recorded_at": now()}
+        if case["status"] == "resolved":
+            case.setdefault("resolved_at", now())
+        self.store.update(db, "cases", case_id, case)
+        self.store.event(db, "analyst_decision", f"{actor.display_name}: {request.action.replace('_', ' ')}. {request.notes}",
+                         case_id=case_id, txn_id=case["txn_id"], actor=actor.username, metadata={"action": request.action, "version": case["version"]})
+        return self._case(db, case_id)
+
+    def claim(self, case_id, request, actor):
+        require(actor, "claim")
+        with self._lock, self.store.connect(write=True) as db:
+            case = self._editable(db, case_id, request.expected_version)
+            owner = case.get("assignee")
+            if owner and owner != actor.username:
+                account = self.analysts.get(owner) if self.analysts else None
+                raise ConflictError(f"Case is assigned to {account.display_name if account else owner}",
+                                    assignee=owner, version=case["version"])
+            self._assign_case(db, case, actor, actor, "case_claimed")
+            return self._case(db, case_id)
+
+    def _assign_case(self, db, case, target, actor, event_type):
+        case.update(assignee=target.username, assigned_to=target.display_name, assigned_at=now(),
+                    updated_at=now(), version=case["version"] + 1)
+        self.store.update(db, "cases", case["case_id"], case)
+        self.store.event(db, event_type, f"{actor.display_name} assigned the case to {target.display_name}.",
+                         case_id=case["case_id"], actor=actor.username)
+
+    def assign(self, case_id, request, actor):
+        require(actor, "assign")
+        target = self.analysts.get(request.username) if self.analysts else None
+        if not target:
+            raise OperationError("Target analyst does not exist", status_code=404)
+        with self._lock, self.store.connect(write=True) as db:
+            case = self._editable(db, case_id, request.expected_version)
+            self._assign_case(db, case, target, actor, "case_assigned")
+            return self._case(db, case_id)
+
+    def request_approval(self, case_id, request, actor):
+        if can(actor.role, request.action):
+            raise OperationError("You can perform this action directly")
+        with self._lock, self.store.connect(write=True) as db:
+            case = self._editable(db, case_id, request.expected_version)
+            if case.get("pending_approval"):
+                raise ConflictError("An approval is already pending for this case")
+            case["pending_approval"] = dict(approval_id=f"APR-{uuid4().hex}", action=request.action,
+                requested_by=actor.username, required_role=required_role(request.action), notes=request.notes, requested_at=now())
+            case.update(version=case["version"] + 1, updated_at=now())
+            self.store.update(db, "cases", case_id, case)
+            self.store.event(db, "approval_requested", f"{actor.display_name} requested {request.action}: {request.notes}",
+                             case_id=case_id, actor=actor.username, metadata=case["pending_approval"])
+            return self._case(db, case_id)
+
+    def decide_approval(self, case_id, request, actor):
         with self._lock, self.store.connect(write=True) as db:
             case = self.store.get(db, "cases", case_id)
             if not case:
                 raise NotFoundError("Case not found")
-            if case["version"] != request.expected_version:
-                raise ConflictError("Case changed since you opened it. Refresh and review the latest version.")
-            if case["verdict"] == "false_positive":
-                raise ConflictError("A false-positive verdict is already recorded; its release must finish without a contradictory decision.")
-            if case["status"] == "resolved" and not (request.action == "false_positive" and case["verdict"] == "fraud"):
-                raise ConflictError("This case is resolved; its final verdict is already recorded.")
-            case.update(version=case["version"] + 1, updated_at=now(), assigned_to=actor, notes=request.notes)
-            if request.action in {"investigate", "escalate"}:
-                case["status"] = "investigating" if request.action == "investigate" else "escalated"
-            elif request.action == "confirm_fraud":
-                case.update(verdict="fraud", status="investigating")
-                actions = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id and a["operation"] == "restrict"]
-                if not actions:
-                    self._queue_action(db, case, "restrict", actor)
-                elif any(a["status"] == "confirmed" for a in actions):
-                    case["status"] = "resolved"
+            approval = case.get("pending_approval")
+            if not approval:
+                raise ConflictError("No approval is pending")
+            if actor.username == approval["requested_by"]:
+                raise OperationError("You cannot approve your own request", status_code=403)
+            require(actor, approval["action"])
+            requester = self.analysts.get(approval["requested_by"]) if self.analysts else None
+            name = requester.display_name if requester else approval["requested_by"]
+            case["pending_approval"] = None
+            if request.approve:
+                decision = DecisionInput(action=approval["action"], expected_version=case["version"], notes=approval["notes"])
+                self._apply_decision(db, case, decision, actor)
+                message = f"Approved by {actor.display_name} (requested by {name})"
             else:
-                case.update(verdict="false_positive", status="investigating")
-                restricted = False
-                for action in self.store.records(db, "actions"):
-                    if action["case_id"] == case_id and action["operation"] == "restrict":
-                        restricted = True
-                        if action["status"] in {"pending", "failed"}:
-                            action.update(status="superseded", updated_at=now())
-                            self.store.update(db, "actions", action["action_id"], action)
-                            db.execute("UPDATE jobs SET done=1 WHERE id=?", (action["action_id"],))
-                # Release is sent even for uncertain previous delivery. Bank
-                # restriction ownership makes this safe for other open cases.
-                if restricted:
-                    self._queue_action(db, case, "release", actor)
-                else:
-                    case["status"] = "resolved"
-            self.store.update(db, "cases", case_id, case)
-            self.store.event(db, "analyst_decision", f"{actor}: {request.action.replace('_', ' ')}. {request.notes}",
-                             case_id=case_id, txn_id=case["txn_id"], actor=actor, metadata={"action": request.action, "version": case["version"]})
+                case.update(version=case["version"] + 1, updated_at=now())
+                self.store.update(db, "cases", case_id, case)
+                message = f"Rejected by {actor.display_name} (requested by {name}): {request.notes}"
+            self.store.event(db, "approval_approved" if request.approve else "approval_rejected", message,
+                             case_id=case_id, actor=actor.username, metadata={**approval, "decision_notes": request.notes})
             return self._case(db, case_id)
+
+    def heartbeat(self, actor, current_case_id=None):
+        with self._lock, self.store.connect(write=True) as db:
+            if current_case_id:
+                self._case(db, current_case_id)
+            self._presence(db, actor, current_case_id)
+            self.store.event(db, "analyst_presence", f"{actor.display_name} is online.", actor=actor.username)
+
+    def _presence(self, db, actor, current_case_id=None, signed_out=False):
+        seen = (self.clock() - timedelta(seconds=46) if signed_out else self.clock()).isoformat()
+        db.execute("""INSERT INTO presence VALUES(?,?,?,?,?) ON CONFLICT(username) DO UPDATE SET
+                   display_name=excluded.display_name,role=excluded.role,last_seen=excluded.last_seen,
+                   current_case_id=excluded.current_case_id""",
+                   (actor.username, actor.display_name, actor.role, seen, current_case_id))
+
+    def record_session(self, actor, signed_in):
+        with self._lock, self.store.connect(write=True) as db:
+            self._presence(db, actor, signed_out=not signed_in)
+            self.store.event(db, "analyst_signed_in" if signed_in else "analyst_signed_out",
+                             f"{actor.display_name} signed {'in' if signed_in else 'out'}.", actor=actor.username)
 
     def retry_action(self, action_id, actor):
         with self._lock, self.store.connect(write=True) as db:
             action = self.store.get(db, "actions", action_id)
             if not action:
                 raise NotFoundError("Bank action not found")
+            require(actor, {"restrict": "restrict", "release": "false_positive", "lien": "place_lien",
+                            "lien_release": "release_lien", "close": "close_account"}[action["operation"]])
             if action["status"] in {"confirmed", "superseded"}:
                 raise ConflictError("This action is already final and cannot be retried")
             action.update(status="pending", last_error=None, updated_at=now())
             self.store.update(db, "actions", action_id, action)
             db.execute("UPDATE jobs SET done=0,next_at=0 WHERE id=?", (action_id,))
             self.store.event(db, "action_retry", "Analyst requested retry of the same idempotent bank action.",
-                             case_id=action["case_id"], actor=actor, metadata={"action_id": action_id})
+                             case_id=action["case_id"], actor=actor.username, metadata={"action_id": action_id})
             return action
 
     def _refresh_bank(self):
@@ -215,6 +341,8 @@ class OperationsService:
             case = self.store.get(db, "cases", action["case_id"])
             if (action["operation"] == "release" and case["verdict"] == "false_positive") or (action["operation"] == "restrict" and case["verdict"] == "fraud"):
                 case["status"] = "resolved"
+            if case["status"] == "resolved":
+                case.setdefault("resolved_at", now())
             case.update(updated_at=now(), version=case["version"] + 1)
             self.store.update(db, "cases", case["case_id"], case)
             self.store.event(db, f"{action['operation']}_confirmed", f"Bank confirmed {action['operation']} for simulated {action['target_type']} {action['target_id']}.",
@@ -285,6 +413,8 @@ class OperationsService:
             return dict(cursor=cursor, as_of=now(), simulation=True, counts=counts, channels=channels,
                         transactions=txns[:200], cases=[self._case(db, c["case_id"]) for c in cases[:200]],
                         actions=actions[:200], events=self.store.events(db),
+                        team=team_snapshot(db, cases, self.analysts, self.clock()),
+                        approvals=[{"case_id": c["case_id"], **c["pending_approval"]} for c in cases if c.get("pending_approval")],
                         bank=self.store.setting(db, "bank_state", self._bank_state),
                         simulation_state=self.store.setting(db, "simulation", {"running": False, "interval_seconds": 5}),
                         detection={"version": VERSION, "coverage": COVERAGE})

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Bank, CaretDown, CaretRight, FileText, Flask, FolderOpen, Graph, List, ListChecks, MagnifyingGlass, ShieldCheck, SignOut, SquaresFour, Stack, Swap, X } from "@phosphor-icons/react";
-import { clearSession, getStoredAnalyst } from "@/lib/auth";
+import { logout, getStoredAnalyst } from "@/lib/auth";
 import { channelName, dateTime, money } from "@/lib/operations";
 import { OperationsProvider, useOperations } from "./operations/OperationsProvider";
 const nav = [
@@ -82,7 +82,7 @@ function Workspace({ children }: { children: React.ReactNode }) {
         <div className="topbar-session">
           <button className="header-search" onClick={openSearch} aria-label="Search investigations"><MagnifyingGlass size={15}/><span>Search investigations</span><kbd>⌘ K</kbd></button>
           <span className={connected&&!error?"connection good":"connection warning"}>{connected&&!error?"System live":!snapshot&&!error?"Connecting":"Reconnecting"}</span>
-          <details className="analyst-menu"><summary aria-label={`Account: ${name}`}><span className="analyst-avatar">{initials}</span><span>{name}</span><CaretDown size={11}/></summary><div className="analyst-dropdown"><strong>{name}</strong><small className="muted">Authenticated analyst</small><button onClick={()=>{clearSession();router.push("/login");router.refresh();}}><SignOut size={15}/>Sign out</button></div></details>
+          <details className="analyst-menu"><summary aria-label={`Account: ${name}`}><span className="analyst-avatar">{initials}</span><span>{name}</span><CaretDown size={11}/></summary><div className="analyst-dropdown"><strong>{name}</strong><small className="muted">Authenticated analyst</small><button onClick={async()=>{await logout();router.push("/login");router.refresh();}}><SignOut size={15}/>Sign out</button></div></details>
         </div>
       </header>
       <div className="ops-environment"><Flask size={13}/><strong>Simulation mode</strong><span>Synthetic payments and bank responses. Test accounts only.</span><span className="snapshot-stamp">{snapshot?`${dateTime(snapshot.as_of)} IST · #${snapshot.cursor}`:"Connecting to ledger…"}</span></div>

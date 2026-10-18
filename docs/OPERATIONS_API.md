@@ -33,3 +33,37 @@ Simulator runs on port 8002 by default. All `/bank` endpoints require `X-Bank-Ke
 `POST /bank/actions` input `{action_id,case_id,operation:"restrict"|"release",target_type:"account"|"card",target_id}`; return `{action_id,status:"confirmed",restriction_active:boolean,bank_reference:string}`. `GET /bank/actions/{action_id}` same response or 404. Restrictions keyed by `(case_id,target_type,target_id)`; release removes only this case's restriction. Idempotent action ids, conflicting reuse returns 409.
 
 `GET /bank/accounts` returns `{accounts:[{account_id,balance_minor,restricted:boolean,active_restrictions:number}],restrictions:[{case_id,target_type,target_id}]}`. `POST /bank/control` body `{mode:"normal"|"reject"|"timeout_after_commit"}` returns `{mode}`. `GET /bank/status` returns `{simulation:true,mode}`. Reject mode returns 503 for new mutating operations. Timeout-after-commit commits a new action then responds 504; retrieving/retrying the same id returns the committed acknowledgement. Existing idempotent results are returned even in failure mode.
+
+
+## Roles, ownership and approvals (v3)
+
+Profiles from `/auth/login`, `/auth/signup` and `/auth/me` include persisted `role`:
+`l1_analyst`, `l2_analyst` or `supervisor`. Signup always creates L1; request bodies cannot elevate it.
+Login/signup and authenticated `POST /auth/logout` record session audit events. Logout clears the
+browser session; it does not revoke other browser sessions using the same demo account.
+
+All routes below require a bearer token. Case mutations share one SQLite write transaction with
+version updates, bank outbox jobs and audit records:
+
+| Route | Body | Behavior |
+|---|---|---|
+| `POST /ops/cases/{id}/claim` | `{expected_version}` | Claim an unassigned case or retain your own claim |
+| `POST /ops/cases/{id}/assign` | `{username,expected_version}` | L2+ assigns an existing analyst |
+| `POST /ops/cases/{id}/approval-request` | `{action,expected_version,notes}` | Request a higher role; one pending request per case |
+| `POST /ops/cases/{id}/approval` | `{approve,notes?}` | Authorized different analyst approves atomically or rejects with mandatory notes |
+| `POST /ops/presence/heartbeat` | `{current_case_id:null|string}` | Presence is online for 45 seconds after the last heartbeat |
+
+The decision endpoint also accepts `restrict`, `release_lien`, `close_account` and
+`file_ncrp_report`; the central permission table is enforced before any mutation. Closure requires
+an existing fraud verdict. Report recording is simulated and never files anything externally.
+Bank support for liens/closure follows in Task 3; queued requests are not confirmed protection.
+
+Insufficient role: **403** `{detail:string,required_role:"l2_analyst"|"supervisor"}`.
+Stale version or competing claim: **409** `{detail:string,version:number,assignee:string|null}`.
+Other conflicts (e.g. a pending approval) return `{detail:string}`. Rejecting or approving your own
+request is forbidden. Rejected/failed approval execution leaves the case and outbox unchanged.
+
+Cases add `assignee` (username), `assigned_at`, `pending_approval` (or null) and ordered distinct
+`handled_by` usernames from human case audit events. `assigned_to` remains the display label.
+Snapshots add `team` (role label, online, last seen, current case, open assigned, resolved today)
+and `approvals` (pending request fields plus case_id). All events use the existing live cursor.

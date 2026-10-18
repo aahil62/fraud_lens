@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from fraudlens.api.routes.operations import router
+from fraudlens.api.routes.auth import router as auth_router
 from fraudlens.api.state import state
 from fraudlens.bank_simulator.main import create_app
 from fraudlens.core.auth.security import create_access_token
@@ -24,9 +25,10 @@ class OperationsApiTests(unittest.TestCase):
         state.runtime = SimpleNamespace(analyst_store=AnalystStore(str(Path(self.tmp.name) / "analysts.json")))
         bank = TestClient(create_app(db_path=Path(self.tmp.name) / "bank.db", api_key="test"), headers={"X-Bank-Key": "test"})
         self.addCleanup(bank.close)
-        state.operations = OperationsService(Path(self.tmp.name) / "ops.db", bank_client=bank)
+        state.operations = OperationsService(Path(self.tmp.name) / "ops.db", bank_client=bank, analysts=state.runtime.analyst_store)
         app = FastAPI()
         app.include_router(router)
+        app.include_router(auth_router)
         self.client = TestClient(app)
         self.addCleanup(self.client.close)
         self.headers = {"Authorization": f"Bearer {create_access_token('asharma')}"}
@@ -60,7 +62,8 @@ class OperationsApiTests(unittest.TestCase):
                 self.assertTrue(report.content.startswith(b"%PDF"))
             elif fmt == "json":
                 self.assertEqual(report.json()["case"]["verdict"], "false_positive")
-        self.assertTrue(any(e["actor"] == "A. Sharma" for e in self.client.get(f"/ops/cases/{case['case_id']}", headers=self.headers).json()["timeline"]))
+        timeline = self.client.get(f"/ops/cases/{case['case_id']}", headers=self.headers).json()["timeline"]
+        self.assertTrue(any(e["actor"] == "asharma" and "A. Sharma" in e["message"] for e in timeline))
 
     def test_duplicate_conflict_and_paging(self):
         txn = dict(txn_id="API-1", account_id="SIM-API", channel="upi", amount_minor=25000,
@@ -71,6 +74,32 @@ class OperationsApiTests(unittest.TestCase):
         self.assertEqual(self.client.get("/ops/transactions?limit=1&offset=0", headers=self.headers).json()["total"], 1)
         self.assertEqual(self.client.get("/ops/transactions?limit=99999", headers=self.headers).status_code, 422)
         self.assertEqual(self.client.get("/ops/cases/missing", headers=self.headers).status_code, 404)
+
+    def test_claim_approval_presence_and_session_routes_share_snapshot(self):
+        login = self.client.post("/auth/login", json={"username": "kmehta", "password": "fraudlens123"})
+        l1 = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        l2 = {"Authorization": f"Bearer {create_access_token('riyer')}"}
+        case_id = self.client.post("/ops/simulation/scenario", headers=self.headers,
+                                  json={"channel": "upi", "scenario": "fraud"}).json()["case_ids"][-1]
+        case = self.client.get(f"/ops/cases/{case_id}", headers=l1).json()
+        claim = self.client.post(f"/ops/cases/{case_id}/claim", headers=l1, json={"expected_version": case["version"]})
+        self.assertEqual(claim.status_code, 200, claim.text)
+        self.assertEqual(claim.json()["assignee"], "kmehta")
+        approval = self.client.post(f"/ops/cases/{case_id}/approval-request", headers=l1,
+                                   json={"action": "confirm_fraud", "expected_version": claim.json()["version"], "notes": "Verified evidence"})
+        self.assertEqual(approval.status_code, 200, approval.text)
+        pending = self.client.get("/ops/snapshot", headers=l2).json()["approvals"]
+        self.assertEqual(pending[0]["case_id"], case_id)
+        result = self.client.post(f"/ops/cases/{case_id}/approval", headers=l2, json={"approve": True})
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()["verdict"], "fraud")
+        self.assertEqual(self.client.post("/ops/presence/heartbeat", headers=l1, json={"current_case_id": case_id}).status_code, 200)
+        self.assertEqual(self.client.post("/auth/logout", headers=l1).status_code, 200)
+        snap = self.client.get("/ops/snapshot", headers=l2).json()
+        self.assertFalse(next(m for m in snap["team"] if m["username"] == "kmehta")["online"])
+        self.assertTrue(any(e["event_type"] == "analyst_signed_in" and e["actor"] == "kmehta" for e in snap["events"]))
+        self.assertTrue(any(e["event_type"] == "analyst_signed_out" and e["actor"] == "kmehta" for e in snap["events"]))
+        self.assertEqual(self.client.post("/auth/logout").status_code, 401)
 
 
 if __name__ == "__main__":

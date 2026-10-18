@@ -38,6 +38,9 @@ class Store:
                     done INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS presence (
+                    username TEXT PRIMARY KEY, display_name TEXT NOT NULL, role TEXT NOT NULL,
+                    last_seen TEXT NOT NULL, current_case_id TEXT);
                 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, data TEXT NOT NULL);
                 CREATE INDEX IF NOT EXISTS pending_jobs ON jobs(done, next_at);
                 CREATE INDEX IF NOT EXISTS case_actions ON actions(case_id);
