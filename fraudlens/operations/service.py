@@ -613,9 +613,12 @@ class OperationsService:
         self._refresh_bank()
         return self.snapshot()
 
-    def run_scenario(self, channel, scenario, actor="simulation"):
+    def run_scenario(self, channel, scenario, actor="simulation", *, victim_amount_minor=None):
         from .scenarios import TYPOLOGIES, scenario_transactions, typology_accounts
         rows = scenario_transactions(channel, scenario)
+        if scenario == "mule_layering" and victim_amount_minor is not None:
+            amounts = [victim_amount_minor, victim_amount_minor * 30 // 48, victim_amount_minor * 15 // 48, victim_amount_minor * 20 // 48]
+            rows = [row.model_copy(update={"amount_minor": amount}) for row, amount in zip(rows, amounts)]
         if scenario in TYPOLOGIES:
             response = self.bank.post("/bank/accounts/seed", json={"accounts": typology_accounts(rows)})
             response.raise_for_status()

@@ -19,7 +19,7 @@ def dump(value):
 
 
 class Store:
-    TABLES = {"transactions", "cases", "actions"}
+    TABLES = {"transactions", "cases", "actions", "attacks"}
 
     def __init__(self, path):
         self.path = str(path)
@@ -38,6 +38,7 @@ class Store:
                     done INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS attacks (id TEXT PRIMARY KEY, data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS complaints (
                     id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL,
                     txn_id TEXT NOT NULL UNIQUE REFERENCES transactions(id),

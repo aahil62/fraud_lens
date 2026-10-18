@@ -302,8 +302,8 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 - Rate limit: in-memory per client IP, 10 POSTs per rolling 5 minutes → 429 `{"detail":"Too many simulated attacks. Try again in a few minutes."}`.
 - Router not mounted outside demo mode (requests → 404).
 
-- [ ] **Step 1: Write failing tests**: launch each typology → 200 and `GET` eventually shows "FraudLens flagged it" `done` after `service.process_jobs()`; 11th launch from same IP → 429; non-demo app → 404; response JSON contains no key named `display_name`, `balance_minor` or full `case_id`.
-- [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** PASS. **Step 5:** Commit `feat(api): public attack console endpoints (demo only)`.
+- [x] **Step 1: Write failing tests**: launch each typology → 200 and `GET` eventually shows "FraudLens flagged it" `done` after `service.process_jobs()`; 11th launch from same IP → 429; non-demo app → 404; response JSON contains no key named `display_name`, `balance_minor` or full `case_id`.
+- [x] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** PASS. **Step 5:** Commit `feat(api): public attack console endpoints (demo only)`.
 
 ---
 

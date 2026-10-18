@@ -109,3 +109,15 @@ The API provisions fictional `SIM-` accounts through private, demo-only
 The bank key is required; non-demo requests return 404. Existing account balances are never reset
 by seed replay. Recipients start at zero so credits, freezes and cash-outs reconcile to bank balances.
 Payments are ingested and reconciled sequentially so prior posted credits are visible to detection.
+
+
+## Public simulation API (demo mode only)
+
+These routes are absent outside `FRAUDLENS_MODE=demo`, including OpenAPI. They never grant analyst access.
+`POST /public/attacks` accepts `{typology:mule_layering|sim_swap_takeover|card_testing|atm_cashout,victim_amount_minor?:100000..20000000}` and returns `{attack_id:"ATK-<12 hex>",status_url}`. Only mule layering uses the amount (default 4800000); its legs scale proportionally in integer paise. Other typologies keep their fixed amounts. The simulation runs through the same detector, outbox and bank service as authenticated scenario launches.
+
+`GET /public/attacks/{attack_id}` returns six ledger-derived steps (Scam payment sent; FraudLens flagged it; Bank protection requested; Bank confirmed protection; Analyst picked it up; Verdict recorded), each `{label,status:pending|done|blocked,at}`. Outcomes are `in_progress|caught|partially_caught|missed`; a confirmed bank action alone never fabricates human pickup or verdict. Progress remains in progress awaiting the analyst. Case reference is masked to its last four characters. Recovery totals and redacted trace rows belong only to this fictional attack; no full case/account IDs, account balances or analyst identities are returned.
+
+`POST /public/attacks/{attack_id}/report-1930` is valid only for mule layering. It persists a time-derived fictional complaint reference before intake, so retry/restart reuse the same report. The response is the same redacted status shape, including complaint_id and held_total_minor. Only acknowledged, unreleased liens count as held.
+
+Both POST routes share a per-client-IP rolling quota of ten requests per five minutes. Excess returns **429** `{"detail":"Too many simulated attacks. Try again in a few minutes."}`. GET polling does not consume that quota. The limit is process-local; attack and complaint records are durable SQLite state. No real helpline, police, bank or external portal is contacted.

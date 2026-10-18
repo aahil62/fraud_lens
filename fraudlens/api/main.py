@@ -30,6 +30,8 @@ from fraudlens.api.state import state
 from fraudlens.runtime import build_runtime
 from fraudlens.operations.service import OperationsService
 from fraudlens.operations.detector import CHANNELS
+from fraudlens.operations.attacks import PublicAttacks
+from fraudlens.api.routes.public import mount_public_routes
 
 
 async def operation_worker(operations):
@@ -67,6 +69,7 @@ async def lifespan(app: FastAPI):
         with state.operations.store.connect(write=True) as db:
             if state.operations.store.setting(db, "simulation") is None:
                 state.operations.store.set_setting(db, "simulation", {"running": True, "interval_seconds": 5})
+    state.attacks = PublicAttacks(state.operations)
     worker = asyncio.create_task(operation_worker(state.operations))
     try:
         yield
@@ -77,6 +80,7 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
         state.operations.close()
+        state.attacks = None
 
 
 app = FastAPI(
@@ -110,3 +114,5 @@ if os.environ.get("FRAUDLENS_LEGACY_API", "1") == "1":
                           copilot_router, stats_router, console_router, live_router):
         app.include_router(legacy_router)
 app.include_router(operations_router)
+
+mount_public_routes(app)
