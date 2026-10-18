@@ -15,6 +15,7 @@ from .detector import CHANNELS, COVERAGE, VERSION, detect
 from .models import DecisionInput, TransactionInput
 from .store import Store, dump, now
 from .team import OperationError, require, team_snapshot
+from .trace import trace_funds, trace_view
 
 
 class ConflictError(OperationError):
@@ -71,8 +72,26 @@ class OperationsService:
             case = self._case(db, case_id) if case_id else None
             return {"transaction": txn, "case": case, "duplicate": False}
 
-    def _queue_action(self, db, case, operation, actor="system", *, amount_minor=None, target_id=None, target_type=None):
+    def _protection_target(self, case, action, target=None):
+        if action not in {"restrict", "place_lien", "release_lien", "close_account"}:
+            return None
+        if case.get("case_type") == "complaint":
+            victim = case["complaint"]["victim_account_id"]
+            if target == victim:
+                raise OperationError("This is the complainant's account.")
+            recipients = [h["account_id"] for h in case["trace"] if h["account_id"] != victim]
+            target = target or next(iter(recipients), None)
+            if not target or target not in recipients:
+                raise OperationError("Select an account reached by this fund trace")
+        elif target and target != case["account_id"]:
+            raise OperationError("Account is not linked to this case")
+        return target
+
+    def _queue_action(self, db, case, operation, actor="system", *, amount_minor=None, target_id=None, target_type=None, reason=None):
         txn = self.store.get(db, "transactions", case["txn_id"])
+        if case.get("case_type") == "complaint" and operation in {"restrict", "lien", "close"}:
+            target_id = self._protection_target(case, {"restrict": "restrict", "lien": "place_lien", "close": "close_account"}[operation], target_id)
+            target_type = "account"
         if target_type is None:
             target_type = "account" if operation in {"lien", "lien_release", "close"} or target_id else "card" if txn["channel"] in {"card", "atm"} else "account"
         if target_id is None:
@@ -85,8 +104,12 @@ class OperationsService:
             action["amount_minor"] = amount_minor
         db.execute("INSERT INTO actions VALUES(?,?,?)", (action_id, case["case_id"], dump(action)))
         db.execute("INSERT INTO jobs(id,kind,resource_id) VALUES(?,?,?)", (action_id, "action", action_id))
-        self.store.event(db, f"{operation}_requested", f"{operation.capitalize()} requested for simulated {target_type} {target_id}.",
-                         case_id=case["case_id"], txn_id=case["txn_id"], actor=actor, metadata={"action_id": action_id})
+        message = f"{operation.capitalize()} requested for simulated {target_type} {target_id}."
+        if reason:
+            message = f"{reason}. {message}"
+        self.store.event(db, f"{operation}_requested", message,
+                         case_id=case["case_id"], txn_id=case["txn_id"], actor=actor,
+                         metadata={"action_id": action_id, "target_account_id": target_id if target_type == "account" else None})
         return action
 
     def _case(self, db, case_id):
@@ -106,6 +129,18 @@ class OperationsService:
                                   {"system", "agent", "simulation", "attack-simulator"}))
         case["actions"] = actions
         case["timeline"] = events
+        if case.get("case_type") == "complaint":
+            case["trace"] = trace_view(case, actions)
+            bank_state = self.store.setting(db, "bank_state", self._bank_state)
+            if bank_state["connected"]:
+                available = {a["account_id"]: a["available_minor"] for a in bank_state["accounts"]}
+                for hop in case["trace"]:
+                    hop["available_minor"] = available.get(hop["account_id"], 0)
+            case["default_target_account_id"] = next((h["account_id"] for h in case["trace"]
+                                                     if h["account_id"] != case["complaint"]["victim_account_id"]), None)
+            case["traced_total_minor"] = sum(h["traced_minor"] for h in case["trace"])
+            case["held_total_minor"] = sum(h["lien_minor"] for h in case["trace"])
+            case["funds_moved_total_minor"] = sum(h["moved_minor"] for h in case["trace"])
         return case
 
     def get_case(self, case_id):
@@ -122,16 +157,22 @@ class OperationsService:
         return case
 
     def decide(self, case_id, request: DecisionInput, actor: AnalystProfile):
-        require(actor, request.action)
         with self._lock, self.store.connect(write=True) as db:
+            existing = self.store.get(db, "cases", case_id)
+            if existing and existing.get("case_type") == "complaint" and request.action in {"close_account", "restrict", "place_lien"}:
+                if request.target_account_id == existing["complaint"]["victim_account_id"]:
+                    raise OperationError("This is the complainant's account.")
+            require(actor, request.action)
             case = self._editable(db, case_id, request.expected_version)
             return self._apply_decision(db, case, request, actor)
 
     def _apply_decision(self, db, case, request, actor):
         case_id = case["case_id"]
-        if request.action in {"false_positive", "close_account"} and any(
-                a["case_id"] == case_id and a["operation"] == "close" and a["status"] != "superseded"
-                for a in self.store.records(db, "actions")):
+        target = self._protection_target(case, request.action, request.target_account_id)
+        closes = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id and
+                  a["operation"] == "close" and a["status"] != "superseded"]
+        if (request.action == "false_positive" and closes) or (request.action == "close_account" and
+                any(a["target_id"] == (target or case["account_id"]) for a in closes)):
             raise ConflictError("Final account closure has already been requested; reconcile its bank result")
         if case["verdict"] == "false_positive" and request.action != "file_ncrp_report":
             raise ConflictError("A false-positive verdict is already recorded; its release must finish without a contradictory decision.")
@@ -143,9 +184,11 @@ class OperationsService:
         elif request.action == "confirm_fraud":
             case.update(verdict="fraud", status="investigating")
             case_actions = [a for a in self.store.records(db, "actions") if a["case_id"] == case_id]
-            restrictions = [a for a in case_actions if a["operation"] == "restrict"]
+            default_target = self._protection_target(case, "restrict") if case.get("case_type") == "complaint" else None
+            restrictions = [a for a in case_actions if a["operation"] == "restrict" and
+                            (default_target is None or a["target_id"] == default_target)]
             if not restrictions:
-                self._queue_action(db, case, "restrict", actor.username)
+                self._queue_action(db, case, "restrict", actor.username, target_id=default_target)
             elif any(a["status"] == "confirmed" for a in restrictions) and not any(
                     a["status"] in {"pending", "failed"} for a in case_actions):
                 case["status"] = "resolved"
@@ -169,19 +212,19 @@ class OperationsService:
         elif request.action == "close_account":
             if case["verdict"] != "fraud":
                 raise ConflictError("Confirm fraud before requesting final account closure")
-            self._queue_action(db, case, "close", actor.username)
+            self._queue_action(db, case, "close", actor.username, target_id=target)
             case["status"] = "investigating"
         elif request.action == "place_lien":
-            self._queue_action(db, case, "lien", actor.username, amount_minor=request.amount_minor)
+            self._queue_action(db, case, "lien", actor.username, amount_minor=request.amount_minor, target_id=target)
         elif request.action in {"restrict", "release_lien"}:
-            self._queue_action(db, case, "restrict" if request.action == "restrict" else "lien_release", actor.username)
+            self._queue_action(db, case, "restrict" if request.action == "restrict" else "lien_release", actor.username, target_id=target)
         elif request.action == "file_ncrp_report":
             case["ncrp_report"] = {"status": "recorded_in_simulation", "recorded_by": actor.username, "recorded_at": now()}
         if case["status"] == "resolved":
             case.setdefault("resolved_at", now())
         self.store.update(db, "cases", case_id, case)
         self.store.event(db, "analyst_decision", f"{actor.display_name}: {request.action.replace('_', ' ')}. {request.notes}",
-                         case_id=case_id, txn_id=case["txn_id"], actor=actor.username, metadata={"action": request.action, "version": case["version"]})
+                         case_id=case_id, txn_id=case["txn_id"], actor=actor.username, metadata={"action": request.action, "version": case["version"], "target_account_id": target})
         return self._case(db, case_id)
 
     def claim(self, case_id, request, actor):
@@ -220,8 +263,9 @@ class OperationsService:
             case = self._editable(db, case_id, request.expected_version)
             if case.get("pending_approval"):
                 raise ConflictError("An approval is already pending for this case")
+            target = self._protection_target(case, request.action, request.target_account_id)
             case["pending_approval"] = dict(approval_id=f"APR-{uuid4().hex}", action=request.action,
-                requested_by=actor.username, required_role=required_role(request.action), notes=request.notes, requested_at=now())
+                requested_by=actor.username, required_role=required_role(request.action), notes=request.notes, requested_at=now(), target_account_id=target)
             case.update(version=case["version"] + 1, updated_at=now())
             self.store.update(db, "cases", case_id, case)
             self.store.event(db, "approval_requested", f"{actor.display_name} requested {request.action}: {request.notes}",
@@ -243,7 +287,8 @@ class OperationsService:
             name = requester.display_name if requester else approval["requested_by"]
             case["pending_approval"] = None
             if request.approve:
-                decision = DecisionInput(action=approval["action"], expected_version=case["version"], notes=approval["notes"])
+                decision = DecisionInput(action=approval["action"], expected_version=case["version"], notes=approval["notes"],
+                                         target_account_id=approval.get("target_account_id"))
                 self._apply_decision(db, case, decision, actor)
                 message = f"Approved by {actor.display_name} (requested by {name})"
             else:
@@ -274,6 +319,82 @@ class OperationsService:
             self.store.event(db, "analyst_signed_in" if signed_in else "analyst_signed_out",
                              f"{actor.display_name} signed {'in' if signed_in else 'out'}.", actor=actor.username)
 
+    def file_complaint(self, request, actor):
+        require(actor, "place_lien")
+        payload = request.model_dump(mode="json")
+        fingerprint = hashlib.sha256(dump(payload).encode()).hexdigest()
+        self._refresh_bank()
+        with self._lock, self.store.connect(write=True) as db:
+            old = db.execute("SELECT fingerprint,case_id FROM complaints WHERE id=?", (request.complaint_id,)).fetchone()
+            if old:
+                if old["fingerprint"] != fingerprint:
+                    raise ConflictError("Complaint id already belongs to a different report")
+                return self._case(db, old["case_id"])
+            txn = self.store.get(db, "transactions", request.reported_txn_id)
+            if not txn:
+                raise NotFoundError("Reported transaction not found")
+            if db.execute("SELECT 1 FROM complaints WHERE txn_id=?", (txn["txn_id"],)).fetchone():
+                raise ConflictError("This payment already has a complaint; use the existing case")
+            if txn["account_id"] != request.victim_account_id or txn["payment_status"] != "posted" or not txn.get("beneficiary_id"):
+                raise OperationError("Complaint requires a posted transfer from the stated victim to a beneficiary")
+            if request.reported_at < datetime.fromisoformat(txn["timestamp"]):
+                raise OperationError("The complaint cannot precede the reported payment")
+            case_id = txn["case_id"] or f"CASE-{uuid4().hex[:12].upper()}"
+            case = self.store.get(db, "cases", case_id)
+            if case:
+                if case["verdict"] == "false_positive":
+                    raise ConflictError("A final false-positive case requires separate supervisor review")
+                case.update(version=case["version"] + 1, updated_at=now(), status="investigating")
+            else:
+                case = dict(case_id=case_id, txn_id=txn["txn_id"], account_id=txn["account_id"], channel=txn["channel"],
+                            amount_minor=txn["amount_minor"], score=txn["score"], severity="high", status="new", verdict="unreviewed",
+                            version=1, created_at=now(), updated_at=now(), assigned_to=None, assignee=None, assigned_at=None,
+                            pending_approval=None, notes="", signals=[], reasons=["Victim-reported transfer; fund trace requested."],
+                            related_accounts=[], policy_version=VERSION)
+                db.execute("INSERT INTO cases VALUES(?,?,?)", (case_id, txn["txn_id"], dump(case)))
+                txn["case_id"] = case_id
+                self.store.update(db, "transactions", txn["txn_id"], txn)
+            hops = trace_funds(self.store.records(db, "transactions"), txn)
+            case.update(case_type="complaint", complaint=payload, trace_prepared=False,
+                        trace=[{**h, "available_minor": 0, "lien_minor": 0, "lien_status": "waiting_bank",
+                                "outcome": "pending" if h["traced_minor"] else "funds_moved"} for h in hops],
+                        related_accounts=[h["account_id"] for h in hops])
+            self.store.update(db, "cases", case_id, case)
+            db.execute("INSERT INTO complaints VALUES(?,?,?,?)", (request.complaint_id, fingerprint, txn["txn_id"], case_id))
+            self.store.event(db, "complaint_received", f"{actor.display_name} recorded simulated {request.source} complaint {request.complaint_id}.",
+                             case_id=case_id, txn_id=txn["txn_id"], actor=actor.username, metadata=payload)
+            if self._bank_state["connected"]:
+                self._prepare_traces(db, self._bank_state["accounts"])
+            return self._case(db, case_id)
+
+    def _prepare_traces(self, db, accounts):
+        available = {a["account_id"]: a["available_minor"] for a in accounts}
+        statuses = {a["account_id"]: a["status"] for a in accounts}
+        for action in self.store.records(db, "actions"):
+            if action["operation"] == "lien" and action["status"] in {"pending", "failed"}:
+                available[action["target_id"]] = max(0, available.get(action["target_id"], 0) - action["amount_minor"])
+        for case in self.store.records(db, "cases"):
+            if case.get("case_type") != "complaint" or case.get("trace_prepared"):
+                continue
+            for hop in case["trace"]:
+                account = hop["account_id"]
+                hop.update(available_minor=available.get(account, 0), lien_status="not_requested", outcome="funds_moved")
+                if account == case["complaint"]["victim_account_id"]:
+                    hop["outcome"] = "returned_to_victim"
+                elif statuses.get(account) == "closed":
+                    hop["outcome"] = "account_closed"
+                else:
+                    amount = min(hop["traced_minor"], available.get(account, 0))
+                    if amount:
+                        action = self._queue_action(db, case, "lien", "agent", amount_minor=amount, target_id=account,
+                                                    reason="Golden-hour lien on traced funds")
+                        hop.update(lien_action_id=action["action_id"], lien_status="pending", outcome="pending")
+                        available[account] -= amount
+            case.update(trace_prepared=True, version=case["version"] + 1, updated_at=now())
+            self.store.update(db, "cases", case["case_id"], case)
+            self.store.event(db, "trace_prepared", "Golden-hour trace prepared against bank-reported available funds.",
+                             case_id=case["case_id"], actor="agent")
+
     def retry_action(self, action_id, actor):
         with self._lock, self.store.connect(write=True) as db:
             action = self.store.get(db, "actions", action_id)
@@ -281,6 +402,10 @@ class OperationsService:
                 raise NotFoundError("Bank action not found")
             require(actor, {"restrict": "restrict", "release": "false_positive", "lien": "place_lien",
                             "lien_release": "release_lien", "close": "close_account"}[action["operation"]])
+            if action["operation"] in {"restrict", "lien", "close"}:
+                case = self.store.get(db, "cases", action["case_id"])
+                self._protection_target(case, {"restrict": "restrict", "lien": "place_lien", "close": "close_account"}[action["operation"]],
+                                        action["target_id"] if action["target_type"] == "account" else None)
             if action["status"] in {"confirmed", "superseded"}:
                 raise ConflictError("This action is already final and cannot be retried")
             action.update(status="pending", last_error=None, updated_at=now())
@@ -304,6 +429,8 @@ class OperationsService:
             if previous != state:
                 self.store.set_setting(db, "bank_state", state)
                 self.store.event(db, "bank_connection", "Bank simulator connected." if state["connected"] else state["last_error"])
+            if state["connected"]:
+                self._prepare_traces(db, state["accounts"])
         self._bank_state = state
 
     def process_jobs(self):
@@ -324,6 +451,13 @@ class OperationsService:
             if action["status"] in {"confirmed", "superseded"}:
                 db.execute("UPDATE jobs SET done=1 WHERE id=?", (job["id"],))
                 return
+            invalid_target = None
+            case = self.store.get(db, "cases", action["case_id"])
+            if case.get("case_type") == "complaint" and action["operation"] in {"restrict", "lien", "close"}:
+                try:
+                    self._protection_target(case, {"restrict": "restrict", "lien": "place_lien", "close": "close_account"}[action["operation"]], action["target_id"])
+                except OperationError as exc:
+                    invalid_target = str(exc)
             action.update(attempts=action["attempts"] + 1, updated_at=now())
             self.store.update(db, "actions", action["action_id"], action)
         # Commit attempt BEFORE making the network call, so a crash after bank
@@ -331,6 +465,17 @@ class OperationsService:
         try:
             response = self.bank.get(f"/bank/actions/{action['action_id']}")
             if response.status_code == 404:
+                if invalid_target:
+                    with self.store.connect(write=True) as db:
+                        action.update(status="superseded", last_error=invalid_target, updated_at=now())
+                        self.store.update(db, "actions", action["action_id"], action)
+                        db.execute("UPDATE jobs SET done=1 WHERE id=?", (job["id"],))
+                        case = self.store.get(db, "cases", action["case_id"])
+                        case.update(version=case["version"] + 1, updated_at=now())
+                        self.store.update(db, "cases", case["case_id"], case)
+                        self.store.event(db, "unsafe_target_cancelled", f"Undelivered action cancelled: {invalid_target}",
+                                         case_id=case["case_id"], metadata={"action_id": action["action_id"], "target_account_id": action["target_id"]})
+                    return
                 payload = {k: action[k] for k in ("action_id", "case_id", "operation", "target_type", "target_id")}
                 if action["operation"] == "lien":
                     payload["amount_minor"] = action["amount_minor"]
@@ -422,6 +567,9 @@ class OperationsService:
                         active[key] = True
                     elif action["operation"] == "release":
                         active.pop(key, None)
+            counts["traced_total_minor"] = sum(sum(h["traced_minor"] for h in c.get("trace", [])) for c in cases)
+            counts["held_total_minor"] = sum(sum(h["lien_minor"] for h in trace_view(c, [a for a in actions if a["case_id"] == c["case_id"]])) for c in cases)
+            counts["complaints"] = sum(c.get("case_type") == "complaint" for c in cases)
             counts["restricted_accounts"] = len({k[2] for k in active if k[1] == "account"})
             counts["restricted_cards"] = len({k[2] for k in active if k[1] == "card"})
             channels = []

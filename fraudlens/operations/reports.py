@@ -3,6 +3,7 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
 from .store import now
+from .money import inr
 
 
 def report(case):
@@ -15,7 +16,7 @@ def markdown(value):
     lines = [f"# FraudLens investigation report: {case['case_id']}", "", value["disclaimer"], "",
              f"Generated: {value['generated_at']} | Case version: {value['case_version']}", "",
              f"Channel: {case['channel']} | Account reference: {case['account_id']}",
-             f"Amount: INR {case['amount_minor'] / 100:,.2f} | Risk score: {case['score']:.3f}",
+             f"Amount: {inr(case['amount_minor'])} | Risk score: {case['score']:.3f}",
              f"Case status: {case['status']} | Analyst verdict: {case['verdict']}",
              f"Analyst: {case['assigned_to'] or 'Unassigned'}", f"Notes: {case['notes'] or 'No analyst notes yet.'}", "",
              "## Detection evidence", ""]
@@ -24,6 +25,12 @@ def markdown(value):
     lines.extend(["", "## Bank actions", ""])
     for action in reversed(case["actions"]):
         lines.append(f"- {action['created_at']}: {action['operation']} {action['target_type']} {action['target_id']}; {action['status']}; bank reference {action['bank_reference'] or 'not acknowledged'}")
+    if case.get("trace") is not None:
+        lines.extend(["", "## Fund trail", "", f"Complaint: {case['complaint']['complaint_id']}",
+                      f"Confirmed held: {inr(case['held_total_minor'])}", ""])
+        for hop in case["trace"]:
+            lines.append(f"- Hop {hop['hop']} | {hop['account_id']} | Traced {inr(hop['traced_minor'])} | "
+                         f"Held {inr(hop['lien_minor'])} | {hop['outcome']} | {hop['lien_status']}")
     lines.extend(["", "## Audit timeline", ""])
     for event in case["timeline"]:
         lines.append(f"- {event['occurred_at']} | {event['actor']} | {event['message']}")

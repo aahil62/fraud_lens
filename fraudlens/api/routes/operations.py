@@ -14,7 +14,7 @@ from fraudlens.core.auth.security import decode_access_token
 from fraudlens.models.schemas import AnalystProfile
 from fraudlens.operations.guidance import guidance_response
 from fraudlens.operations.models import (Channel, ControlInput, DecisionInput, ScenarioInput, TransactionInput,
-                                         ClaimInput, AssignInput, ApprovalRequestInput, ApprovalDecisionInput, PresenceInput)
+                                         ClaimInput, AssignInput, ApprovalRequestInput, ApprovalDecisionInput, PresenceInput, ComplaintInput)
 from fraudlens.operations.team import OperationError
 from fraudlens.operations.reports import markdown, pdf, report
 from fraudlens.operations.service import NotFoundError
@@ -99,6 +99,11 @@ def request_approval(case_id: str, payload: ApprovalRequestInput, current: Analy
 @router.post("/cases/{case_id}/approval")
 def decide_approval(case_id: str, payload: ApprovalDecisionInput, current: AnalystProfile = Depends(get_current_analyst)):
     return service().decide_approval(case_id, payload, current)
+
+
+@router.post("/complaints")
+def complaint(payload: ComplaintInput, current: AnalystProfile = Depends(get_current_analyst)):
+    return service().file_complaint(payload, current)
 
 
 @router.post("/presence/heartbeat")

@@ -243,7 +243,7 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 - Routes: `POST /ops/complaints` (any analyst role), `GET /ops/cases/{id}` already returns trace.
 - Report: case report (JSON/Markdown/PDF) gains a "Fund trail" section listing hops and amounts held.
 
-- [ ] **Step 1: Write failing tests** in `tests/test_trace.py`:
+- [x] **Step 1: Write failing tests** in `tests/test_trace.py`:
   - `test_single_hop_full_hold`: victim → M1 ₹50,000, M1 untouched → hop1 traced 5_000_000, lien 5_000_000, outcome `held`.
   - `test_fan_out_two_hops_fifo`: victim → M1 ₹50,000; M1 → M2 ₹30,000; M1 → M3 ₹15,000 → hop1 M1 traced 500_000 (remaining), hop2 M2 3_000_000, M3 1_500_000.
   - `test_atm_cashout_marks_funds_moved`: M1 withdraws ₹20,000 at ATM → that portion counted as `funds_moved`, not a hop.
@@ -251,10 +251,13 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
   - `test_window_excludes_old_transactions` (outgoing 25 h later ignored).
   - `test_complaint_idempotent_and_conflict`.
   - `test_agent_liens_are_audited_with_actor_agent`.
-- [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Full suite → PASS.
-- [ ] **Step 5:** Commit `feat(ops): 1930/NCRP complaint intake and golden-hour fund trace`.
+- [x] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Full suite → PASS.
+- [x] **Step 5:** Commit `feat(ops): 1930/NCRP complaint intake and golden-hour fund trace`.
 
 ---
+
+
+**User clarification (2026-10-18, authoritative):** On complaint cases, the victim's account can never be a close, restrict or lien target; return HTTP 400 `"This is the complainant's account."`. Decision and approval inputs carry optional `target_account_id`, retained through approval and the outbox. Only traced non-victim accounts may be targeted; default to the first-hop recipient. Supervisor closure is offered per hop with its account reference explicit and audited per account, still requiring confirmed fraud. Multiple different traced mule accounts can close independently. Add tests for victim rejection, hop-2 closure leaving hop 1 untouched, and untraced-target rejection. Traced money returned to the victim is never liened.
 
 ### Task 5: Realistic fraud typologies in detector and scenarios
 
@@ -324,6 +327,9 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 - [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** PASS. **Step 5:** Commit `feat(agent): triage priority, case briefs and auto-assignment`.
 
 ---
+
+
+**Complaint target rule (user clarification, Task 4):** The agent defaults recommendations to the first-hop recipient and includes `target_account_id` explicitly. It never recommends close/restrict/lien against the victim. Per-hop close controls in Task 9 let a supervisor select another traced mule; approval must retain that target. A confirmed-fraud verdict is still required for closure. Agent never executes closure itself.
 
 ### Task 8: Evaluation update for new typologies
 

@@ -45,6 +45,7 @@ class DecisionInput(BaseModel):
     expected_version: Annotated[StrictInt, Field(ge=1)]
     notes: str = Field(default="", max_length=3000)
     amount_minor: Annotated[StrictInt, Field(gt=0, le=100_000_000)] | None = None
+    target_account_id: Identifier | None = None
 
     @model_validator(mode="after")
     def require_rationale(self):
@@ -82,6 +83,7 @@ class AssignInput(ClaimInput):
 
 class ApprovalRequestInput(ClaimInput):
     action: Literal["restrict", "confirm_fraud", "false_positive", "close_account", "file_ncrp_report", "release_lien"]
+    target_account_id: Identifier | None = None
     notes: str = Field(min_length=1, max_length=3000)
 
     @field_validator("notes")
@@ -108,3 +110,19 @@ class ApprovalDecisionInput(BaseModel):
 class PresenceInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     current_case_id: Identifier | None = None
+
+
+class ComplaintInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    complaint_id: str = Field(pattern=r"^NCRP-[0-9]{6,14}$", max_length=19)
+    source: Literal["1930_helpline", "ncrp_portal", "branch"]
+    victim_account_id: Identifier
+    reported_txn_id: Identifier
+    reported_at: datetime
+
+    @field_validator("reported_at")
+    @classmethod
+    def utc_reported_at(cls, value):
+        if value.tzinfo is None:
+            raise ValueError("reported_at must include a timezone")
+        return value.astimezone(timezone.utc)

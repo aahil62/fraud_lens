@@ -38,6 +38,10 @@ class Store:
                     done INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS complaints (
+                    id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL,
+                    txn_id TEXT NOT NULL UNIQUE REFERENCES transactions(id),
+                    case_id TEXT NOT NULL REFERENCES cases(id));
                 CREATE TABLE IF NOT EXISTS presence (
                     username TEXT PRIMARY KEY, display_name TEXT NOT NULL, role TEXT NOT NULL,
                     last_seen TEXT NOT NULL, current_case_id TEXT);
