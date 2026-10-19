@@ -10,6 +10,7 @@ import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,7 @@ from fraudlens.api.routes.cases import router as cases_router
 from fraudlens.api.routes.console import router as console_router
 from fraudlens.api.routes.copilot import router as copilot_router
 from fraudlens.api.routes.decisions import router as decisions_router
-from fraudlens.api.routes.health import router as health_router
+from fraudlens.api.routes.health import public_status_router, router as health_router
 from fraudlens.api.routes.live import router as live_router
 from fraudlens.api.routes.reports import router as reports_router
 from fraudlens.api.routes.stats import router as stats_router
@@ -32,6 +33,13 @@ from fraudlens.operations.service import OperationsService
 from fraudlens.operations.detector import CHANNELS
 from fraudlens.operations.attacks import PublicAttacks
 from fraudlens.api.routes.public import mount_public_routes
+from fraudlens.api.limits import LoginLimiter
+
+
+def initial_simulation_config():
+    """Synthetic stream on first seed. The public container starts it paused and slow."""
+    return {"running": os.environ.get("FRAUDLENS_SIMULATION_RUNNING", "1") == "1",
+            "interval_seconds": float(os.environ.get("FRAUDLENS_SIMULATION_INTERVAL", "5"))}
 
 
 async def operation_worker(operations):
@@ -68,8 +76,10 @@ async def lifespan(app: FastAPI):
         await asyncio.to_thread(state.operations.seed_baseline)
         with state.operations.store.connect(write=True) as db:
             if state.operations.store.setting(db, "simulation") is None:
-                state.operations.store.set_setting(db, "simulation", {"running": True, "interval_seconds": 5})
+                state.operations.store.set_setting(db, "simulation", initial_simulation_config())
     state.attacks = PublicAttacks(state.operations)
+    state.login_limiter = LoginLimiter()
+    state.started_at = datetime.now(timezone.utc).isoformat()
     worker = asyncio.create_task(operation_worker(state.operations))
     try:
         yield
@@ -81,6 +91,7 @@ async def lifespan(app: FastAPI):
             pass
         state.operations.close()
         state.attacks = None
+        state.started_at = None
 
 
 app = FastAPI(
@@ -107,6 +118,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(health_router)
+app.include_router(public_status_router)
 if os.environ.get("FRAUDLENS_LEGACY_API", "1") == "1":
     # Compatibility API for historical fixtures. The supported showcase
     # runner disables it; /ops is the only console data source.

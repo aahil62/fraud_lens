@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.lock
 COPY --chown=app:app fraudlens/ fraudlens/
 COPY --chown=app:app scripts/ scripts/
 COPY --chown=app:app --from=frontend /build/frontend/.next/standalone frontend/.next/standalone
-ENV PORT=7860 PYTHONUNBUFFERED=1
+ENV PORT=7860 PYTHONUNBUFFERED=1 FRAUDLENS_PUBLIC_DEMO=1
 USER app
 EXPOSE 7860
 CMD ["python", "scripts/serve.py"]
