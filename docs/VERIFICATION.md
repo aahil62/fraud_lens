@@ -38,7 +38,19 @@ Screenshots: [docs/screenshots/v3/](screenshots/v3/) — landing hero, golden ho
 - The optional Ollama wording path against a running model (covered only by mocked tests).
 - Hugging Face deployment, cold-start time and any public URL (Task 16, needs approval).
 - NPCI lien/hold rules (source unavailable; labelled "modelled on (unverified)").
-- One `docker stop` with a browser holding an open event stream exited 137; `docker kill -s TERM` without open clients exits 0.
+- Shutdown on Hugging Face Spaces (its stop deadline is unknown; checked only with local Docker Desktop).
+
+### Combined branch: Task 16 Steps 1–2 + shutdown fixes (19 October 2026)
+
+`feature/fraudlens-v3` after merging `claude/fraudlens-task-16-9eeb86` (merge `a98a028`) and the shutdown fixes (`35a1834`, `0111f21`, `72c6f8d`):
+
+| Check | Observed result |
+| --- | --- |
+| Backend suite | **442 tests, OK, 1 skipped** (209.2 s). |
+| Frontend | **55 tests passed** (19 files); lint, `tsc --noEmit` and production build passed. |
+| Container build | `docker build -t fraudlens .` passed. |
+| Container behaviour | `/backend/health` 200 within 3 s of start; `/`, `/attack` 200; `/backend/ops/public-status` `{"ready":true,"mode":"demo",...}` without a token; signup 403; with one earlier successful login, failed logins returned 401 until the 20-attempt limit and 429 after; a mule-layering attack reached "Bank confirmed protection" and its 1930 report traced and held ₹28,000. |
+| Shutdown | With an authenticated `/ops/events` stream open, `docker stop` exited **0 in 1.5 s** and the logs contained no traceback. `dev.py` port checks now tolerate sockets left in TIME_WAIT by a just-stopped launch and wait up to 5 s for a port to free. |
 
 ## Earlier record (17 October 2026)
 
