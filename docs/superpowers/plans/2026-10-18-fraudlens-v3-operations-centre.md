@@ -341,11 +341,13 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 
 **Files:** Modify `fraudlens/evaluation/operations.py`, regenerate `docs/verification/operations-evaluation.json`, update `docs/OPERATIONS_EVALUATION.md`.
 
-- [ ] **Step 1:** Add the four typologies (fraud + matching benign controls, 8 seeds each, same construction rules as existing corpus) to the evaluation corpus.
-- [ ] **Step 2:** Run `.venv/bin/python -m fraudlens.evaluation.operations`. Record new TP/FP/TN/FN, precision, recall at both thresholds.
-- [ ] **Step 3:** Rewrite the results table in `docs/OPERATIONS_EVALUATION.md` with the new numbers. Keep the "Evidence boundary" section. Do not round in a flattering direction; use 4 decimals as before.
-- [ ] **Step 4:** Add test `tests/test_evaluation_snapshot.py::test_docs_match_json` asserting the precision/recall numbers in the markdown table equal the JSON.
-- [ ] **Step 5:** Commit `test(eval): evaluate new typologies`.
+- [x] **Step 1:** Add the four typologies (fraud + matching benign controls, 8 seeds each, same construction rules as existing corpus) to the evaluation corpus.
+- [x] **Step 2:** Run `.venv/bin/python -m fraudlens.evaluation.operations`. Record new TP/FP/TN/FN, precision, recall at both thresholds.
+- [x] **Step 3:** Rewrite the results table in `docs/OPERATIONS_EVALUATION.md` with the new numbers. Keep the "Evidence boundary" section. Do not round in a flattering direction; use 4 decimals as before.
+- [x] **Step 4:** Add test `tests/test_evaluation_snapshot.py::test_docs_match_json` asserting the precision/recall numbers in the markdown table equal the JSON.
+- [x] **Step 5:** Commit `test(eval): evaluate new typologies`.
+
+**Execution note:** Each typology adds one fraud and one same-shape benign control per seed under its terminal channel (64 incidents; corpus 312 → 376). New fixtures are appended after the existing ones so existing incidents keep their random draws. Families are `typology_fraud` / `typology_control`.
 
 ---
 

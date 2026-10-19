@@ -104,6 +104,42 @@ def fixtures(seed: int, channel: str):
     yield unit("telemetry_invisible_fraud", "unobservable_fraud", True,
                payment("invisible", amount_minor=rng.randint(5_000, 45_000)))
 
+    # v3 typologies: one fraud and one same-shape benign control per seed,
+    # each placed under the channel of its terminal attempt.
+    if channel == "upi":
+        received = rng.randint(1_000_000, 5_000_000)
+        credit = payment("mule-credit", seconds=-240, account_id=f"SYNTH-VICTIM-{seed}", beneficiary_id=account,
+                         amount_minor=received, new_beneficiary=True)
+        first = payment("mule-out-1", seconds=-60, beneficiary_id=f"SYNTH-M2-{seed}", new_beneficiary=True,
+                        amount_minor=received * 5 // 8)
+        last = dict(beneficiary_id=f"SYNTH-M3-{seed}", amount_minor=received * 5 // 16)
+        yield unit("mule_layering", "typology_fraud", True,
+                   payment("mule-out-2", new_beneficiary=True, **last), [credit, first])
+        yield unit("mule_layering_control", "typology_control", False,
+                   payment("mule-control", new_beneficiary=False, **last),
+                   [credit, {**first, "new_beneficiary": False}])
+    elif channel == "net_banking":
+        large = rng.randint(15_000_000, 20_000_000)
+        yield unit("sim_swap_takeover", "typology_fraud", True,
+                   payment("sim-swap", new_device=True, new_beneficiary=True,
+                           failed_auth_attempts=rng.randint(3, 5), amount_minor=large))
+        yield unit("sim_swap_takeover_control", "typology_control", False,
+                   payment("sim-swap-control", amount_minor=large))
+    elif channel == "card":
+        probes = [payment(f"card-probe-{i}", seconds=-(6 - i) * 60, merchant_id=f"synthetic-merchant-{i}",
+                          amount_minor=rng.randint(4_900, 19_900)) for i in range(6)]
+        large = rng.randint(1_000_000, 2_500_000)
+        yield unit("card_testing", "typology_fraud", True, payment("card-large", amount_minor=large), probes)
+        yield unit("card_testing_control", "typology_control", False,
+                   payment("card-large-control", amount_minor=large), probes[-1:])
+    else:
+        cash = [payment(f"atm-cash-{i}", seconds=-(4 - i) * 240, device_id=f"terminal-{seed}-{i % 3}",
+                        amount_minor=1_000_000) for i in range(3)]
+        yield unit("atm_cashout", "typology_fraud", True,
+                   payment("atm-cash-terminal", device_id=f"terminal-{seed}-2", amount_minor=1_000_000), cash)
+        yield unit("atm_cashout_control", "typology_control", False,
+                   payment("atm-cash-control", device_id=f"terminal-{seed}-0", amount_minor=1_000_000), cash[:1])
+
 
 def metrics(records: list[dict], threshold: float) -> dict:
     tp = sum(r["is_fraud"] and r["score"] >= threshold for r in records)
