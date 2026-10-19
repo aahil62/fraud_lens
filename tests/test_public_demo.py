@@ -82,6 +82,24 @@ class LoginRateLimitTests(unittest.TestCase):
         # A forged left-most entry does not buy a fresh bucket: the proxy-appended address wins.
         self.assertEqual(self.attempt(proxied, **{"X-Forwarded-For": "198.51.100.1, 203.0.113.7"}).status_code, 429)
 
+    def test_configured_client_ip_header_wins_behind_the_console_proxy(self):
+        # Render sits behind Cloudflare, whose CF-Connecting-IP is the visitor; X-Forwarded-For
+        # there ends in rotating proxy addresses, so it cannot key a per-visitor limit.
+        proxied = TestClient(app, client=("127.0.0.1", 40000))
+        with mock.patch.dict(os.environ, {"FRAUDLENS_CLIENT_IP_HEADER": "cf-connecting-ip"}):
+            for index in range(20):
+                self.attempt(proxied, **{"CF-Connecting-IP": "203.0.113.7", "X-Forwarded-For": f"10.0.0.{index}"})
+            self.assertEqual(self.attempt(proxied, **{"CF-Connecting-IP": "203.0.113.7", "X-Forwarded-For": "10.0.0.99"}).status_code, 429)
+            self.assertEqual(self.attempt(proxied, **{"CF-Connecting-IP": "203.0.113.8"}).status_code, 401)
+            # Without the header (e.g. a local container) the X-Forwarded-For rule still applies.
+            self.assertEqual(self.attempt(proxied, **{"X-Forwarded-For": "198.51.100.5"}).status_code, 401)
+
+    def test_configured_header_is_ignored_from_untrusted_peers(self):
+        with mock.patch.dict(os.environ, {"FRAUDLENS_CLIENT_IP_HEADER": "cf-connecting-ip"}):
+            for index in range(20):
+                self.attempt(**{"CF-Connecting-IP": f"203.0.113.{index}"})
+            self.assertEqual(self.attempt(**{"CF-Connecting-IP": "203.0.113.99"}).status_code, 429)
+
     def test_forwarded_header_is_ignored_from_untrusted_peers(self):
         for index in range(20):
             self.attempt(**{"X-Forwarded-For": f"203.0.113.{index}"})
@@ -156,6 +174,11 @@ class ServeEntrypointTests(unittest.TestCase):
         dockerfile = (ROOT / "Dockerfile").read_text()
         self.assertRegex(dockerfile, r"ENV [^\n]*FRAUDLENS_PUBLIC_DEMO=1")
         self.assertEqual([line for line in dockerfile.splitlines() if line.startswith("EXPOSE")], ["EXPOSE 7860"])
+
+    def test_container_trusts_cloudflare_client_header_and_streams_uncompressed(self):
+        self.assertRegex((ROOT / "Dockerfile").read_text(), r"ENV [^\n]*FRAUDLENS_CLIENT_IP_HEADER=cf-connecting-ip")
+        # Next's gzip buffers /ops/events behind the /backend rewrite, so live updates never arrive.
+        self.assertRegex((ROOT / "frontend/next.config.ts").read_text(), r"compress:\s*false")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Self-contained server for the single-container image (scripts/serve.py).
   output: "standalone",
+  // Next's gzip buffers the /ops/events stream behind the /backend rewrite, so
+  // live updates would never reach the console. The hosting edge (Cloudflare on
+  // Render) still compresses pages for visitors.
+  compress: false,
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
   },
