@@ -408,9 +408,11 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 - Footer: "Analysts are watching this live at /dashboard" with link to `/login`.
 - 429 → friendly message from API.
 
-- [ ] **Step 1:** Failing tests: renders four typologies; slider only for mule layering; after mocked launch, timeline renders six steps; 429 message shown.
-- [ ] **Step 2:** Implement. **Step 3:** Tests/lint/tsc pass. Browser check at 390×844 and 1280×720; screenshot `docs/screenshots/v3/attack-mobile.png`.
-- [ ] **Step 4:** Commit `feat(attack): public attack console`.
+- [x] **Step 1:** Failing tests: renders four typologies; slider only for mule layering; after mocked launch, timeline renders six steps; 429 message shown.
+- [x] **Step 2:** Implement. **Step 3:** Tests/lint/tsc pass. Browser check at 390×844 and 1280×720; screenshot `docs/screenshots/v3/attack-mobile.png`.
+- [x] **Step 4:** Commit `feat(attack): public attack console`.
+
+**Execution notes:** The status payload already carried `traced_total_minor`/`held_total_minor` from Task 6, so no backend change was needed. An attack stays `in_progress` until an analyst records a verdict, so "Report it to 1930" appears once FraudLens has flagged the mule-layering attack (or polling has stopped) rather than waiting for a final outcome; polling restarts after the report so the held amount updates as bank liens confirm. `/attack` was added to the public paths in `frontend/proxy.ts`. Checked at 390×844 and 1280×720 (no horizontal overflow).
 
 ---
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const TOKEN_COOKIE = "fraudlens_token";
-const PUBLIC_PATHS = ["/", "/login", "/signup"];
+const PUBLIC_PATHS = ["/", "/login", "/signup", "/attack"];
 
 /** Gates every analyst-console page behind a session cookie set at login
  * (see lib/auth.ts's setSession). The landing page and auth pages stay
