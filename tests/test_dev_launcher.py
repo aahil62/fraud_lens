@@ -65,6 +65,39 @@ class ApiShutdownTests(unittest.TestCase):
         self.assertNotIn("CancelledError", output)
 
 
+@unittest.skipIf(os.name == "nt", "POSIX signals only")
+class RealServerClientIpTests(unittest.TestCase):
+    """Through real uvicorn: its proxy-header rewriting must not replace the loopback peer."""
+
+    def test_login_limit_keys_on_configured_header_behind_loopback_proxy(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        port = free_port()
+        env = {**os.environ, "FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
+               "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}", "FRAUDLENS_BANK_KEY": "test",
+               "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3", "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
+               "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
+               "FRAUDLENS_ANALYSTS_PATH": f"{tmp.name}/analysts.json", "FRAUDLENS_CLIENT_IP_HEADER": "cf-connecting-ip"}
+        process = start_process(uvicorn_command(sys.executable, "fraudlens.api.main:app", port), ROOT, env)
+        self.addCleanup(stop_processes, [process])
+        wait_ready(f"http://127.0.0.1:{port}/health", process, 60)
+
+        def attempt(**headers):
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+            try:
+                conn.request("POST", "/auth/login", json.dumps({"username": "riyer", "password": "wrong-password"}),
+                             {"Content-Type": "application/json", **headers})
+                return conn.getresponse().status
+            finally:
+                conn.close()
+
+        # On Render the forwarded chain differs on every request; the visitor header stays the same.
+        statuses = [attempt(**{"CF-Connecting-IP": "203.0.113.50", "X-Forwarded-For": f"10.0.0.{i}"}) for i in range(21)]
+        self.assertEqual(statuses[:20], [401] * 20)
+        self.assertEqual(statuses[20], 429)
+        self.assertEqual(attempt(**{"CF-Connecting-IP": "203.0.113.51", "X-Forwarded-For": "10.0.0.1"}), 401)
+
+
 class PortProbeTests(unittest.TestCase):
     def listener(self):
         sock = socket.socket()
