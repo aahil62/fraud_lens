@@ -25,3 +25,15 @@ it("hides demo roles outside demo mode", async () => {
   expect(await screen.findByRole("button", { name: "Open workspace" })).toBeInTheDocument();
   for (const name of ROLES) expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
 });
+it("hides the sign-up link on the public demo, where sign-up is disabled", async () => {
+  vi.stubEnv("NEXT_PUBLIC_DEMO_MODE", "1");
+  vi.stubEnv("NEXT_PUBLIC_PUBLIC_DEMO", "1");
+  render(<LoginPage />);
+  expect(await screen.findByRole("button", { name: ROLES[0] })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Create an account" })).not.toBeInTheDocument();
+});
+it("keeps the sign-up link for local use", async () => {
+  vi.stubEnv("NEXT_PUBLIC_PUBLIC_DEMO", "");
+  render(<LoginPage />);
+  expect(await screen.findByRole("link", { name: "Create an account" })).toBeInTheDocument();
+});

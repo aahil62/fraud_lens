@@ -173,6 +173,7 @@ class ServeEntrypointTests(unittest.TestCase):
     def test_dockerfile_enables_public_demo_and_exposes_only_the_console_port(self):
         dockerfile = (ROOT / "Dockerfile").read_text()
         self.assertRegex(dockerfile, r"ENV [^\n]*FRAUDLENS_PUBLIC_DEMO=1")
+        self.assertRegex(dockerfile, r"ENV [^\n]*NEXT_PUBLIC_PUBLIC_DEMO=1", "console hides sign-up on the public demo")
         self.assertEqual([line for line in dockerfile.splitlines() if line.startswith("EXPOSE")], ["EXPOSE 7860"])
 
     def test_container_trusts_cloudflare_client_header_and_streams_uncompressed(self):
