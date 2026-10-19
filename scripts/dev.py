@@ -103,6 +103,7 @@ def main():
                 "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
                 "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{ports['bank']}",
                 "NEXT_PUBLIC_API_BASE": f"http://127.0.0.1:{ports['api']}",
+                "NEXT_PUBLIC_DEMO_MODE": "1",
                 "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{ports['frontend']},http://localhost:{ports['frontend']}"})
     env.setdefault("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator")
     env.setdefault("FRAUDLENS_BANK_DB", str(ROOT / "var/bank.sqlite3"))

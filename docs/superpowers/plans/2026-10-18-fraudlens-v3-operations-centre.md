@@ -382,9 +382,11 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 
 **Files:** Modify `frontend/app/login/page.tsx`, `frontend/components/AuthFrame.tsx` (if needed). Test: `frontend/app/login/login.test.tsx`.
 
-- [ ] **Step 1: Failing test:** when `process.env.NEXT_PUBLIC_DEMO_MODE === "1"`, three buttons render: "Continue as L1 Analyst (K. Mehta)", "Continue as L2 Senior Analyst (R. Iyer)", "Continue as Fraud Supervisor (A. Sharma)"; clicking one calls `login("kmehta","fraudlens123")` (mock) and routes to `next`. When not demo, buttons absent.
-- [ ] **Step 2:** Implement; replace the "Explore the local demo" aside with these buttons plus one line: "Open two windows with different roles to see the hand-off live."
-- [ ] **Step 3:** Tests/lint/tsc pass. Commit `feat(auth): one-click demo role sign-in`.
+- [x] **Step 1: Failing test:** when `process.env.NEXT_PUBLIC_DEMO_MODE === "1"`, three buttons render: "Continue as L1 Analyst (K. Mehta)", "Continue as L2 Senior Analyst (R. Iyer)", "Continue as Fraud Supervisor (A. Sharma)"; clicking one calls `login("kmehta","fraudlens123")` (mock) and routes to `next`. When not demo, buttons absent.
+- [x] **Step 2:** Implement; replace the "Explore the local demo" aside with these buttons plus one line: "Open two windows with different roles to see the hand-off live."
+- [x] **Step 3:** Tests/lint/tsc pass. Commit `feat(auth): one-click demo role sign-in`.
+
+**Execution note:** `scripts/dev.py` now sets `NEXT_PUBLIC_DEMO_MODE=1` (it already runs the API with `FRAUDLENS_MODE=demo`), so the local demo shows the role buttons. Outside demo mode the old credential hint is removed, not just hidden.
 
 ---
 

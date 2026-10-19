@@ -488,3 +488,6 @@ meter::-moz-meter-bar { background: #7183cb; border-radius: 6px; }
   .agent-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .queue-view-filters .muted { margin-left: 0; flex-basis: 100%; }
 }
+.demo-roles { display: grid; gap: 8px; }
+.demo-roles button { justify-content: space-between; width: 100%; min-height: 42px; font-size: 13px; text-align: left; }
+.demo-roles p { margin-top: 4px; font-size: 12px; line-height: 1.6; }
