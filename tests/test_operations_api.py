@@ -104,3 +104,21 @@ class OperationsApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_agent_brief_and_settings_routes(self):
+        self.assertEqual(self.client.get("/ops/cases/missing/brief").status_code, 401)
+        self.assertEqual(self.client.post("/ops/agent/settings", json={"auto_assign": True}).status_code, 401)
+        self.client.post("/ops/simulation/scenario", headers=self.headers, json={"channel": "upi", "scenario": "fraud"})
+        case = self.client.get("/ops/snapshot", headers=self.headers).json()["cases"][0]
+        brief = self.client.get(f"/ops/cases/{case['case_id']}/brief", headers=self.headers)
+        self.assertEqual(brief.status_code, 200, brief.text)
+        self.assertEqual(brief.json()["generated_by"], "template")
+        self.assertEqual(self.client.get("/ops/cases/missing/brief", headers=self.headers).status_code, 404)
+        login = self.client.post("/auth/login", json={"username": "kmehta", "password": "fraudlens123"})
+        l1 = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        denied = self.client.post("/ops/agent/settings", headers=l1, json={"auto_assign": True})
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(denied.json()["required_role"], "supervisor")
+        enabled = self.client.post("/ops/agent/settings", headers=self.headers, json={"auto_assign": True})
+        self.assertEqual(enabled.json(), {"auto_assign": True})
+        self.assertTrue(self.client.get("/ops/snapshot", headers=self.headers).json()["agent"]["auto_assign"])

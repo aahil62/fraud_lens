@@ -126,3 +126,8 @@ class ComplaintInput(BaseModel):
         if value.tzinfo is None:
             raise ValueError("reported_at must include a timezone")
         return value.astimezone(timezone.utc)
+
+
+class AgentSettingsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    auto_assign: bool

@@ -14,7 +14,7 @@ from fraudlens.core.auth.security import decode_access_token
 from fraudlens.models.schemas import AnalystProfile
 from fraudlens.operations.guidance import guidance_response
 from fraudlens.operations.models import (Channel, ControlInput, DecisionInput, ScenarioInput, TransactionInput,
-                                         ClaimInput, AssignInput, ApprovalRequestInput, ApprovalDecisionInput, PresenceInput, ComplaintInput)
+                                         ClaimInput, AssignInput, ApprovalRequestInput, ApprovalDecisionInput, PresenceInput, ComplaintInput, AgentSettingsInput)
 from fraudlens.operations.team import OperationError
 from fraudlens.operations.reports import markdown, pdf, report
 from fraudlens.operations.service import NotFoundError
@@ -171,3 +171,13 @@ async def events(request: Request, after: int = Query(0, ge=0)):
 
     return StreamingResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+@router.get("/cases/{case_id}/brief")
+def brief(case_id: str):
+    return service().get_brief(case_id)
+
+
+@router.post("/agent/settings")
+def agent_settings(payload: AgentSettingsInput, current: AnalystProfile = Depends(get_current_analyst)):
+    return service().set_agent_settings(payload.auto_assign, current)

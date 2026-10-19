@@ -326,13 +326,16 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 - Service: brief stored on the case and refreshed when the case changes; snapshot cases include `priority`, `priority_reason`; snapshot gains `agent: {auto_assign: bool, briefs_drafted: int, liens_placed: int, cases_auto_assigned: int, cases_triaged: int}` (real counts from events).
 - Routes: `GET /ops/cases/{id}/brief`, `POST /ops/agent/settings`.
 
-- [ ] **Step 1: Write failing tests**: priority formula exact values for two hand-computed cases; recommendation table (one test per rule); narrative contains masked IDs only (no full account id); `polish_summary` with a fake LLM that changes "₹48,000" to "₹84,000" → template returned; `auto_assign` skips offline analysts and balances load; agent counters equal number of agent events.
-- [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** PASS. **Step 5:** Commit `feat(agent): triage priority, case briefs and auto-assignment`.
+- [x] **Step 1: Write failing tests**: priority formula exact values for two hand-computed cases; recommendation table (one test per rule); narrative contains masked IDs only (no full account id); `polish_summary` with a fake LLM that changes "₹48,000" to "₹84,000" → template returned; `auto_assign` skips offline analysts and balances load; agent counters equal number of agent events.
+- [x] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** PASS. **Step 5:** Commit `feat(agent): triage priority, case briefs and auto-assignment`.
 
 ---
 
 
 **Complaint target rule (user clarification, Task 4):** The agent defaults recommendations to the first-hop recipient and includes `target_account_id` explicitly. It never recommends close/restrict/lien against the victim. Per-hop close controls in Task 9 let a supervisor select another traced mule; approval must retain that target. A confirmed-fraud verdict is still required for closure. Agent never executes closure itself.
+
+
+**Execution clarification:** Check existing final verdicts before score recommendations, so confirmed fraud can reach per-account closure and an already-cleared alert is not offered a second verdict. A low detector score never by itself recommends clearing a victim complaint; use investigation after trace preparation. Optional wording is applied on authenticated brief read outside write locks, version-checked before storage; snapshots otherwise work fully from templates. `liens_placed` counts confirmed bank actions linked to agent request events, never unacknowledged requests. Default complaint target is the first eligible non-victim trace hop, skipping already-requested/closed targets.
 
 ### Task 8: Evaluation update for new typologies
 

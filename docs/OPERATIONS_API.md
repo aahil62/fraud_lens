@@ -121,3 +121,14 @@ These routes are absent outside `FRAUDLENS_MODE=demo`, including OpenAPI. They n
 `POST /public/attacks/{attack_id}/report-1930` is valid only for mule layering. It persists a time-derived fictional complaint reference before intake, so retry/restart reuse the same report. The response is the same redacted status shape, including complaint_id and held_total_minor. Only acknowledged, unreleased liens count as held.
 
 Both POST routes share a per-client-IP rolling quota of ten requests per five minutes. Excess returns **429** `{"detail":"Too many simulated attacks. Try again in a few minutes."}`. GET polling does not consume that quota. The limit is process-local; attack and complaint records are durable SQLite state. No real helpline, police, bank or external portal is contacted.
+
+
+## FraudLens Agent
+
+`GET /ops/cases/{id}/brief` returns a stored deterministic draft with typology, summary, up to five evidence points, recommended_action, target_account_id, amount_minor (for a lien), required_role/label, confidence, up to four next steps, ncrp_narrative and generated_by. Narratives use IST, Indian currency grouping and masked account references. They are drafts, never an external filing. Complaint recommendations select the first eligible traced mule and never protect the complainant; low detector score alone does not dismiss a victim report. Already-recorded verdicts take precedence so confirmed fraud may recommend supervisor closure without repeating the verdict.
+
+Priority is a bounded integer: `round(55*score + 15*min(1,amount_minor/10000000) + 10*min(1,age_minutes/60) + 20*is_complaint)`, capped at 100 with nonnegative age. The top two contributors form priority_reason. Scores are prioritisation signals, not calibrated fraud probabilities.
+
+`POST /ops/agent/settings {auto_assign:boolean}` requires supervisor role; default is off. When enabled, the worker assigns unassigned open cases by priority to online L1 analysts with the least assigned workload, breaking ties by username. Every assignment and brief draft is an agent audit event. Snapshot `agent` counters are derived from the full event ledger; liens_placed requires a bank-confirmed action linked to an agent request, including later released holds in the cumulative count.
+
+Optional `FRAUDLENS_LLM=ollama` enables only summary wording on authenticated brief read. The local request has a six-second timeout and default model `qwen2.5:7b-instruct` (`FRAUDLENS_LLM_MODEL` overrides). Amounts must match the template and known facts; failure returns the deterministic sentence. Model I/O runs outside case locks; stale case versions cannot overwrite a newer brief. It never changes recommendations, roles, narratives, case state or bank actions. The agent never confirms fraud, releases funds, or closes an account.

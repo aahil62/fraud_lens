@@ -16,6 +16,7 @@ from .models import DecisionInput, TransactionInput
 from .store import Store, dump, now
 from .team import OperationError, require, team_snapshot
 from .trace import trace_funds, trace_view
+from .agent import auto_assign, build_brief, polish_summary, priority
 
 
 class ConflictError(OperationError):
@@ -36,6 +37,68 @@ class OperationsService:
         self._owns_client = bank_client is None
         self._lock = threading.RLock()
         self._bank_state = dict(connected=False, mode="unknown", accounts=[], last_error="Waiting for bank connection")
+        self._run_agent()
+
+    def _save_case(self, db, case):
+        score, reason = priority(case, self.clock())
+        case.update(priority=score, priority_reason=reason)
+        if case.get("brief_version") != case["version"]:
+            actions = [a for a in self.store.records(db, "actions") if a["case_id"] == case["case_id"]]
+            view = {**case}
+            if case.get("case_type") == "complaint":
+                view["trace"] = trace_view(case, actions)
+                view["traced_total_minor"] = sum(h["traced_minor"] for h in view["trace"])
+                view["held_total_minor"] = sum(h["lien_minor"] for h in view["trace"])
+            case["brief"] = build_brief(view, self.store.records(db, "transactions"), actions)
+            case["brief_version"] = case["version"]
+            if not case.get("agent_triaged"):
+                self.store.event(db, "agent_triaged", "FraudLens Agent prioritised the case; no verdict recorded.",
+                                 case_id=case["case_id"], actor="agent", metadata={"priority": score, "reason": reason})
+                case["agent_triaged"] = True
+            self.store.event(db, "agent_brief_drafted", "FraudLens Agent refreshed its factual case brief.", case_id=case["case_id"], actor="agent")
+        self.store.update(db, "cases", case["case_id"], case)
+
+    def _run_agent(self):
+        with self.store.connect(write=True) as db:
+            cases = self.store.records(db, "cases")
+            for case in cases:
+                if case.get("brief_version") != case["version"]:
+                    self._save_case(db, case)
+            if self.store.setting(db, "agent_auto_assign", False):
+                team = team_snapshot(db, cases, self.analysts, self.clock())
+                pending = [{**case, "priority": priority(case, self.clock())[0]} for case in cases]
+                members = {m["username"]: m for m in team}
+                actor = AnalystProfile(username="agent", display_name="FraudLens Agent", role="l1_analyst")
+                for case_id, username in auto_assign(pending, team):
+                    case = self.store.get(db, "cases", case_id)
+                    member = members[username]
+                    target = AnalystProfile(username=username, display_name=member["display_name"], role=member["role"])
+                    self._assign_case(db, case, target, actor, "case_auto_assigned")
+
+    def set_agent_settings(self, enabled, actor):
+        require(actor, "agent_settings")
+        with self._lock, self.store.connect(write=True) as db:
+            self.store.set_setting(db, "agent_auto_assign", enabled)
+            self.store.event(db, "agent_policy_updated", f"{actor.display_name} {'enabled' if enabled else 'disabled'} online-L1 auto-assignment.", actor=actor.username)
+        return {"auto_assign": enabled}
+
+    def get_brief(self, case_id):
+        with self._lock:
+            self._run_agent()
+            case = self.get_case(case_id)
+        brief = case["brief"]
+        # Optional wording happens outside the ledger transaction and case lock.
+        summary = polish_summary(brief["summary"], {"amount_minor": case["amount_minor"], "verdict": case["verdict"]})
+        if summary != brief["summary"]:
+            with self._lock, self.store.connect(write=True) as db:
+                current = self.store.get(db, "cases", case_id)
+                if current["version"] == case["version"]:
+                    current["brief"] = {**brief, "summary": summary, "generated_by": "llm"}
+                    self.store.update(db, "cases", case_id, current)
+                    self.store.event(db, "agent_summary_polished", "Optional local wording applied; recommendation and case facts unchanged.", case_id=case_id, actor="agent")
+                    return current["brief"]
+            return self.get_case(case_id)["brief"]
+        return brief
 
     def close(self):
         if self._owns_client:
@@ -69,6 +132,8 @@ class OperationsService:
                 if result["score"] >= .8:
                     self._queue_action(db, case, "restrict")
             db.execute("INSERT INTO jobs(id,kind,resource_id) VALUES(?,?,?)", (f"payment-{request.txn_id}", "payment", request.txn_id))
+            if case_id:
+                self._save_case(db, case)
             case = self._case(db, case_id) if case_id else None
             return {"transaction": txn, "case": case, "duplicate": False}
 
@@ -127,6 +192,7 @@ class OperationsService:
         case.setdefault("pending_approval", None)
         case["handled_by"] = list(dict.fromkeys(e["actor"] for e in events if e["actor"] not in
                                   {"system", "agent", "simulation", "attack-simulator"}))
+        case["priority"], case["priority_reason"] = priority(case, self.clock())
         case["actions"] = actions
         case["timeline"] = events
         if case.get("case_type") == "complaint":
@@ -222,7 +288,7 @@ class OperationsService:
             case["ncrp_report"] = {"status": "recorded_in_simulation", "recorded_by": actor.username, "recorded_at": now()}
         if case["status"] == "resolved":
             case.setdefault("resolved_at", now())
-        self.store.update(db, "cases", case_id, case)
+        self._save_case(db, case)
         self.store.event(db, "analyst_decision", f"{actor.display_name}: {request.action.replace('_', ' ')}. {request.notes}",
                          case_id=case_id, txn_id=case["txn_id"], actor=actor.username, metadata={"action": request.action, "version": case["version"], "target_account_id": target})
         return self._case(db, case_id)
@@ -242,7 +308,7 @@ class OperationsService:
     def _assign_case(self, db, case, target, actor, event_type):
         case.update(assignee=target.username, assigned_to=target.display_name, assigned_at=now(),
                     updated_at=now(), version=case["version"] + 1)
-        self.store.update(db, "cases", case["case_id"], case)
+        self._save_case(db, case)
         self.store.event(db, event_type, f"{actor.display_name} assigned the case to {target.display_name}.",
                          case_id=case["case_id"], actor=actor.username)
 
@@ -267,7 +333,7 @@ class OperationsService:
             case["pending_approval"] = dict(approval_id=f"APR-{uuid4().hex}", action=request.action,
                 requested_by=actor.username, required_role=required_role(request.action), notes=request.notes, requested_at=now(), target_account_id=target)
             case.update(version=case["version"] + 1, updated_at=now())
-            self.store.update(db, "cases", case_id, case)
+            self._save_case(db, case)
             self.store.event(db, "approval_requested", f"{actor.display_name} requested {request.action}: {request.notes}",
                              case_id=case_id, actor=actor.username, metadata=case["pending_approval"])
             return self._case(db, case_id)
@@ -293,7 +359,7 @@ class OperationsService:
                 message = f"Approved by {actor.display_name} (requested by {name})"
             else:
                 case.update(version=case["version"] + 1, updated_at=now())
-                self.store.update(db, "cases", case_id, case)
+                self._save_case(db, case)
                 message = f"Rejected by {actor.display_name} (requested by {name}): {request.notes}"
             self.store.event(db, "approval_approved" if request.approve else "approval_rejected", message,
                              case_id=case_id, actor=actor.username, metadata={**approval, "decision_notes": request.notes})
@@ -359,7 +425,7 @@ class OperationsService:
                         trace=[{**h, "available_minor": 0, "lien_minor": 0, "lien_status": "waiting_bank",
                                 "outcome": "pending" if h["traced_minor"] else "funds_moved"} for h in hops],
                         related_accounts=[h["account_id"] for h in hops])
-            self.store.update(db, "cases", case_id, case)
+            self._save_case(db, case)
             db.execute("INSERT INTO complaints VALUES(?,?,?,?)", (request.complaint_id, fingerprint, txn["txn_id"], case_id))
             self.store.event(db, "complaint_received", f"{actor.display_name} recorded simulated {request.source} complaint {request.complaint_id}.",
                              case_id=case_id, txn_id=txn["txn_id"], actor=actor.username, metadata=payload)
@@ -391,7 +457,7 @@ class OperationsService:
                         hop.update(lien_action_id=action["action_id"], lien_status="pending", outcome="pending")
                         available[account] -= amount
             case.update(trace_prepared=True, version=case["version"] + 1, updated_at=now())
-            self.store.update(db, "cases", case["case_id"], case)
+            self._save_case(db, case)
             self.store.event(db, "trace_prepared", "Golden-hour trace prepared against bank-reported available funds.",
                              case_id=case["case_id"], actor="agent")
 
@@ -444,6 +510,7 @@ class OperationsService:
                 else:
                     self._deliver_payment(job)
             self._refresh_bank()
+            self._run_agent()
 
     def _deliver_action(self, job):
         with self.store.connect(write=True) as db:
@@ -472,7 +539,7 @@ class OperationsService:
                         db.execute("UPDATE jobs SET done=1 WHERE id=?", (job["id"],))
                         case = self.store.get(db, "cases", action["case_id"])
                         case.update(version=case["version"] + 1, updated_at=now())
-                        self.store.update(db, "cases", case["case_id"], case)
+                        self._save_case(db, case)
                         self.store.event(db, "unsafe_target_cancelled", f"Undelivered action cancelled: {invalid_target}",
                                          case_id=case["case_id"], metadata={"action_id": action["action_id"], "target_account_id": action["target_id"]})
                     return
@@ -509,7 +576,7 @@ class OperationsService:
             if case["status"] == "resolved":
                 case.setdefault("resolved_at", now())
             case.update(updated_at=now(), version=case["version"] + 1)
-            self.store.update(db, "cases", case["case_id"], case)
+            self._save_case(db, case)
             self.store.event(db, f"{action['operation']}_confirmed", f"Bank confirmed {action['operation']} for simulated {action['target_type']} {action['target_id']}.",
                              case_id=case["case_id"], txn_id=case["txn_id"], metadata={"action_id": action["action_id"], "bank_reference": ack["bank_reference"]})
 
@@ -580,7 +647,13 @@ class OperationsService:
                                      pending_review=sum(c["status"] == "new" for c in cc), confirmed_fraud=sum(c["verdict"] == "fraud" for c in cc),
                                      resolved=sum(c["status"] == "resolved" for c in cc), declined=sum(t["payment_status"] == "declined" for t in ct)))
             cursor = db.execute("SELECT COALESCE(MAX(id),0) FROM events").fetchone()[0]
-            return dict(cursor=cursor, as_of=now(), simulation=True, counts=counts, channels=channels,
+            event_counts = {r[0]: r[1] for r in db.execute("SELECT json_extract(data,'$.event_type'),COUNT(*) FROM events WHERE json_extract(data,'$.actor')='agent' GROUP BY json_extract(data,'$.event_type')")}
+            agent_liens = {r[0] for r in db.execute("SELECT json_extract(data,'$.metadata.action_id') FROM events WHERE json_extract(data,'$.event_type')='lien_requested' AND json_extract(data,'$.actor')='agent'")}
+            agent_state = dict(auto_assign=self.store.setting(db, "agent_auto_assign", False),
+                               briefs_drafted=event_counts.get("agent_brief_drafted", 0), cases_triaged=event_counts.get("agent_triaged", 0),
+                               cases_auto_assigned=event_counts.get("case_auto_assigned", 0),
+                               liens_placed=sum(a["operation"] == "lien" and a["status"] == "confirmed" and a["action_id"] in agent_liens for a in actions))
+            return dict(cursor=cursor, as_of=now(), simulation=True, counts=counts, channels=channels, agent=agent_state,
                         transactions=txns[:200], cases=[self._case(db, c["case_id"]) for c in cases[:200]],
                         actions=actions[:200], events=self.store.events(db),
                         team=team_snapshot(db, cases, self.analysts, self.clock()),
