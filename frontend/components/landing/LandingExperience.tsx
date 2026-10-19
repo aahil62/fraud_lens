@@ -5,6 +5,10 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight, ArrowUpRight, Bank, Check, CheckCircle, CreditCard, Fingerprint, GitBranch, GithubLogo, MagnifyingGlass, ShieldCheck } from "@phosphor-icons/react";
 import LensScene from "./LensScene";
 import { channels, type ChannelKey } from "./channels";
+import ArchitectureDiagram from "./ArchitectureDiagram";
+import GoldenHour from "./GoldenHour";
+import { PROOF } from "./proof";
+import { RoleChip } from "../operations/RoleChip";
 
 type ScrollCraftWindow = Window & { ScrollCraft?: { mount: (root: HTMLElement) => { destroy: () => void } } };
 const stageNames = ["The signal", "The protection", "The decision"];
@@ -58,7 +62,7 @@ export default function LandingExperience() {
       <a className="fl-skip" href="#sample-incident">Skip to the sample investigation</a>
       <header className="fl-nav">
         <Link className="fl-brand" href="/" aria-label="FraudLens home"><BrandMark /><span>FraudLens</span></Link>
-        <nav aria-label="Main navigation"><a href="#payment-rails">The channels</a><a href="#sample-incident">Inside an incident</a></nav>
+        <nav aria-label="Main navigation"><a href="#golden-hour">The golden hour</a><a href="#payment-rails">The channels</a><a href="#how-its-built">How it&apos;s built</a></nav>
         <Link className="fl-nav-entry" href="/login">Open workspace <ArrowUpRight size={16} weight="bold" /></Link>
       </header>
 
@@ -67,15 +71,17 @@ export default function LandingExperience() {
           <p className="fl-intro">Financial crime. In focus.</p>
           <h1 id="hero-heading">Follow the <span>signal.</span></h1>
         </div>
-        <div className="fl-hero-imprint" aria-hidden="true" data-sc-parallax="-0.045">A clearer picture.</div>
         <LensScene key={motionPaused ? "static" : "animated"} channel={channelKey} animated={!motionPaused} />
         <div className="fl-hero-note">
-          <p>From a suspicious payment<br />to a decision you can explain.</p>
-          <Link className="fl-primary" href="/login">Open workspace <ArrowUpRight size={20} /></Link>
+          <p>From a suspicious payment{" "}<br />to a decision you can explain.</p>
+          <div className="fl-cta-row"><Link className="fl-primary" href="/login">Open the operations centre <ArrowUpRight size={20} /></Link>
+          <Link className="fl-secondary" href="/attack">Launch a live attack <ArrowRight size={18} /></Link></div>
         </div>
         <div className="fl-lens-annotation"><span className="fl-annotation-line" /><span>Four payment rails.<br /><strong>One connected investigation.</strong></span></div>
         <div className="fl-hero-baseline"><span>Detection → Protection → Investigation</span><button className="fl-motion-control" type="button" aria-pressed={motionPaused} onClick={()=>setMotionPaused(!motionPaused)}>{motionPaused ? "Resume 3D motion" : "Pause 3D motion"}</button><span>Synthetic-data showcase</span></div>
       </section>
+
+      <GoldenHour paused={motionPaused} />
 
       <section className="fl-rails fl-section" id="payment-rails" data-sc-act="flow" aria-labelledby="rails-heading">
         <div className="fl-rails-heading"><h2 id="rails-heading">Different rails.<br /><span>One line of sight.</span></h2><p>Context changes from channel to channel.<br />The need for a clear decision doesn’t.</p><a className="fl-text-link" href="#sample-incident">Trace an example <ArrowRight size={18} /></a></div>
@@ -127,9 +133,32 @@ export default function LandingExperience() {
         <div className="fl-incident-takeaway"><span>Clear signals.</span><span>Traceable actions.</span><span>Accountable decisions.</span></div>
       </section>
 
+      <section className="fl-team fl-section" id="team-authority" aria-labelledby="team-heading">
+        <h2 id="team-heading">One team, clear authority.</h2>
+        <div className="fl-team-grid">
+          <div><RoleChip role="l1_analyst" /><h3>L1 Analyst</h3><p>Claims and investigates cases, escalates, and places liens on traced funds. Asks a senior analyst to approve anything bigger.</p></div>
+          <div><RoleChip role="l2_analyst" /><h3>L2 Senior Analyst</h3><p>Freezes debits, releases liens, confirms fraud or clears false alarms, assigns work and approves L1 requests.</p></div>
+          <div><RoleChip role="supervisor" /><h3>Fraud Supervisor</h3><p>Closes mule accounts after confirmed fraud, records the NCRP report, approves the final calls and sets agent policy.</p></div>
+          <div className="fl-team-agent"><span className="fl-agent-chip">Agent</span><h3>FraudLens Agent</h3><p>Triages, drafts, holds funds within policy. Never decides.</p></div>
+        </div>
+      </section>
+
+      <section className="fl-built fl-section" id="how-its-built" aria-labelledby="built-heading">
+        <h2 id="built-heading">How it&apos;s built</h2>
+        <ArchitectureDiagram />
+        <dl className="fl-proof">
+          <div><dt>Payment channels</dt><dd>{PROOF.channels}</dd></div>
+          <div><dt>Scam typologies you can launch</dt><dd>{PROOF.typologies}</dd></div>
+          <div><dt>Precision / recall at automatic protection (score ≥ {PROOF.protectionThreshold})</dt><dd>{PROOF.precision.toFixed(4)} / {PROOF.recall.toFixed(4)}</dd></div>
+          <div><dt>Backend tests</dt><dd>{PROOF.backendTests}</dd></div>
+        </dl>
+        <p className="fl-proof-note">Precision and recall come from a constructed corpus of {PROOF.evaluationSamples} synthetic payments, not real bank data. <a href="https://github.com/aahil62/fraud_lens/blob/main/docs/OPERATIONS_EVALUATION.md" target="_blank" rel="noreferrer">Read the evaluation</a>.</p>
+      </section>
+
       <section className="fl-close fl-section" data-sc-act="flow" aria-labelledby="close-heading">
         <div className="fl-close-statement"><BrandMark /><h2 id="close-heading">Less guesswork.<br /><span>More clarity.</span></h2><p>Bring the full incident into view.</p></div>
-        <Link className="fl-close-entry" href="/login"><span>Open workspace</span><ArrowUpRight size={46} weight="light" /></Link>
+        <div className="fl-close-actions"><Link className="fl-close-entry" href="/login"><span>Open the operations centre</span><ArrowUpRight size={46} weight="light" /></Link>
+          <Link className="fl-secondary" href="/attack">Launch a live attack <ArrowRight size={18} /></Link></div>
       </section>
       <footer className="fl-footer"><Link className="fl-brand" href="/"><BrandMark /><span>FraudLens</span></Link><p>A working showcase with synthetic transactions and a separate bank simulator.<br />No external bank connection. Real-world detection performance is not claimed.</p><a href="https://github.com/aahil62/fraud_lens" target="_blank" rel="noreferrer"><GithubLogo size={18} />View source <ArrowUpRight size={14} /></a></footer>
     </main>
