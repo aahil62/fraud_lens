@@ -18,17 +18,31 @@ ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
 
 
-def ensure_ports_available(ports):
+def port_free(port):
+    # SO_REUSEADDR matches how uvicorn binds, so connections left in TIME_WAIT by a
+    # just-stopped launch do not count as busy; a live listener still does.
+    with socket.socket() as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("127.0.0.1", port))
+            return True
+        except OSError:
+            return False
+
+
+def ensure_ports_available(ports, wait=5):
+    """Fail on a port that stays busy for `wait` seconds (a previous launch may still be exiting)."""
     if len(set(ports.values())) != len(ports):
         raise RuntimeError("BANK_PORT, API_PORT, and FRONTEND_PORT must be distinct")
     for name, port in ports.items():
         if not 1 <= port <= 65535:
             raise RuntimeError(f"Invalid {name} port: {port}")
-        with socket.socket() as probe:
-            try:
-                probe.bind(("127.0.0.1", port))
-            except OSError as error:
-                raise RuntimeError(f"{name} port {port} is unavailable. Stop its owner or choose another port in .env.") from error
+    deadline = time.monotonic() + wait
+    for name, port in ports.items():
+        while not port_free(port):
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"{name} port {port} is unavailable. Stop its owner or choose another port in .env.")
+            time.sleep(.25)
 
 
 def uvicorn_command(python, app, port):

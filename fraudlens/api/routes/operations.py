@@ -38,6 +38,20 @@ class OperationsRoute(APIRoute):
         return guarded
 
 
+class EventStreamResponse(StreamingResponse):
+    """Server-sent events whose cancellation at server shutdown is a normal end.
+
+    uvicorn cancels still-open streams once --timeout-graceful-shutdown passes;
+    clients reconnect on their own, so this must not be logged as an app error.
+    """
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        except asyncio.CancelledError:
+            pass
+
+
 router = APIRouter(prefix="/ops", tags=["live operations"], route_class=OperationsRoute,
                    dependencies=[Depends(get_current_analyst)])
 
@@ -171,7 +185,7 @@ async def events(request: Request, after: int = Query(0, ge=0)):
             heartbeat += 1
             await asyncio.sleep(.5)
 
-    return StreamingResponse(stream(), media_type="text/event-stream",
+    return EventStreamResponse(stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
 

@@ -11,7 +11,10 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from dev import start_process, stop_processes, uvicorn_command, wait_ready  # noqa: E402
+import threading  # noqa: E402
+import time  # noqa: E402
+
+from dev import ensure_ports_available, start_process, stop_processes, uvicorn_command, wait_ready  # noqa: E402
 
 
 def free_port():
@@ -31,7 +34,10 @@ class ApiShutdownTests(unittest.TestCase):
                "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3", "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
                "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
                "FRAUDLENS_ANALYSTS_PATH": f"{tmp.name}/analysts.json"}
-        process = start_process(uvicorn_command(sys.executable, "fraudlens.api.main:app", port), ROOT, env)
+        log = open(Path(tmp.name) / "api.log", "w+")
+        self.addCleanup(log.close)
+        process = subprocess.Popen(uvicorn_command(sys.executable, "fraudlens.api.main:app", port), cwd=ROOT, env=env,
+                                   stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         self.addCleanup(stop_processes, [process])
         wait_ready(f"http://127.0.0.1:{port}/health", process, 60)
 
@@ -52,6 +58,44 @@ class ApiShutdownTests(unittest.TestCase):
             process.wait(timeout=10)
         except subprocess.TimeoutExpired:
             self.fail("API did not exit within 10s of SIGTERM while an event stream was open")
+        log.seek(0)
+        output = log.read()
+        # Cutting an open stream on shutdown is expected; it must not be logged as an application error.
+        self.assertNotIn("Traceback", output)
+        self.assertNotIn("CancelledError", output)
+
+
+class PortProbeTests(unittest.TestCase):
+    def listener(self):
+        sock = socket.socket()
+        sock.bind(("127.0.0.1", 0))
+        sock.listen()
+        return sock
+
+    def test_port_released_during_wait_is_accepted(self):
+        sock = self.listener()
+        port = sock.getsockname()[1]
+        threading.Timer(.5, sock.close).start()
+        ensure_ports_available({"bank": port}, wait=5)
+
+    def test_port_still_held_after_wait_is_rejected(self):
+        sock = self.listener()
+        self.addCleanup(sock.close)
+        port = sock.getsockname()[1]
+        started = time.monotonic()
+        with self.assertRaisesRegex(RuntimeError, str(port)):
+            ensure_ports_available({"bank": port}, wait=1)
+        self.assertGreaterEqual(time.monotonic() - started, .9)
+
+    def test_recently_closed_connection_does_not_block_restart(self):
+        sock = self.listener()
+        port = sock.getsockname()[1]
+        client = socket.create_connection(("127.0.0.1", port))
+        server_side, _ = sock.accept()
+        server_side.close()  # server closes first, leaving TIME_WAIT on the service port
+        client.close()
+        sock.close()
+        ensure_ports_available({"bank": port}, wait=0)
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ class LauncherChecks(unittest.TestCase):
             occupied.listen()
             port = occupied.getsockname()[1]
             with self.assertRaisesRegex(RuntimeError, str(port)):
-                ensure_ports_available({"bank": port})
+                ensure_ports_available({"bank": port}, wait=0)
             self.assertEqual(occupied.getsockname()[1], port)
 
     def test_duplicate_ports_are_rejected(self):
