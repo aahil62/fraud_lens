@@ -1,5 +1,6 @@
 """Per-client limits for public-facing routes."""
 from collections import deque
+import os
 import threading
 import time
 
@@ -7,12 +8,22 @@ LOOPBACK = {"127.0.0.1", "::1"}
 
 
 def client_ip(request) -> str:
-    """The caller's address. Behind the bundled console proxy (a loopback peer)
-    the right-most X-Forwarded-For entry is the one the last proxy appended;
-    earlier entries are client-supplied and ignored."""
+    """The caller's address, trusting forwarded headers only via the bundled console proxy (a loopback peer).
+
+    FRAUDLENS_CLIENT_IP_HEADER names a header the hosting edge sets itself (the
+    container uses cf-connecting-ip: Render sits behind Cloudflare, which overwrites
+    it with the visitor's address). Otherwise the right-most X-Forwarded-For entry,
+    the one the last proxy appended, is used; earlier entries are client-supplied.
+    """
     peer = request.client.host if request.client else "unknown"
+    if peer not in LOOPBACK:
+        return peer
+    header = os.environ.get("FRAUDLENS_CLIENT_IP_HEADER", "").strip()
+    trusted = request.headers.get(header, "").strip() if header else ""
+    if trusted:
+        return trusted.split(",")[0].strip()
     forwarded = request.headers.get("x-forwarded-for", "")
-    if peer in LOOPBACK and forwarded.strip():
+    if forwarded.strip():
         return forwarded.split(",")[-1].strip()
     return peer
 

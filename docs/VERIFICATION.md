@@ -36,9 +36,8 @@ Screenshots: [docs/screenshots/v3/](screenshots/v3/) — landing hero, golden ho
 - Two physically separate browsers or devices; the two-analyst check used two origins in one browser.
 - A real `prefers-reduced-motion` toggle, screen-reader pass, or browser matrix beyond the built-in Chromium-based browser.
 - The optional Ollama wording path against a running model (covered only by mocked tests).
-- Hugging Face deployment, cold-start time and any public URL (Task 16, needs approval).
 - NPCI lien/hold rules (source unavailable; labelled "modelled on (unverified)").
-- Shutdown on Hugging Face Spaces (its stop deadline is unknown; checked only with local Docker Desktop).
+- Shutdown on Render (its stop deadline is unknown; checked only with local Docker Desktop).
 
 ### Combined branch: Task 16 Steps 1–2 + shutdown fixes (19 October 2026)
 
@@ -51,6 +50,23 @@ Screenshots: [docs/screenshots/v3/](screenshots/v3/) — landing hero, golden ho
 | Container build | `docker build -t fraudlens .` passed. |
 | Container behaviour | `/backend/health` 200 within 3 s of start; `/`, `/attack` 200; `/backend/ops/public-status` `{"ready":true,"mode":"demo",...}` without a token; signup 403; with one earlier successful login, failed logins returned 401 until the 20-attempt limit and 429 after; a mule-layering attack reached "Bank confirmed protection" and its 1930 report traced and held ₹28,000. |
 | Shutdown | With an authenticated `/ops/events` stream open, `docker stop` exited **0 in 1.5 s** and the logs contained no traceback. `dev.py` port checks now tolerate sockets left in TIME_WAIT by a just-stopped launch and wait up to 5 s for a port to free. |
+
+### Live demo on Render (19 October 2026)
+
+Hugging Face now requires a paid plan for Docker Spaces, so the user deployed the same Dockerfile from `main` (`449a1af`) as a free Render web service: https://fraud-lens-r3t0.onrender.com. Locally, the image capped at 0.1 CPU / 512 MB (Render free tier) started in 82 s, used about 240 MB, and served signed-in snapshots in about 0.5 s.
+
+Checked on the live site:
+- `/`, `/login`, `/attack`, `/backend/health` 200; `/backend/ops/public-status` `{"ready":true,"mode":"demo",...}`.
+- Demo L1 sign-in reached the queue with "System live". A scam launched from `/attack` at 375×812 appeared in the analyst's queue **1.9 s** later.
+- Hand-off: K. Mehta claimed the case and requested confirm-fraud approval in the browser; R. Iyer approved as a separate client through the API; K. Mehta's page then showed "Approved by R. Iyer (requested by K. Mehta)".
+- The bank declined mule M1's later ₹15,000 payment (`account_restricted`) after protection was confirmed; M2's ₹20,000 ATM cash-out had already posted.
+- "Report it to 1930" filed a complaint that traced ₹28,000 across two hops and held ₹28,000 ([screenshot](screenshots/v3/live-fund-trail.png), [mobile](screenshots/v3/live-attack-mobile.png)).
+
+Two live problems found and fixed in `781adbd` (verified locally in the container; **not yet live until `main` is pushed and Render redeploys**):
+- **Rate limits did not trigger.** 21 failed logins all returned 401: behind Render's Cloudflare edge the right-most `X-Forwarded-For` entry changes per request. Limits now key on `CF-Connecting-IP`, which Cloudflare sets itself (`FRAUDLENS_CLIENT_IP_HEADER`, trusted only from the console proxy).
+- **Live push was buffered.** Next.js gzipped `/ops/events` behind the `/backend` rewrite (Cloudflare always accepts gzip), so consoles updated only on the 10 s poll. Compression is now off in Next and left to the edge; the container stream now delivers its first event immediately with gzip accepted.
+
+Not measured: cold-start time after Render's 15-minute sleep (Render's wake-up plus the 82 s boot), and the rate limit with two different real visitor addresses.
 
 ## Earlier record (17 October 2026)
 

@@ -10,7 +10,7 @@ When a scam victim in India calls the **1930** helpline or reports on the **Nati
 
 ## Try it
 
-**Hosted demo:** _not deployed yet (link added after deployment)._ Demo data resets when the server restarts.
+**Live demo:** https://fraud-lens-r3t0.onrender.com — sign in with a demo role on a laptop (a second browser or private window gives you a second role) and launch a scam from [/attack](https://fraud-lens-r3t0.onrender.com/attack) on your phone. It runs on Render's free tier, so after 15 idle minutes it sleeps and the first visit can take a couple of minutes to wake. Demo data resets when the server restarts.
 
 Locally (Python 3.12, Node.js 24+):
 
@@ -31,7 +31,7 @@ Open http://127.0.0.1:3000 (bank simulator :8002, API :8001). The login page has
 
 All demo accounts use the password `fraudlens123`. Fictional data only — never enter real account or card details.
 
-Single container (same image as the hosted demo): `docker build -t fraudlens . && docker run -p 7860:7860 fraudlens`, then open http://localhost:7860.
+Single container (the image the live demo runs on Render): `docker build -t fraudlens . && docker run -p 7860:7860 fraudlens`, then open http://localhost:7860.
 
 ## What it does
 
