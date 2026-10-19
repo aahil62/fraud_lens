@@ -3,7 +3,8 @@
 
 Starts the bank simulator and API on 127.0.0.1 with the same uvicorn commands
 and environment as scripts/dev.py, then the standalone Next.js server on
-0.0.0.0:$PORT. Data lives under /tmp/fraudlens and resets on every boot.
+0.0.0.0:$PORT. Data lives under /tmp/fraudlens and resets on every boot; the
+synthetic stream starts paused at one scenario every 8 s.
 """
 import os
 from pathlib import Path
@@ -15,14 +16,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dev import start_process, stop_processes, wait_ready  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
+DATA_FILES = ("bank.sqlite3*", "operations.sqlite3*", "analysts.json", "session.key")
+
+
+def reset_data(data):
+    """Remove the previous boot's demo state so every start reseeds."""
+    for pattern in DATA_FILES:
+        for path in data.glob(pattern):
+            path.unlink()
 
 
 def main():
     port = int(os.environ.get("PORT", "7860"))
     data = Path(os.environ.get("FRAUDLENS_DATA_DIR", "/tmp/fraudlens"))
     data.mkdir(parents=True, exist_ok=True)
+    reset_data(data)
     env = os.environ.copy()
     env.update({"FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
+                "FRAUDLENS_SIMULATION_RUNNING": "0", "FRAUDLENS_SIMULATION_INTERVAL": "8",
                 "FRAUDLENS_BANK_URL": "http://127.0.0.1:8002",
                 "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{port},http://localhost:{port}"})
     env.setdefault("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator")

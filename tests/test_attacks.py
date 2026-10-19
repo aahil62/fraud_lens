@@ -55,6 +55,15 @@ class AttackTests(unittest.TestCase):
         self.clock += 301
         self.assertEqual(self.launch("sim_swap_takeover").status_code, 200)
 
+    def test_limit_is_per_visitor_behind_the_console_proxy(self):
+        proxied = TestClient(self.client.app, client=("127.0.0.1", 40000))
+        self.addCleanup(proxied.close)
+        launch = lambda ip: proxied.post("/public/attacks", json={"typology": "card_testing"}, headers={"X-Forwarded-For": ip})
+        for _ in range(10):
+            self.assertEqual(launch("203.0.113.7").status_code, 200)
+        self.assertEqual(launch("203.0.113.7").status_code, 429)
+        self.assertEqual(launch("203.0.113.8").status_code, 200)
+
     def test_non_demo_has_no_public_routes(self):
         app = FastAPI()
         mount_public_routes(app, mode="production")

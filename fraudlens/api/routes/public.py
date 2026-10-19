@@ -3,6 +3,7 @@ import os
 
 from fastapi import APIRouter, HTTPException, Request
 
+from fraudlens.api.limits import client_ip
 from fraudlens.api.routes.operations import OperationsRoute
 from fraudlens.api.state import state
 from fraudlens.operations.attacks import AttackInput
@@ -19,7 +20,7 @@ def attacks():
 @router.post("/attacks")
 def launch(payload: AttackInput, request: Request):
     service = attacks()
-    service.limit(request.client.host if request.client else "unknown")
+    service.limit(client_ip(request))
     return service.launch(payload)
 
 
@@ -31,7 +32,7 @@ def status(attack_id: str):
 @router.post("/attacks/{attack_id}/report-1930")
 def report(attack_id: str, request: Request):
     service = attacks()
-    service.limit(request.client.host if request.client else "unknown")
+    service.limit(client_ip(request))
     return service.report_1930(attack_id)
 
 
