@@ -292,7 +292,8 @@ export function BankView() {
             <h2>Simulated account positions</h2>
             <p>
               Restrictions are owned by individual cases. Releasing one case
-              preserves other active restrictions.
+              preserves other active restrictions. Frozen, closed and liened
+              accounts are listed first.
             </p>
           </div>
         </div>
@@ -308,7 +309,7 @@ export function BankView() {
               </tr>
             </thead>
             <tbody>
-              {snapshot.bank.accounts.map((account) => (
+              {[...snapshot.bank.accounts].sort((x, y) => Number(y.status !== "active" || (y.liens?.length ?? 0) > 0) - Number(x.status !== "active" || (x.liens?.length ?? 0) > 0)).map((account) => (
                 <tr key={account.account_id}>
                   <td className="identifier">{account.account_id}</td>
                   <td><span className={`account-status ${account.status}`}>{account.status === "frozen" ? "Frozen" : account.status === "closed" ? "Closed" : "Active"}</span></td>

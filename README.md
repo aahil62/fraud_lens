@@ -1,24 +1,18 @@
 # FraudLens
 
-Multi-channel fraud investigation with reversible protective actions and one consistent operational ledger.
+A real-time, multi-analyst fraud operations centre for an Indian bank — UPI, net banking, cards and ATMs — with an enforcing bank simulator, a 1930 "golden hour" fund trace and an AI agent that triages but never decides.
 
-FraudLens connects payment attempts, detection evidence, bank acknowledgements and analyst decisions for **UPI, net banking, card payments and ATM withdrawals**. This is a self-contained local showcase: transactions are synthetic and a separate bank simulator enforces restrictions on test accounts/instruments. No external bank integration or regulatory certification is claimed.
+![FraudLens case page: agent brief, owner, approvals](docs/screenshots/v3/case-agent-brief.png)
 
-## Implemented workflow
+## Why it matters
 
-- Continuous synthetic transactions and on-demand scenarios across all four channels.
-- History-aware rule, velocity, behavioral, graph and reference-ML signals, plus versioned channel controls. Risk scores prioritize review; they are not calibrated fraud probabilities.
-- Automatic protective requests for supported high-risk patterns; moderate scores create review cases without automatic restriction.
-- A persistent bank simulator that posts permitted payments, declines restricted payments, and acknowledges restriction/release requests.
-- Authenticated analyst investigation, escalation, fraud confirmation, and false-positive reversal, with rationale and optimistic case versions.
-- Durable delivery and reconciliation after rejection, uncertain acknowledgement, retry, or restart. Restrictions belong to cases; reversing one preserves other cases' protection.
-- One live snapshot powers dashboard counts, channel totals, investigations, evidence/network, bank actions, reports and audit history. Disconnects are visible; reconnect retrieves current persisted state.
-- Timestamped JSON, Markdown and PDF reports. JSON/Markdown retain Unicode; PDF represents characters unsupported by its portable built-in font as reversible Unicode escapes.
-- Source-linked guidance mapping, independent controlled scenario evaluation, a local launcher, pinned Python dependencies and CI.
+When a scam victim in India calls the **1930** helpline or reports on the **National Cyber Crime Reporting Portal** (cybercrime.gov.in), the I4C's Citizen Financial Cyber Fraud Reporting and Management System exists to "stop siphoning off funds by the fraudsters" ([PIB, Ministry of Home Affairs, 6 Aug 2024](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2042130)). Mule accounts move the money on within minutes, so the bank's job is to trace each hop and hold what is left, fast. Banks also carry customer-protection duties for unauthorised electronic transactions ([RBI circular, 6 Jul 2017](https://www.rbi.org.in/scripts/BS_CircularIndexDisplay.aspx?Id=11040)); FraudLens therefore never freezes the victim's own account. What each source does and does not say is mapped in [docs/GUIDANCE.md](docs/GUIDANCE.md).
 
-## Run locally
+## Try it
 
-Requires Python **3.12** and Node.js **24+**. From this checkout's root:
+**Hosted demo:** _not deployed yet (link added after deployment)._ Demo data resets when the server restarts.
+
+Locally (Python 3.12, Node.js 24+):
 
 ```bash
 python3.12 -m venv .venv
@@ -27,78 +21,81 @@ npm --prefix frontend ci
 .venv/bin/python scripts/dev.py
 ```
 
-Open **http://127.0.0.1:3000**. Local demo accounts: `asharma` or `riyer`, password `fraudlens123`.
+Open http://127.0.0.1:3000 (bank simulator :8002, API :8001). The login page has one-click demo roles. Open two windows with different roles — for example `127.0.0.1:3000` and `localhost:3000`, which keep separate sessions — and launch an attack from http://127.0.0.1:3000/attack to watch the hand-off.
 
-The launcher starts bank **8002**, API **8001**, and console **3000**, waits for readiness, and stops its own children on Ctrl-C. Occupied/conflicting ports produce an error; other processes are never killed. Copy `.env.example` to `.env` to change ports, storage or the internal simulator key. The launcher uses demo mode and disables the historical API.
+| Demo role | Username | Can do |
+| --- | --- | --- |
+| L1 Analyst | `kmehta`, `pnair` | Claim, investigate, escalate, place liens; request approval for the rest |
+| L2 Senior Analyst | `riyer` | Freeze debits, release liens, confirm fraud or clear false positives, assign, approve L1 requests |
+| Fraud Supervisor | `asharma` | Close traced mule accounts after confirmed fraud, record the NCRP report, set agent policy |
 
-SQLite databases and a random persistent session signing key live under ignored `var/`. Initial fixtures are seeded once into an empty operational database; interrupted seeding resumes stable IDs. Playback starts automatically on the first showcase launch. Pausing playback persists across restart; existing activity is retained.
+All demo accounts use the password `fraudlens123`. Fictional data only — never enter real account or card details.
 
-## Demonstrate an incident
+Single container (same image as the hosted demo): `docker build -t fraudlens . && docker run -p 7860:7860 fraudlens`, then open http://localhost:7860.
 
-1. Open **Transactions**, select a channel and run a fraud scenario.
-2. Open its investigation. Inspect reasons, signals, connections and the payment/action timeline.
-3. Confirm fraud to retain protection, or mark a false positive with a rationale. Resolution of a false positive follows release acknowledgement.
-4. Inspect **Bank actions**, **Audit trail** and **Overview**. All views reflect the same operational records.
-5. Exercise bank rejection or timeout-after-commit. Failed/uncertain requests remain visible; retries reconcile the original action ID.
+## What it does
 
-With the application running in another terminal, verify actual effects over HTTP:
+- **Multi-analyst roles and approvals.** L1 → L2 → Supervisor permission table enforced by the API (403 with the required role). Lower roles request approval; a different, senior analyst approves or rejects. Case claiming uses optimistic versions, so two analysts cannot both win (409). Presence shows who is online and on which case.
+- **Enforcing bank ladder.** A separate bank service holds a specific amount (lien), freezes debits, or closes an account. Credits still post into liened accounts; payments into closed accounts are declined. Every request is shown as pending until the bank acknowledges it.
+- **1930 golden-hour fund trace.** A complaint traces the reported payment FIFO through up to four hops in 24 hours, then liens what each mule account still holds — partially when money has already moved or been cashed out at an ATM.
+- **Public attack console.** `/attack` lets anyone launch mule layering, SIM-swap takeover, card testing or an ATM cash-out burst against the simulated bank and watch six live steps, then report it to 1930 as the victim.
+- **FraudLens Agent.** Prioritises cases, drafts a brief and an NCRP narrative (masked account references, IST), auto-assigns to online L1s when a supervisor enables it, and places golden-hour liens. It never confirms fraud, releases funds or closes accounts; every agent action is an audited event. Optional local LLM wording is rejected if it changes any rupee amount.
+- **Reports and audit.** JSON, Markdown and PDF case reports (with the fund trail); one audit ledger behind every screen.
 
-```bash
-.venv/bin/python scripts/verify_live.py
+## Architecture
+
+```mermaid
+flowchart LR
+  S[Synthetic stream] --> D
+  A[Attack console] --> D
+  D["Detector<br/>rules · velocity · behaviour · graph · reference ML"] -->|scored cases| L["Case ledger + outbox<br/>SQLite, transactional"]
+  L -->|bank actions| B["Bank server<br/>separate service: lien · freeze · close"]
+  B -->|acknowledgements| L
+  L -->|live events| C["Live console<br/>multi-analyst, roles + approvals"]
 ```
 
-This proof restricts execution to loopback simulator services. It creates labelled test activity, proves that a later payment is declined while restricted, reverses the case, and proves that a later payment posts.
+## Evaluation
+
+Controlled synthetic corpus of 376 terminal payment attempts (eight seeds, four channels), from [docs/verification/operations-evaluation.json](docs/verification/operations-evaluation.json):
+
+| Decision threshold | TP | FP | TN | FN | Precision | Recall |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Review, score ≥0.5 | 184 | 64 | 96 | 32 | 0.7419 | 0.8519 |
+| Automatic protection, score ≥0.8 | 176 | 32 | 128 | 40 | 0.8462 | 0.8148 |
+
+The corpus deliberately includes authorised-but-unusual payments (false positives) and fraud that looks ordinary (false negatives). It is not real fraud prevalence; see [docs/OPERATIONS_EVALUATION.md](docs/OPERATIONS_EVALUATION.md).
+
+## Engineering notes
+
+- **Transactional outbox.** Payments, cases, bank jobs and audit events commit in one SQLite transaction; a worker delivers bank actions afterwards, so a crash never loses or duplicates an action.
+- **Idempotency.** Transactions, bank actions and complaints are keyed by ID; an identical retry is a no-op, a different payload under the same ID is a 409.
+- **Optimistic versions.** Every case write checks `expected_version`; stale claims and decisions get 409 with the current owner.
+- **Reconciliation.** Timeouts after the bank committed are reconciled against the bank's own record on retry, and requests are never shown as confirmed until acknowledged.
+- **Money** is integer paise end to end, displayed with ₹ and Indian grouping.
+
+<details>
+<summary>Limits</summary>
+
+- Synthetic data and a simulated bank only. No real bank, NPCI, I4C or police connection; nothing is reported externally.
+- Detection rules were written alongside the fixtures they are evaluated on; results do not show real-world accuracy.
+- Regulatory mapping is paraphrased and partial; the NPCI lien entry is "modelled on (unverified)". Not legal advice or certification.
+- One API worker, SQLite, in-process rate limits: a demo, not a production deployment.
+- Five high-severity development-only npm advisory paths remain through the Next ESLint plugin (`braces`, GHSA-vfj7-8cjw-p6xm); production dependencies audit clean.
+
+</details>
 
 ## Verify
 
 ```bash
-# Stop Next dev before building into the same .next directory.
-.venv/bin/python scripts/check.py
-
-# Include the historical backend regression suite.
-.venv/bin/python scripts/check.py --full
-
-# Safe while the console is running.
-.venv/bin/python scripts/check.py --skip-frontend
-
-# Reproduce independent scenario evaluation.
+.venv/bin/python -m unittest discover -s tests
+npm --prefix frontend run test
+npm --prefix frontend run lint
+(cd frontend && npx tsc --noEmit)
 .venv/bin/python -m fraudlens.evaluation.operations
 ```
 
-See [verification](docs/VERIFICATION.md), [evaluation](docs/OPERATIONS_EVALUATION.md), and machine-readable evidence under [docs/verification](docs/verification/). Constructed scenarios establish behavior only within their stated boundaries, not real-bank detection accuracy or losses prevented.
+Results and what was checked by hand are in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
-## Structure
+## Credits
 
-```text
-fraudlens/operations/       Strict inputs, detector, SQLite, lifecycle/outbox, scenarios, reports
-fraudlens/bank_simulator/   Separate FastAPI application and durable bank ledger
-fraudlens/api/routes/operations.py
-fraudlens/core/             Existing scoring, graph, authentication and historical components
-fraudlens/evaluation/operations.py
-frontend/components/operations/   Shared live state, investigations, controls and evidence
-frontend/lib/operations.ts        Typed authenticated operational client
-scripts/dev.py             Three-service local lifecycle
-scripts/check.py           Verification and launcher checks
-scripts/verify_live.py      Actual HTTP proof against the local simulator
-tests/                     Operational tests and historical regressions
-docs/                      Architecture, contracts, guidance, evaluation and evidence
-```
-
-## Boundaries
-
-- Investigation status, analyst verdict and bank-action status are separate. Requested protection is never displayed as confirmed protection.
-- Payment attempts, cases, delivery jobs and audit events commit transactionally. Duplicate IDs with different payloads return conflict.
-- Operational reads, writes, streams and exports require verified analyst authentication. The bank requires its separate key. Supported deployment: one API worker for one local analyst team, not a multi-tenant service.
-- Public demo credentials are local-only. Non-demo mode requires a strong explicit session key, rejects stored public demo accounts and default/weak bank keys, and disables public analyst signup. These guards do not establish production banking readiness.
-- Use fictional references only. Never enter real account numbers, PANs, PINs, CVVs, credentials or customer data.
-- Card restrictions affect a specific linked test instrument; account restrictions affect linked simulated debits. The simulator does not represent actual credit-card accounts or guarantee real-bank restriction scope.
-- Formal customer notices, statutory fraud classification, settlement reconciliation, regulatory reporting and member-only certification are outside this implementation. Read [guidance applicability](docs/GUIDANCE.md).
-- Scope, delivery ordering and restart behavior are explained in [architecture](docs/ARCHITECTURE.md).
-
-## Dependencies
-
-Next.js and its ESLint configuration were updated from 16.3.4 to **16.4.2**. The checked npm production dependency audit reports no advisories. Five high development-only advisory paths remain through the Next ESLint plugin's `fast-glob` → `micromatch` → `braces` chain ([GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)). The checked dependency set has no safe same-major upstream fix; npm's suggested Next 14 configuration downgrade is incompatible. This limitation is recorded, not suppressed. Recheck before publishing.
-
-## Historical implementation
-
-The original benchmark, separate ULB model validation, Fraud DNA library, Copilot and legacy API remain in source for reference/regression. Their results are **not** evaluation results for this operational pipeline. Historical endpoints can be enabled explicitly using `FRAUDLENS_LEGACY_API=1` outside the launcher; their separate fixture dataset never supplies the new console's metrics. Historical team contributions remain in Git history.
+FraudLens began as a team project. This repository's git history records only the author's commits, so earlier teammates are not listed by name here. This version — roles and approvals, bank ladder, 1930 trace, attack console, agent and console redesign — is the author's solo rebuild.

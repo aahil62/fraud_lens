@@ -9,5 +9,5 @@ export const PROOF = {
   recall: 0.8148,
   evaluationSamples: 376,
   /** Backend unittest count from the last full run (updated in Task 15). */
-  backendTests: 423,
+  backendTests: 425,
 };

@@ -1,5 +1,48 @@
 # Verification record
 
+## v3 operations centre (19 October 2026)
+
+Branch `feature/fraudlens-v3`, local machine only. Nothing was pushed or deployed. No CI run is claimed.
+
+| Check | Command | Observed result |
+| --- | --- | --- |
+| Backend suite | `.venv/bin/python -m unittest discover -s tests` | **425 tests, OK, 1 skipped** (199.9 s). The skip is the optional external ULB dataset. |
+| Frontend tests | `npm --prefix frontend run test` | **55 passed** (19 files). |
+| Lint | `npm --prefix frontend run lint` | Passed, no warnings. |
+| Types | `cd frontend && npx tsc --noEmit` | Passed. |
+| Production build | `npm --prefix frontend run build` (dev server stopped) | Passed; 20 routes including `/attack` and `/team`. |
+| Production npm audit | `npm --prefix frontend audit --omit=dev` | 0 vulnerabilities. Development-only ESLint advisories remain (see Limits). |
+| Evaluation | `.venv/bin/python -m fraudlens.evaluation.operations` | 376 incidents; protection precision 0.8462, recall 0.8148 ([details](OPERATIONS_EVALUATION.md)). `tests/test_evaluation_snapshot.py` checks the table matches the JSON. |
+| Container | `docker build -t fraudlens .` then `docker run -p 7860:7860 fraudlens` | Built (994 MB). `/` 200, `/backend/health` 200, `/attack` 200; demo L2 sign-in reached a live dashboard; a mule-layering attack and its 1930 report traced and held ₹28,000. Runs as uid 1000. |
+
+### Checked in the browser
+
+Built-in browser against `scripts/dev.py` (bank :8002, API :8001, console :3000), at 1280×800/1280×720 and 390×844:
+
+- **Two-analyst hand-off.** K. Mehta (L1) on `127.0.0.1:3000` and R. Iyer (L2) on `localhost:3000` (separate origins keep separate sessions). A mule-layering scenario appeared for both; K. Mehta claimed it; R. Iyer saw "Assigned to K. Mehta"; K. Mehta's agent brief offered "Request approval from L2"; R. Iyer saw the request banner and a Team badge of 1, approved; both saw verdict Fraud and "handled by K. Mehta, R. Iyer"; the timeline recorded "Approved by R. Iyer (requested by K. Mehta)".
+- **1930 fund trail.** A complaint on the same chain traced ₹28,000 across two mule hops (₹20,000 already cashed out at an ATM) and showed both held after bank acknowledgement.
+- **Team page** (supervisor): presence, approvals, Auto-assign switch and agent counters. **Bank page**: Frozen/Active/Closed chips, available vs balance, liens with case links.
+- **Login** demo-role buttons route to `next`. **Attack console** at 390×844 and 1280×720: launch, live six-step timeline, "Report it to 1930" result.
+- **Landing**: every section rendered at 1280×720 and 390px (no blank sections); golden-hour animation and lock positions; architecture diagram switches to a stacked list on mobile.
+- **No horizontal page overflow** at 390px on landing, login, signup, attack, dashboard, investigations, case (detector and complaint), team, bank and guidance. Wide tables and the queue status strip scroll inside their panels.
+- **Keyboard**: mobile drawer opens with Enter, traps Tab/Shift+Tab, closes with Escape and returns focus to the menu button; focus outlines are visible. Attack-console radio cards show a focus ring.
+- **Contrast** (computed WCAG ratios): role chips 5.8–6.9:1, muted text on canvas 4.87:1, status chips ≥4.7:1. Two failures were fixed: white on the attack launch button (3.72 → 5.13:1 with `#c23f45`) and the pending-step icon (2.59 → 4.36:1).
+- **Reduced motion**: global `prefers-reduced-motion` rule plus specific rules for the attack timeline and golden-hour loop (which shows locks statically). The emulated preference itself was not toggled in the browser tool.
+
+Screenshots: [docs/screenshots/v3/](screenshots/v3/) — landing hero, golden hour, architecture, team section (mobile), dashboard, investigations, case with agent brief, approval, fund trail, team, bank, attack (mobile), login roles.
+
+### Not verified
+
+- Two physically separate browsers or devices; the two-analyst check used two origins in one browser.
+- A real `prefers-reduced-motion` toggle, screen-reader pass, or browser matrix beyond the built-in Chromium-based browser.
+- The optional Ollama wording path against a running model (covered only by mocked tests).
+- Hugging Face deployment, cold-start time and any public URL (Task 16, needs approval).
+- NPCI lien/hold rules (source unavailable; labelled "modelled on (unverified)").
+- One `docker stop` with a browser holding an open event stream exited 137; `docker kill -s TERM` without open clients exits 0.
+
+## Earlier record (17 October 2026)
+
+
 Verified locally on **17 October 2026**, on the implementation branch `codex/fraudlens-live-operations`. Remote CI has been configured; a GitHub Actions run is not claimed.
 
 | Check | Observed result |

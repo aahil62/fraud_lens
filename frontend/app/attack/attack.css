@@ -1,4 +1,5 @@
-/* The attacker's side: dark charcoal, red for the attacker, cobalt for FraudLens. */
+/* The attacker's side: dark charcoal, red for the attacker, cobalt for FraudLens.
+   The launch button uses a darker red (#c23f45) so white text meets 4.5:1. */
 .attack-page { --attack-bg: #171b24; --attack-panel: #202634; --attack-line: #343c4f; --attack-text: #f3f5fa; --attack-muted: #aab2c4; --attack-red: #e0565b; --attack-cobalt: #8fa2ff;
   min-height: 100vh; background: var(--attack-bg); color: var(--attack-text); padding: 0 16px 40px; }
 .attack-page main, .attack-header, .attack-footer { max-width: 480px; margin: 0 auto; }
@@ -21,8 +22,8 @@
 .attack-amount input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--attack-red); }
 .attack-range { display: flex; justify-content: space-between; color: var(--attack-muted); }
 .attack-launch, .attack-report { width: 100%; min-height: 48px; border-radius: 10px; font-size: 15px; font-weight: 650; }
-.attack-launch { background: var(--attack-red); border-color: var(--attack-red); color: white; }
-.attack-launch:hover { background: #c9474c; border-color: #c9474c; color: white; }
+.attack-launch { background: #c23f45; border-color: #c23f45; color: white; }
+.attack-launch:hover { background: #ad353b; border-color: #ad353b; color: white; }
 .attack-report { margin-top: 14px; background: #4058d5; border-color: #4058d5; color: white; }
 .attack-report:hover { background: #3249bf; color: white; }
 .attack-page :where(button, a):focus-visible { outline: 3px solid var(--attack-cobalt); outline-offset: 3px; }
@@ -33,7 +34,7 @@
 .attack-timeline ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .attack-timeline li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; padding: 9px 0; color: var(--attack-muted); font-size: 14px; transition: color 300ms; }
 .attack-timeline li small { display: block; font-size: 12px; margin-top: 2px; }
-.attack-step-icon { display: inline-grid; transition: transform 300ms, color 300ms; color: #5d6578; }
+.attack-step-icon { display: inline-grid; transition: transform 300ms, color 300ms; color: #808a9e; }
 .attack-timeline li[data-status="done"] { color: white; }
 .attack-timeline li[data-status="done"] .attack-step-icon { color: var(--attack-cobalt); animation: attack-pop 360ms ease-out; }
 .attack-timeline li[data-status="blocked"] { color: #ffc4c6; }
