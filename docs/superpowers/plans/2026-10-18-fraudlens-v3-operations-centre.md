@@ -435,9 +435,16 @@ Deploy (create): `Dockerfile`, `.dockerignore`, `scripts/serve.py`, `deploy/hf-s
 
 **Files:** Modify `fraudlens/operations/guidance.py`, `docs/GUIDANCE.md`; test existing guidance tests updated.
 
-- [ ] **Step 1:** Using a browser/web search, verify and record source URLs for: I4C Citizen Financial Cyber Fraud Reporting and Management System and the 1930 helpline; NCRP portal (cybercrime.gov.in); RBI Master Directions on Fraud Risk Management (2024) for commercial banks; NPCI UPI fraud/dispute handling circulars relevant to lien/hold or reporting; RBI guidance on customer liability for unauthorised electronic transactions (2017 circular). Record the exact title, issuer, date and URL for each.
-- [ ] **Step 2:** For each, add a guidance entry: `{source, url, what_it_requires (one sentence, paraphrased), how_fraudlens_models_it, not_covered}`. Only claim what the source says. If a URL could not be verified, label the entry "modelled on (unverified)".
-- [ ] **Step 3:** The "Controls & guidance" page lists these entries grouped by issuer. Tests pass. Commit `docs(guidance): map 1930/NCRP, RBI and NPCI requirements`.
+- [x] **Step 1:** Using a browser/web search, verify and record source URLs for: I4C Citizen Financial Cyber Fraud Reporting and Management System and the 1930 helpline; NCRP portal (cybercrime.gov.in); RBI Master Directions on Fraud Risk Management (2024) for commercial banks; NPCI UPI fraud/dispute handling circulars relevant to lien/hold or reporting; RBI guidance on customer liability for unauthorised electronic transactions (2017 circular). Record the exact title, issuer, date and URL for each.
+- [x] **Step 2:** For each, add a guidance entry: `{source, url, what_it_requires (one sentence, paraphrased), how_fraudlens_models_it, not_covered}`. Only claim what the source says. If a URL could not be verified, label the entry "modelled on (unverified)".
+- [x] **Step 3:** The "Controls & guidance" page lists these entries grouped by issuer. Tests pass. Commit `docs(guidance): map 1930/NCRP, RBI and NPCI requirements`.
+
+**Verification record (2026-10-19):**
+- I4C CFCFRMS + 1930 and NCRP: PIB (Ministry of Home Affairs), "Strengthening the mechanism to deal with cyber frauds", 6 Aug 2024, https://www.pib.gov.in/PressReleasePage.aspx?PRID=2042130 — read in the browser (WebFetch got 403). cybercrime.gov.in itself loaded but its landing text does not describe the system.
+- RBI Master Directions on Fraud Risk Management in Commercial Banks (incl. RRBs) and AIFIs, RBI/DOS/2024-25/118, 15 Jul 2024, https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12702. Note: RBI (Commercial Banks – Fraud Risk Management) Directions, 2026 (31 Jul 2026, id=13641) repeal existing FRM directions for commercial banks per its para 67; both are listed.
+- RBI Customer Protection – Limiting Liability of Customers in Unauthorised Electronic Banking Transactions, RBI/2017-18/15, 6 Jul 2017, https://www.rbi.org.in/scripts/BS_CircularIndexDisplay.aspx?Id=11040.
+- NPCI UPI lien/hold on fraud complaints: **not verified** (npci.org.in circular pages returned an error page; search found only secondary sources). Labelled "modelled on (unverified)".
+- New entries live in `requirements` (new field) alongside the existing `references`; tested by `tests/test_guidance.py`.
 
 ---
 

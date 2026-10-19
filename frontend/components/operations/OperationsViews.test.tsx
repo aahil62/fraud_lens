@@ -50,3 +50,16 @@ it("bins only snapshot transactions inside the stated thirty-minute window", () 
   expect(screen.getByText("sampled attempts")).toHaveTextContent("2 sampled attempts");
   expect(screen.getByRole("img", { name: "UPI: 5 payment attempts" })).toBeInTheDocument();
 });
+it("groups regulatory requirements by issuer and flags unverified ones", async () => {
+  const { GuidanceView } = await import("./OperationsViews");
+  const ops = await import("@/lib/operations");
+  const row = (issuer: string, source: string, url: string | null, status: string) => ({ issuer, source, url, date: "2024-08-06", status,
+    what_it_requires: "x", how_fraudlens_models_it: "y", not_covered: "z" });
+  vi.spyOn(ops, "opsFetch").mockResolvedValue({ references: [], disclaimer: "d", requirements: [
+    row("I4C (Ministry of Home Affairs)", "CFCFRMS and 1930", "https://www.pib.gov.in/x", "Verified"),
+    row("NPCI", "UPI hold on disputed amount", null, "modelled on (unverified)") ] });
+  render(<GuidanceView />);
+  expect(await screen.findByRole("heading", { name: "I4C (Ministry of Home Affairs)" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "NPCI" })).toBeInTheDocument();
+  expect(screen.getByText(/modelled on \(unverified\)/)).toBeInTheDocument();
+});

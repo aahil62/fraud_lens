@@ -432,6 +432,26 @@ export function GuidanceView() {
           ))}
         </div>
       </section>
+      {guidance?.requirements && <section className="ops-section">
+        <div className="section-heading"><div>
+          <h2>1930 / NCRP, RBI and NPCI requirements</h2>
+          <p>Grouped by issuer. Paraphrased; unverified items are labelled.</p>
+        </div></div>
+        {[...new Set(guidance.requirements.map((row) => row.issuer))].map((issuer) => <div key={issuer} className="guidance-issuer">
+          <h3>{issuer}</h3>
+          <div className="guidance-list">{guidance.requirements!.filter((row) => row.issuer === issuer).map((row) => (
+            <details key={row.source} className="guidance-disclosure">
+              <summary><span><strong>{row.source}</strong><small>{row.date} · {row.status}</small></span><span>Read mapping</span></summary>
+              <div className="guidance-detail">{row.url
+                ? <a href={row.url} target="_blank" rel="noreferrer" className="guidance-source">Open source <ArrowUpRight size={15} /></a>
+                : <p className="fine-print">No primary source verified.</p>}<dl>
+                <dt>What it requires</dt><dd>{row.what_it_requires}</dd>
+                <dt>How FraudLens models it</dt><dd>{row.how_fraudlens_models_it}</dd>
+                <dt>Not covered</dt><dd>{row.not_covered}</dd>
+              </dl></div>
+            </details>))}</div>
+        </div>)}
+      </section>}
       <section className="ops-section">
         <div className="section-heading">
           <h2>Requirements-to-evidence matrix</h2>

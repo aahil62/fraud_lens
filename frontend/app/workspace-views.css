@@ -181,3 +181,4 @@
 .coverage-disclosures,.guidance-list { padding:0 23px 9px }
 .audit-panel .filter-bar { margin-bottom:0 }
 @media(max-width:640px) { .channel-chart { padding:0 17px }.channel-chart-panel .panel-footer-link { margin:0 17px }.activity-chart { padding-left:17px;padding-right:17px }.chart-scope { padding-left:17px;padding-right:17px }.priority-panel .focus-case-row { margin:0 17px }.coverage-disclosures,.guidance-list { padding-left:17px;padding-right:17px } }
+.guidance-issuer > h3 { padding: 4px 23px 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }

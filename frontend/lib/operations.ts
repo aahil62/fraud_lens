@@ -294,6 +294,16 @@ export type Guidance = {
     status: string;
     test_evidence: string[];
   }[];
+  requirements?: {
+    issuer: string;
+    source: string;
+    url: string | null;
+    date: string;
+    status: string;
+    what_it_requires: string;
+    how_fraudlens_models_it: string;
+    not_covered: string;
+  }[];
   disclaimer: string;
 };
 export class OperationsError extends Error {
