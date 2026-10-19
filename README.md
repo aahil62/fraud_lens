@@ -10,7 +10,7 @@ When a scam victim in India calls the **1930** helpline or reports on the **Nati
 
 ## Try it
 
-**Live demo:** https://fraud-lens-r3t0.onrender.com — sign in with a demo role on a laptop (a second browser or private window gives you a second role) and launch a scam from [/attack](https://fraud-lens-r3t0.onrender.com/attack) on your phone. It runs on Render's free tier, so after 15 idle minutes it sleeps and the first visit can take a couple of minutes to wake. Demo data resets when the server restarts.
+**Live demo:** https://fraud-lens-r3t0.onrender.com — sign in with a demo role on a laptop (a second browser or private window gives you a second role) and launch a scam from [/attack](https://fraud-lens-r3t0.onrender.com/attack) on your phone. It runs on Render's free tier, so after 15 idle minutes it sleeps and the first visit takes about a minute to wake (52 s measured). Demo data resets when the server restarts.
 
 Locally (Python 3.12, Node.js 24+):
 

@@ -6,15 +6,16 @@ This folder (`~/Projects/portfolio/fraudlens`) is the **only** FraudLens checkou
 
 1. Read `docs/superpowers/plans/2026-10-18-fraudlens-v3-operations-centre.md`. That plan is the job.
 2. Background only: `docs/history/2026-10-17-codex-ui-handoff.md` (what the previous session did; its paths point at the old folder), `DESIGN.md`, `PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/OPERATIONS_API.md`.
-3. Tasks 0–15 are done; continue with the remaining Task 16 steps in order (see Current state).
+3. All plan tasks are done; new work goes on `feature/fraudlens-v3` (see Current state).
 
 ## Current state (2026-10-19)
 
-- Branch `feature/fraudlens-v3`. **Tasks 0–15 and Task 16 Steps 1–2 are committed** (roles, approvals, bank ladder, 1930 trace, typologies, attack API, agent, evaluation, console, demo-role login, `/attack`, landing, guidance, Docker image, docs, public-demo hardening), plus shutdown fixes for open event streams. Checks and limits are in `docs/VERIFICATION.md`.
-- **Remaining: Task 16 Steps 3–8** (merge to `main` and push, Hugging Face Space, deploy, live checks, GitHub metadata, README live link). Steps 3, 5, 7 and the Step 8 push need the user's explicit approval; Step 4 is done by the user.
+- **The plan is complete (Tasks 0–16).** `main` is pushed to `aahil62/fraud_lens` and deployed as a free Render web service from the Dockerfile: https://fraud-lens-r3t0.onrender.com (Hugging Face Docker Spaces now need a paid plan; `deploy/hf-space/` and `scripts/deploy_hf.sh` are kept for that option but unused). Render redeploys on every push to `main`.
+- Day-to-day branch: `feature/fraudlens-v3`; merge into `main` with `--no-ff`. Pushing to `main` changes the public site, so it needs the user's explicit approval.
+- Checks, live results and known limits are in `docs/VERIFICATION.md`.
 - User decision (1930 complaints): never restrict, lien or close the complainant's (victim's) account; "Close account" targets a traced mule account chosen per hop (default: first-hop recipient), requires a confirmed-fraud verdict, and only accounts in the trace are allowed.
 - User decision (credits): the project is the author's; it began as a hackathon project. Do not list teammates.
-- Nothing is deployed or pushed.
+- Live-demo specifics: limits key on `CF-Connecting-IP` (Render is behind Cloudflare; `FRAUDLENS_CLIENT_IP_HEADER`), uvicorn runs with `--no-proxy-headers`, and Next compression is off so `/ops/events` streams.
 
 ## Commands
 
@@ -33,6 +34,5 @@ Stop the dev server you started before `npm --prefix frontend run build`. Never 
 - Write the plan's listed tests first, watch them fail, implement, run all checks, then commit with the plan's commit message.
 - Use the exact names, roles, thresholds, amounts, routes and UI copy in the plan. If a step is impossible as written, stop and explain.
 - Fictional data only. Money is integer paise.
-- No push, deploy, publish or merge to `main` without the user's explicit approval.
-- Task 16 (public deploy): at every step marked "user approval", stop, show the exact command and wait for a yes. Steps marked "user does this" belong to the user (Hugging Face account, tokens).
+- No push, deploy, publish or merge to `main` without the user's explicit approval (a push to `main` redeploys the live site).
 - Finish by reporting checks with exact counts, screenshots, the live URL (if deployed) and anything not verified.
