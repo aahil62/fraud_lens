@@ -1,6 +1,6 @@
 # FraudLens: code revamp, repository cleanup and visual redesign
 
-**Status:** Parts 1–2 ready to implement. Part 3 is a proposal; its open decisions (end of Part 3) must be settled with the user before any redesign code is written.
+**Status:** Parts 1–2 ready to implement. Part 3's direction is set by the user (2026-10-19); the palette is chosen from mockups at the start of Part 3, before any redesign code is written.
 
 **Ground rules (all parts):**
 - No new features. Behaviour, routes, API contracts, roles, copy and numbers stay the same unless a step says otherwise.
@@ -30,6 +30,8 @@
 | `fraudlens/operations/attacks.py`, `agent.py` | 126, 121 | 11 each |
 
 **Goal:** a reviewer can open any core file and follow it. Pure refactors: no behaviour change, tests unchanged except imports.
+
+**Scope (user, 2026-10-19):** the user does not trust the Codex-written code, so review *all* code — Codex's and Claude's — against how experienced engineers write it, not only the long-line files above. Start with a whole-repo review (`code-review` at high effort, `improve-codebase-architecture`, `simplify`, `vercel-react-best-practices` for the frontend, `vibesec-skill` for the auth/public routes) and add its findings as numbered steps below before refactoring. Review checklist for every module: clear names, one responsibility, no hidden side effects, early returns over nesting, no duplicated logic, comments only where the *why* is not obvious, consistent error handling, types on public functions, and tests that read as specifications.
 
 1. **Formatting baseline.** Add `ruff` (dev only, pinned) with `line-length = 110` and a `ruff format` pass on `fraudlens/` and `scripts/` and `tests/`. Add `prettier` (pinned) for `frontend/` and run it. Commit formatting alone so later diffs stay readable. Verify: all checks green; `ruff check` clean.
 2. **Split `OperationsService` (`service.py`).** Keep the public methods on the class (routes and tests call them), but move bodies into focused modules under `fraudlens/operations/`:
@@ -80,26 +82,48 @@ Done when: the root holds only project files (app code, tests, docs, deploy, con
 
 ---
 
-## Part 3: Visual redesign (proposal — decisions pending)
+## Part 3: Visual redesign
 
-**User's brief (2026-10-19):** more professional and bold, not "vibe coded"; landing, console and attack pages share one colour system and identity; strong but not bright or fancy colours; aligned with what the product does.
+**User's direction (2026-10-19, authoritative):**
+- Look and feel of **premium fintech SaaS** sites: it should feel premium when opened, touched and interacted with, and still read as a **fraud / risk** product.
+- **Not** fancy or bright colours, and **not** the typical AI-template palette: no purple, indigo or dark-blue themes. Colour pairings must be deliberate, with real contrast.
+- **One standardised core visual** across landing, console and attack pages. Pages may have their own mood, but they must complement each other; no jumps like one area light red and another dark green.
+- **Landing page as beautiful as possible.**
+- Must not look "vibe-coded" (generic AI-generated UI). (The user wrote "white-coded"; read as vibe-coded, and also as: not a plain all-white page. Confirm when Part 3 starts.)
+- Use the best of the installed design skills.
 
-**Current state:** light workbench console (canvas `#f5f7fb`, cobalt `#4058d5`), a light landing with a Three.js lens, and a separate dark charcoal/red attack page. Tokens live in `frontend/app/globals.css`, `landing.css`, `attack/attack.css`, `workspace-views.css` — three partly separate palettes.
+**Current state:** light workbench console (canvas `#f5f7fb`, cobalt `#4058d5` — which falls in the colour family the user rejected), a light landing with a Three.js lens, and a separate dark charcoal/red attack page. Tokens are spread over `frontend/app/globals.css`, `landing.css`, `attack/attack.css`, `workspace-views.css`.
 
-**Proposed direction (my recommendation, to confirm):** "operations control room".
-- **One token source.** A single `frontend/app/tokens.css` imported by every page: ink/graphite neutrals, one restrained brand colour, and semantic colours used *only* for meaning (risk, held, frozen, closed, approval). Landing, console and attack all use it.
-- **Brand colour.** A deep, desaturated colour instead of bright cobalt — e.g. deep indigo/ink-blue or deep teal — used for primary actions, focus and the brand mark only.
-- **Structure.** Dark graphite chrome (sidebar, top bar, landing hero, attack page) with light, high-contrast working surfaces for dense data (tables, case pages), so it reads like a serious operations tool and stays readable.
-- **Typography.** Keep Mona Sans; stronger hierarchy (heavier, tighter headlines; tabular numerals everywhere money or scores appear); a monospace for IDs and amounts.
-- **Components.** Consistent status chips, tables, panels, buttons and empty states; fewer one-off styles; motion only where it explains state (live updates, fund trail), always respecting reduced motion.
-- **Landing.** Same palette and type as the console; the 3D lens either restyled to the new palette or replaced by a calmer product-led hero (decision below).
-- **Skills to use when implementing:** `impeccable` / `frontend-design` for direction and critique, `scroll-craft` only if the landing keeps scroll-driven motion, `anti-slop`/`unslop:audit` for a before/after audit, `web-design-guidelines` + WCAG AA contrast checks.
+**Palette concepts to mock up (pick one; all avoid blue/indigo/purple):**
+1. **Graphite + brass.** Warm graphite (`~#16171a`) chrome, warm off-white work surfaces (`~#f3f1ec`, not pure white), a muted brass/amber accent for primary actions and the brand mark. Feels like a bank vault / control room.
+2. **Graphite + deep emerald.** Same neutrals, a desaturated deep green accent. Calm, money-coded; green must stay distinct from the "funds held" status colour.
+3. **Graphite + signal vermilion.** Same neutrals, a muted vermilion accent tied to "risk", with green kept for "held/safe". Most "fraud" in feel; needs care so red does not read as error everywhere.
 
-**Process when implementing:** audit current screens → two or three quick visual directions as static mockups (landing hero + case page + attack page) for the user to pick → token file + components → landing → console pages → attack page → contrast/keyboard/reduced-motion/390px checks → screenshots → user review before any push.
+In every concept: one accent colour only; semantic colours (risk, frozen, held, closed, pending approval) are a fixed, tested set used only for meaning; WCAG AA contrast on every text pair; tabular numerals for money and scores; a monospace for IDs. The attack page keeps its "attacker" mood by sitting fully on the dark graphite side of the same palette, not by using new colours.
 
-**Open decisions (settle these first):**
-1. A reference product or site whose look FraudLens should feel closest to.
-2. Console: dark chrome with light work surfaces (recommended), fully dark, or fully light.
-3. Brand colour family: deep indigo/ink-blue, deep teal, or another restrained colour.
-4. Landing hero: keep the 3D lens (restyled), or replace it with a product-led hero (a live console preview).
-5. Attack page: keep its separate "attacker" mood within the shared palette, or make it match the console fully.
+**Skill map (use in this order):**
+| Need | Skill |
+| --- | --- |
+| Audit the current UI and score it | `unslop:audit`, `anti-slop` |
+| Art direction, critique, polish | `impeccable`, `frontend-design` |
+| Palette and type exploration | `ui-ux-pro-max`, `unslop:retheme` |
+| Token architecture (primitive → semantic → component) | `ckm-design-system` |
+| Brand mark and voice consistency | `ckm-brand` |
+| Landing scroll storytelling | `nateherk-design:scroll-craft` |
+| 3D hero (lens restyle, materials, lighting, post-processing) | `threejs-fundamentals`, `threejs-materials`, `threejs-lighting`, `threejs-shaders`, `threejs-postprocessing`, `threejs-animation` |
+| Charts on dashboard and evaluation | `dataviz` |
+| Accessibility and interface rules | `web-design-guidelines` |
+| React/Next performance after the redesign | `vercel-react-best-practices` |
+| Browser checks and screenshots | built-in browser, `playwright` |
+
+**Process:**
+1. Run the audit skills on today's landing, dashboard, case page and attack page; save the findings to `docs/design/audit-before.md`.
+2. Build the three palette concepts as static mockups (landing hero, case page, attack page side by side) and let the user pick one; confirm the "white-coded" reading.
+3. Write `frontend/app/tokens.css` (primitive → semantic → component tokens) as the only colour/type/spacing source; every other stylesheet uses tokens only (a test fails on hex colours outside `tokens.css`).
+4. Restyle shared components (buttons, chips, tables, panels, inputs, empty/loading states, focus rings) once.
+5. Landing: redesign every section with the new tokens; keep the 3D lens but restyle it to the palette (materials, lighting, post-processing), with a static fallback and reduced-motion support; scroll-craft only for meaningful motion.
+6. Console pages, then the attack page, then login/sign-up.
+7. Checks: WCAG AA contrast table, keyboard focus, reduced motion, 390px and 1280px on every page, no horizontal overflow, Lighthouse performance on the landing; screenshots to `docs/screenshots/v4/`; re-run the audit skills and save `docs/design/audit-after.md`.
+8. User review in the browser before any push to `main`.
+
+Done when: one token file drives every page, the chosen palette has no blue/indigo/purple, the before/after audit shows the generic-UI findings resolved, all checks pass, and the user approves the look.
