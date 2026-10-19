@@ -1,13 +1,17 @@
 # FraudLens: code revamp, repository cleanup and visual redesign
 
-**Status:** Parts 1–2 ready to implement. Part 3's direction is set by the user (2026-10-19); the palette is chosen from mockups at the start of Part 3, before any redesign code is written.
+**Status:** Ready to implement in the stage order below. Part 3's direction is set by the user (2026-10-19); the palette is chosen from mockups at the start of Part 3, before any redesign code is written.
 
 **Ground rules (all parts):**
 - No new features. Behaviour, routes, API contracts, roles, copy and numbers stay the same unless a step says otherwise.
 - Work on `feature/fraudlens-v3`; one commit per numbered step; conventional messages with the Co-Authored-By line.
 - After every step: `.venv/bin/python -m unittest discover -s tests`, `npm --prefix frontend run test`, `npm --prefix frontend run lint`, `(cd frontend && npx tsc --noEmit)`. All green before committing.
 - Pushing to `main` redeploys the live site (Render): ask the user before every push.
-- Order: Part 2 (cleanup) first, so Part 1 refactors less code; then Part 1; then Part 3.
+- **Order (agreed with the user, 2026-10-19):**
+  1. **Stage A — dead-code removal:** Part 2 steps 1–2 only (legacy pipeline, dead frontend files, redirect-only pages, stray tool/agent files). No refactoring or reorganising. Removing first means the redesign never restyles code that is about to be deleted.
+  2. **Stage B — visual redesign:** Part 3. Large components touched by the redesign (`OperationsViews.tsx`, `ConsoleShell.tsx`, `CaseWorkspace.tsx`, `LandingExperience.tsx`) are split into readable pieces as they are restyled (Part 1 step 6 happens here).
+  3. **Stage C — whole-codebase review and rewrite:** Part 1 (all remaining steps), after the redesign so the new UI code is reviewed too.
+  4. **Stage D — final stage:** Part 2 steps 3–5 (docs folder, deploy leftovers, final tidy), README structure, new screenshots, `docs/VERIFICATION.md` and test counts, every check, then push to `main` with the user's approval.
 
 ---
 
