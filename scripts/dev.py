@@ -33,10 +33,11 @@ def ensure_ports_available(ports):
 
 def uvicorn_command(python, app, port):
     # Open SSE streams (/ops/events) never finish on their own; without a graceful
-    # timeout uvicorn waits on them forever and ignores SIGTERM. Stay under the 5 s
-    # that stop_processes allows before SIGKILL.
+    # timeout uvicorn waits on them forever and ignores SIGTERM. Keep it short:
+    # Docker Desktop's default `docker stop` deadline measured ~3.3 s, and clients
+    # reconnect to the stream on their own.
     return [str(python), "-m", "uvicorn", app, "--host", "127.0.0.1", "--port", str(port),
-            "--timeout-graceful-shutdown", "3"]
+            "--timeout-graceful-shutdown", "1"]
 
 
 def start_process(command, cwd, env):
