@@ -33,7 +33,7 @@ Screenshots: [docs/screenshots/v3/](screenshots/v3/) — landing hero, golden ho
 
 ### Not verified
 
-- Two physically separate browsers or devices; the two-analyst check used two origins in one browser.
+- Two physically separate devices or networks; the two-analyst checks used two origins in one browser (local) and browser + API client (live).
 - A real `prefers-reduced-motion` toggle, screen-reader pass, or browser matrix beyond the built-in Chromium-based browser.
 - The optional Ollama wording path against a running model (covered only by mocked tests).
 - NPCI lien/hold rules (source unavailable; labelled "modelled on (unverified)").
@@ -71,7 +71,11 @@ Two live problems found and fixed in `781adbd` (verified locally in the containe
 - Rate limit: still did not trigger after `babe951`. Root cause: uvicorn's default proxy-header handling trusts 127.0.0.1 and replaced the request peer with the `X-Forwarded-For` value before `client_ip()` ran (unit tests use a test client that bypasses uvicorn). Fixed in `7bd4d67` by starting uvicorn with `--no-proxy-headers`, with a real-server regression test. Live after redeploy: 21 failed logins → 20 × 401 then **429**, and a forged `X-Forwarded-For` on the next attempt still got 429. Cloudflare rejects requests that forge `CF-Connecting-IP` (403).
 - Backend suite at `7bd4d67`: 446 tests OK, 1 skipped.
 
-Not measured: cold-start time after Render's 15-minute sleep (Render's wake-up plus the 82 s boot), and the limit with two different real visitor addresses (only one address was available; the per-visitor split is covered by local tests).
+**Final live checks (19 October 2026, `main` at `6c81da5`):**
+- **Rate-limit key.** A temporary route (removed in `6c81da5`) reported, as salted hashes only, which address headers reach the API. `CF-Connecting-IP` and `True-Client-IP` were present and identical across requests; the middle `X-Forwarded-For` entries changed on every request (Cloudflare edge addresses), which explains the original failure. Requests sent over this machine's IPv4 and IPv6 had the same `CF-Connecting-IP`, so Cloudflare treats them as one visitor and they correctly share a limit (IPv4: 429 after 20 attempts; IPv6 then 429 too). A second, genuinely different visitor address was not available; the per-visitor split is covered by `tests/test_public_demo.py` and the real-server test in `tests/test_dev_launcher.py`.
+- **Cold start.** After 17 idle minutes, the first request to `/` took **52 s** (Render wake-up plus boot), then 0.3 s warm.
+- **Public-demo polish.** The live login page no longer links to the disabled sign-up page; the dashboard's "Next to investigate" follows agent priority.
+- Backend suite at `6c81da5`: 446 tests OK, 1 skipped; frontend 58 tests, lint and types pass.
 
 ## Earlier record (17 October 2026)
 
