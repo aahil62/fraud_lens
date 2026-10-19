@@ -13,6 +13,7 @@ it("retains the last consistent counts on a failed snapshot and recovers from th
   const snapshots = [response(1, 12, 2), { ok: false, status: 503, json: async () => ({ detail: "Operations unavailable" }) }, response(3, 19, 4)];
   const fetcher = vi.fn().mockImplementation(async (url: string) => {
     if (url.includes("/events")) throw new Error("Stream interrupted");
+    if (url.includes("/presence/heartbeat")) return { ok: true, json: async () => ({ ok: true }) };
     return snapshots.shift();
   });
   vi.stubGlobal("fetch", fetcher);
@@ -25,4 +26,21 @@ it("retains the last consistent counts on a failed snapshot and recovers from th
   await waitFor(() => expect(screen.getByTestId("counts")).toHaveTextContent("19/4"));
   expect(fetcher.mock.calls.every(([, options]) => options.headers.Authorization === "Bearer test-session")).toBe(true);
   expect(screen.getByTestId("connection")).toHaveTextContent("disconnected");
+});
+function CaseOpener() {
+  const { setCurrentCase } = useOperations();
+  return <button onClick={() => setCurrentCase("CASE-42")}>Open case</button>;
+}
+it("sends a presence heartbeat on mount and immediately when a case opens", async () => {
+  const fetcher = vi.fn().mockImplementation(async (url: string) => {
+    if (url.includes("/events")) throw new Error("Stream interrupted");
+    if (url.includes("/presence/heartbeat")) return { ok: true, json: async () => ({ ok: true }) };
+    return { ok: true, json: async () => ({ cursor: 1, counts: {} }) };
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<OperationsProvider><CaseOpener /></OperationsProvider>);
+  const beats = () => fetcher.mock.calls.filter(([url]) => url.includes("/presence/heartbeat")).map(([, options]) => JSON.parse(options.body));
+  await waitFor(() => expect(beats()).toContainEqual({ current_case_id: null }));
+  fireEvent.click(screen.getByRole("button", { name: "Open case" }));
+  await waitFor(() => expect(beats()).toContainEqual({ current_case_id: "CASE-42" }));
 });

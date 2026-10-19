@@ -8,17 +8,21 @@ import {
   type Guidance,
   type Snapshot,
   channelName,
+  claimCase,
+  explainError,
   dateTime,
   human,
   money,
   opsFetch,
 } from "@/lib/operations";
 import { useOperations } from "./OperationsProvider";
+import { useAnalyst } from "./useAnalyst";
 import {
   ActionLedger,
   CaseTable,
   Empty,
   Loading,
+  CaseLink,
   PageHeading,
   ReportButtons,
   Timeline,
@@ -81,10 +85,30 @@ export function DashboardView() {
     <div className="evidence-footnote"><ShieldCheck size={18} /><p>Synthetic local activity. Risk scores are signals, not probabilities. Real-bank performance and regulatory certification have not been established.</p><time>Snapshot {dateTime(snapshot.as_of)} IST</time></div>
   </div>;
 }
+export const QUEUE_VIEWS = [
+  { value: "all", label: "All" },
+  { value: "mine", label: "Mine" },
+  { value: "unassigned", label: "Unassigned" },
+  { value: "awaiting_approval", label: "Awaiting approval" },
+  { value: "complaints", label: "Complaints" },
+] as const;
+type QueueView = (typeof QUEUE_VIEWS)[number]["value"];
+/** Mirrors the API's view filter so a racing refresh never shows a stale row. */
+export function inQueueView(item: Case, view: QueueView, username?: string) {
+  if (view === "mine") return Boolean(username) && item.assignee === username;
+  if (view === "unassigned") return !item.assignee;
+  if (view === "awaiting_approval") return Boolean(item.pending_approval);
+  if (view === "complaints") return item.case_type === "complaint";
+  return true;
+}
 export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
-  const { snapshot } = useOperations();
+  const { snapshot, refresh } = useOperations();
+  const analyst = useAnalyst();
   const [channel, setChannel] = useState("");
   const [status, setStatus] = useState("");
+  const [view, setView] = useState<QueueView>("all");
+  const [claiming, setClaiming] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<{
     items: Case[] | Transaction[];
@@ -96,6 +120,7 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
     const params = new URLSearchParams({ limit: "25", offset: String(offset) });
     if (channel) params.set("channel", channel);
     if (status && kind === "cases") params.set("status", status);
+    if (kind === "cases" && view !== "all") params.set("view", view);
     void opsFetch<{ items: Case[] | Transaction[]; total: number }>(
       `/${kind}?${params}`,
     )
@@ -114,7 +139,20 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
     return () => {
       cancelled = true;
     };
-  }, [kind, channel, status, offset, snapshot?.cursor]);
+  }, [kind, channel, status, view, offset, snapshot?.cursor, reload]);
+  async function claim(item: Case) {
+    setClaiming(item.case_id);
+    try {
+      await claimCase(item.case_id, item.version);
+      setError("");
+    } catch (err) {
+      setError(explainError(err, snapshot?.team));
+    } finally {
+      setClaiming(null);
+      setReload((n) => n + 1);
+      await refresh().catch(() => {});
+    }
+  }
   return (
     <div className="workspace-view ledger-view">
       <PageHeading
@@ -133,6 +171,7 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
         { value: "escalated", label: "Escalated", count: snapshot?.counts.escalated },
         { value: "resolved", label: "Resolved", count: snapshot?.counts.resolved },
       ].map((item) => <button key={item.value} aria-pressed={status === item.value} onClick={() => { setStatus(item.value); setOffset(0); }}><span>{item.label}</span><strong>{item.count?.toLocaleString("en-IN") ?? "…"}</strong></button>)}</div>}
+      {kind === "cases" && <div className="queue-view-filters" role="group" aria-label="Queue view">{QUEUE_VIEWS.map((item) => <button key={item.value} aria-pressed={view === item.value} onClick={() => { setView(item.value); setOffset(0); }}>{item.label}{item.value === "awaiting_approval" && snapshot?.approvals?.length ? <b>{snapshot.approvals.length}</b> : null}</button>)}<span className="muted">Sorted by agent priority</span></div>}
       {kind === "transactions" && snapshot && <div className="ledger-context"><span><span className={`connection-dot ${snapshot.simulation_state.running ? "running" : ""}`} />Stream {snapshot.simulation_state.running ? "running" : "paused"}</span><span><strong>{snapshot.counts.posted}</strong> posted</span><span><strong>{snapshot.counts.declined}</strong> declined</span><span><strong>{snapshot.counts.pending_payments}</strong> pending</span></div>}
       <section className="ops-section ledger-panel">
         <div className="filter-bar">
@@ -186,7 +225,7 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
         {!data ? (
           <Loading />
         ) : kind === "cases" ? (
-          <CaseTable cases={data.items as Case[]} />
+          <CaseTable cases={(data.items as Case[]).filter((item) => inQueueView(item, view, analyst?.username))} onClaim={(item) => { void claim(item); }} busyId={claiming} />
         ) : (
           <TransactionTable transactions={data.items as Transaction[]} />
         )}
@@ -262,8 +301,9 @@ export function BankView() {
             <thead>
               <tr>
                 <th>Account</th>
-                <th>Balance</th>
-                <th>Account restriction</th>
+                <th>Status</th>
+                <th>Available / balance</th>
+                <th>Liens</th>
                 <th>Active restrictions</th>
               </tr>
             </thead>
@@ -271,12 +311,9 @@ export function BankView() {
               {snapshot.bank.accounts.map((account) => (
                 <tr key={account.account_id}>
                   <td className="identifier">{account.account_id}</td>
-                  <td className="numeric">{money(account.balance_minor)}</td>
-                  <td>
-                    {account.restricted
-                      ? "Restricted"
-                      : "No account restriction"}
-                  </td>
+                  <td><span className={`account-status ${account.status}`}>{account.status === "frozen" ? "Frozen" : account.status === "closed" ? "Closed" : "Active"}</span></td>
+                  <td className="numeric"><strong>{money(account.available_minor)}</strong><small className="record-sub">of {money(account.balance_minor)}</small></td>
+                  <td>{account.liens?.length ? <ul className="lien-list">{account.liens.map((lien) => <li key={lien.lien_id}><span className="numeric">{money(lien.amount_minor)}</span> <CaseLink id={lien.case_id} /></li>)}</ul> : <span className="muted">None</span>}</td>
                   <td>{account.active_restrictions}</td>
                 </tr>
               ))}

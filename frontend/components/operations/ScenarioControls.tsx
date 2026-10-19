@@ -68,6 +68,10 @@ export default function ScenarioControls() {
                 <option value="cross_channel">
                   Cross-channel incident (all four)
                 </option>
+                <option value="mule_layering">Mule layering (UPI → mules → ATM)</option>
+                <option value="sim_swap_takeover">SIM-swap takeover (net banking)</option>
+                <option value="card_testing">Card testing (cards)</option>
+                <option value="atm_cashout">ATM cash-out burst</option>
               </select>
             </label>
           </div>

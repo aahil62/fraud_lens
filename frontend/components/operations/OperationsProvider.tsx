@@ -9,6 +9,7 @@ import {
 } from "react";
 import { getToken } from "@/lib/auth";
 import {
+  heartbeat,
   newestSnapshot,
   OPS_BASE,
   OperationsError,
@@ -22,6 +23,8 @@ type State = {
   connected: boolean;
   refresh: () => Promise<void>;
   mutate: <T>(path: string, body?: unknown) => Promise<T>;
+  /** Case pages report what the analyst has open so teammates see it. */
+  setCurrentCase: (caseId: string | null) => void;
 };
 const Context = createContext<State | null>(null);
 export function OperationsProvider({
@@ -34,6 +37,27 @@ export function OperationsProvider({
   const [connected, setConnected] = useState(false);
   const cursor = useRef(0);
   const inFlight = useRef<Promise<void> | null>(null);
+  const currentCase = useRef<string | null>(null);
+  const beat = useCallback(() => {
+    if (document.visibilityState !== "visible") return;
+    void heartbeat(currentCase.current).catch(() => {});
+  }, []);
+  const setCurrentCase = useCallback(
+    (caseId: string | null) => {
+      currentCase.current = caseId;
+      beat();
+    },
+    [beat],
+  );
+  useEffect(() => {
+    beat();
+    const timer = setInterval(beat, 15000);
+    document.addEventListener("visibilitychange", beat);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", beat);
+    };
+  }, [beat]);
   const refresh = useCallback(() => {
     if (inFlight.current) return inFlight.current;
     const request = opsFetch<Snapshot>("/snapshot")
@@ -146,7 +170,9 @@ export function OperationsProvider({
     [refresh],
   );
   return (
-    <Context.Provider value={{ snapshot, error, connected, refresh, mutate }}>
+    <Context.Provider
+      value={{ snapshot, error, connected, refresh, mutate, setCurrentCase }}
+    >
       {children}
     </Context.Provider>
   );

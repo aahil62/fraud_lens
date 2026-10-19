@@ -2,13 +2,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Bank, CaretDown, CaretRight, FileText, Flask, FolderOpen, Graph, List, ListChecks, MagnifyingGlass, ShieldCheck, SignOut, SquaresFour, Stack, Swap, X } from "@phosphor-icons/react";
+import { Bank, CaretDown, CaretRight, FileText, Flask, FolderOpen, Graph, List, ListChecks, MagnifyingGlass, ShieldCheck, SignOut, SquaresFour, Stack, Swap, UsersThree, X } from "@phosphor-icons/react";
 import { logout, getStoredAnalyst } from "@/lib/auth";
-import { channelName, dateTime, money } from "@/lib/operations";
+import { channelName, dateTime, decidableApprovals, money } from "@/lib/operations";
+import { RoleChip } from "./operations/RoleChip";
+import { TeamPresence } from "./operations/TeamPresence";
 import { OperationsProvider, useOperations } from "./operations/OperationsProvider";
 const nav = [
   { href: "/dashboard", label: "Overview", icon: SquaresFour },
   { href: "/cases", label: "Investigations", icon: FolderOpen },
+  { href: "/team", label: "Team", icon: UsersThree },
   { href: "/live", label: "Transactions", icon: Swap },
   { href: "/network", label: "Connections", icon: Graph },
   { href: "/bank", label: "Bank actions", icon: Bank },
@@ -34,6 +37,7 @@ function Workspace({ children }: { children: React.ReactNode }) {
   const current = nav.find(x => x.href === pathname || (x.href === "/cases" && pathname === "/case"));
   const name = analyst?.display_name ?? "Analyst";
   const initials = name.split(/[ .]+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("");
+  const approvals = decidableApprovals(snapshot, analyst).length;
   const results = snapshot?.cases.filter(x => `${x.case_id} ${x.account_id} ${channelName(x.channel)} ${x.verdict}`.toLowerCase().includes(query.toLowerCase())).slice(0,8) ?? [];
   function openSearch() { setQuery(""); dialog.current?.showModal(); search.current?.focus(); }
   useEffect(() => {
@@ -62,7 +66,7 @@ function Workspace({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown",keyboard);
   }, []);
   function navigation(items: typeof nav) {
-    return <nav aria-label={items[0].href === "/dashboard" ? "Main navigation" : "Evidence and assurance"}>{items.map(({href,label,icon: Icon})=><Link key={href} href={href} onClick={()=>setMenuOpen(false)} aria-current={current?.href===href?"page":undefined}><Icon size={18} weight={current?.href===href?"duotone":"regular"}/>{label}{href==="/cases" && snapshot && <b>{snapshot.counts.pending_review}</b>}</Link>)}</nav>;
+    return <nav aria-label={items[0].href === "/dashboard" ? "Main navigation" : "Evidence and assurance"}>{items.map(({href,label,icon: Icon})=><Link key={href} href={href} onClick={()=>setMenuOpen(false)} aria-current={current?.href===href?"page":undefined}><Icon size={18} weight={current?.href===href?"duotone":"regular"}/>{label}{href==="/cases" && snapshot && <b>{snapshot.counts.pending_review}</b>}{href==="/team" && approvals > 0 && <b aria-label={`${approvals} approvals waiting for you`}>{approvals}</b>}</Link>)}</nav>;
   }
   return <div className="ops-shell">
     <a className="skip-link" href="#workspace">Skip to workspace</a>
@@ -70,8 +74,8 @@ function Workspace({ children }: { children: React.ReactNode }) {
     <aside ref={navigationRef} className="ops-sidebar" id="workspace-navigation" data-open={menuOpen}>
       <Link href="/" className="ops-brand"><LensMark/><span>FraudLens<small>Fraud intelligence</small></span></Link>
       <div className="workspace-picker"><Stack size={23} weight="duotone"/><span><strong>Analyst workspace</strong><small>Local environment</small></span><CaretDown size={11}/></div>
-      <div className="nav-group-label">Workspace</div>{navigation(nav.slice(0,5))}
-      <div className="nav-group-label">Evidence & assurance</div>{navigation(nav.slice(5))}
+      <div className="nav-group-label">Workspace</div>{navigation(nav.slice(0,6))}
+      <div className="nav-group-label">Evidence & assurance</div>{navigation(nav.slice(6))}
       <div className="sidebar-bottom"><div className="sidebar-sim"><Flask size={23} weight="duotone"/><strong>A safe place to investigate.</strong><p>Four payment channels. Fictional accounts. Reversible bank actions.</p></div><div className="sidebar-footer"><ShieldCheck size={14}/><span>Analyst access</span><span>Local</span></div></div>
     </aside>
     <div className="ops-main" inert={menuOpen}>
@@ -81,8 +85,9 @@ function Workspace({ children }: { children: React.ReactNode }) {
         <div className="breadcrumbs"><span>Workspace</span><CaretRight size={12}/><strong>{current?.label ?? "Investigation"}</strong></div>
         <div className="topbar-session">
           <button className="header-search" onClick={openSearch} aria-label="Search investigations"><MagnifyingGlass size={15}/><span>Search investigations</span><kbd>⌘ K</kbd></button>
+          {snapshot?.team && <TeamPresence team={snapshot.team}/>}
           <span className={connected&&!error?"connection good":"connection warning"}>{connected&&!error?"System live":!snapshot&&!error?"Connecting":"Reconnecting"}</span>
-          <details className="analyst-menu"><summary aria-label={`Account: ${name}`}><span className="analyst-avatar">{initials}</span><span>{name}</span><CaretDown size={11}/></summary><div className="analyst-dropdown"><strong>{name}</strong><small className="muted">Authenticated analyst</small><button onClick={async()=>{await logout();router.push("/login");router.refresh();}}><SignOut size={15}/>Sign out</button></div></details>
+          <details className="analyst-menu"><summary aria-label={`Account: ${name}`}><span className="analyst-avatar">{initials}</span><span>{name}</span><CaretDown size={11}/></summary><div className="analyst-dropdown"><strong>{name}</strong><small className="muted">{analyst?.role ? <RoleChip role={analyst.role}/> : null} Authenticated analyst</small><button onClick={async()=>{await logout();router.push("/login");router.refresh();}}><SignOut size={15}/>Sign out</button></div></details>
         </div>
       </header>
       <div className="ops-environment"><Flask size={13}/><strong>Simulation mode</strong><span>Synthetic payments and bank responses. Test accounts only.</span><span className="snapshot-stamp">{snapshot?`${dateTime(snapshot.as_of)} IST · #${snapshot.cursor}`:"Connecting to ledger…"}</span></div>

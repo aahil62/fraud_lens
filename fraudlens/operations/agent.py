@@ -35,7 +35,8 @@ def build_brief(case, transactions, actions):
         ("pass-through", "Mule pass-through"), ("card testing", "Card testing"),
         ("sim-swap", "SIM-swap account takeover"), ("atm burst", "ATM cash-out burst"),
         ("rapid atm", "ATM cash-out burst"), ("attempted payments", "Velocity"),
-        ("large transfer", "High-value new device"), ("new-device", "High-value new device")) if phrase in reasons), "Unusual activity")
+        ("large transfer", "High-value new device"), ("new-device", "High-value new device"),
+        ("victim-reported", "1930 victim complaint")) if phrase in reasons), "Unusual activity")
     complaint = case.get("complaint")
     victim = complaint["victim_account_id"] if complaint else None
     trace = case.get("trace", [])

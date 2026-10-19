@@ -67,8 +67,10 @@ def transactions(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge
 
 @router.get("/cases")
 def cases(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), channel: Channel | None = None,
-          status: Literal["new", "investigating", "escalated", "resolved"] | None = None):
-    return service().listing("cases", limit, offset, channel, status)
+          status: Literal["new", "investigating", "escalated", "resolved"] | None = None,
+          view: Literal["all", "mine", "unassigned", "awaiting_approval", "complaints"] = "all",
+          current: AnalystProfile = Depends(get_current_analyst)):
+    return service().listing("cases", limit, offset, channel, status, view, current.username)
 
 
 @router.get("/cases/{case_id}")

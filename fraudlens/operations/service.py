@@ -662,13 +662,19 @@ class OperationsService:
                         simulation_state=self.store.setting(db, "simulation", {"running": False, "interval_seconds": 5}),
                         detection={"version": VERSION, "coverage": COVERAGE})
 
-    def listing(self, kind, limit=50, offset=0, channel=None, status=None):
+    def listing(self, kind, limit=50, offset=0, channel=None, status=None, view="all", username=None):
         with self.store.connect() as db:
             items = self.store.records(db, kind)
             if channel:
                 items = [v for v in items if v["channel"] == channel]
             if status:
                 items = [v for v in items if v.get("status") == status]
+            if kind == "cases":
+                keep = {"all": lambda c: True, "mine": lambda c: username is not None and c.get("assignee") == username,
+                        "unassigned": lambda c: not c.get("assignee"), "awaiting_approval": lambda c: bool(c.get("pending_approval")),
+                        "complaints": lambda c: c.get("case_type") == "complaint"}[view]
+                items = [{**c, **dict(zip(("priority", "priority_reason"), priority(c, self.clock())))} for c in items if keep(c)]
+                items.sort(key=lambda c: -c["priority"])
             return {"items": items[offset:offset + limit], "total": len(items)}
 
     def control(self, request, actor):

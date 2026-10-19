@@ -40,7 +40,8 @@ class AgentTests(unittest.TestCase):
     def test_untraced_complaint_recommends_lien_on_first_mule(self):
         c = case(case_type="complaint", complaint={"victim_account_id": "SIM-VICTIM-PRIVATE-1234", "source": "1930_helpline", "reported_at": T.isoformat()},
                  trace=[dict(hop=1, account_id="SIM-MULE-PRIVATE-5678", traced_minor=4800000, available_minor=4800000, lien_minor=0)], trace_prepared=False)
-        brief = build_brief(c, [], [])
+        brief = build_brief({**c, "reasons": ["Victim-reported transfer; fund trace requested."]}, [], [])
+        self.assertEqual(brief["typology"], "1930 victim complaint")
         self.assertEqual(brief["recommended_action"], "place_lien")
         self.assertEqual(brief["target_account_id"], "SIM-MULE-PRIVATE-5678")
         self.assertEqual(brief["amount_minor"], 4800000)
@@ -160,3 +161,21 @@ class AgentServiceTests(unittest.TestCase):
         self.service.process_jobs()
         self.assertEqual(self.service.snapshot()["agent"]["liens_placed"], 1)
 
+
+class QueueViewTests(unittest.TestCase):
+    setUp = AgentServiceTests.setUp
+
+    def test_case_queue_views_and_priority_sort(self):
+        low = self.service.ingest(TransactionInput(txn_id="Q-LOW", account_id="SIM-Q1", channel="upi", amount_minor=600000,
+                                                   timestamp=T, new_device=True))["case"]
+        high = self.service.ingest(TransactionInput(txn_id="Q-HIGH", account_id="SIM-Q2", channel="upi", amount_minor=8000000,
+                                                    timestamp=T, new_device=True, new_beneficiary=True))["case"]
+        listing = self.service.listing("cases")
+        self.assertEqual([c["case_id"] for c in listing["items"]], [high["case_id"], low["case_id"]])
+        self.assertGreater(listing["items"][0]["priority"], listing["items"][1]["priority"])
+        from fraudlens.operations.models import ClaimInput
+        self.service.claim(low["case_id"], ClaimInput(expected_version=self.service.get_case(low["case_id"])["version"]), self.l1)
+        self.assertEqual([c["case_id"] for c in self.service.listing("cases", view="mine", username="kmehta")["items"]], [low["case_id"]])
+        self.assertEqual([c["case_id"] for c in self.service.listing("cases", view="unassigned")["items"]], [high["case_id"]])
+        self.assertEqual(self.service.listing("cases", view="complaints")["total"], 0)
+        self.assertEqual(self.service.listing("cases", view="awaiting_approval")["total"], 0)

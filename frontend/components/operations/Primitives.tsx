@@ -68,13 +68,20 @@ export function CaseLink({ id }: { id: string }) {
     </Link>
   );
 }
-export function CaseTable({ cases }: { cases: Case[] }) {
+function Owner({ item }: { item: Case }) {
+  if (!item.assignee) return <span className="muted">Unassigned</span>;
+  const name = item.assigned_to ?? item.assignee;
+  return <span className="owner-cell"><span className="presence-avatar small" aria-hidden="true">{name.split(/[ .]+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("")}</span>{name}</span>;
+}
+export function CaseTable({ cases, onClaim, busyId }: { cases: Case[]; onClaim?: (item: Case) => void; busyId?: string | null }) {
   return cases.length ? (
     <div className="table-scroll">
       <table>
         <thead>
           <tr>
             <th>Investigation / account</th>
+            <th>Priority</th>
+            <th>Owner</th>
             <th>Channel</th>
             <th>Exposure</th>
             <th>Risk score</th>
@@ -89,6 +96,15 @@ export function CaseTable({ cases }: { cases: Case[] }) {
               <td>
                 <CaseLink id={item.case_id} />
                 <small className="record-sub">{item.account_id}</small>
+              </td>
+              <td>
+                <div className="priority-cell" title={item.priority_reason}><strong className="numeric">{item.priority ?? "—"}</strong>
+                  <span className="priority-bar" aria-hidden="true"><span style={{ width: `${item.priority ?? 0}%` }} /></span></div>
+              </td>
+              <td>
+                <Owner item={item} />
+                {onClaim && !item.assignee && item.status !== "resolved" && <button className="row-action" disabled={busyId === item.case_id}
+                  aria-label={`Claim ${item.case_id}`} onClick={() => onClaim(item)}>Claim</button>}
               </td>
               <td><ChannelLabel channel={item.channel}/></td>
               <td className="numeric">{money(item.amount_minor)}</td>
