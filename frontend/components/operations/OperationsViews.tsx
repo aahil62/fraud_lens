@@ -65,7 +65,7 @@ export function DashboardView() {
   const { snapshot } = useOperations();
   if (!snapshot) return <Loading />;
   const c = snapshot.counts;
-  const priority = snapshot.cases.filter((item) => item.status !== "resolved").sort((a, b) => b.score - a.score).slice(0, 5);
+  const priority = snapshot.cases.filter((item) => item.status !== "resolved").sort((a, b) => (b.priority ?? b.score * 100) - (a.priority ?? a.score * 100)).slice(0, 5);
   return <div className="workspace-view dashboard-view">
     <PageHeading title="Your operations, in focus." description="Monitor payments and move the right investigations forward."><Link href="/cases" className="primary-button">Review investigations <ArrowRight size={17} /></Link></PageHeading>
     <div className="overview-metrics">
@@ -78,7 +78,7 @@ export function DashboardView() {
     </div>
     {(c.failed_actions > 0 || c.pending_actions > 0) && <Link className="delivery-notice" href="/bank"><WarningCircle size={22} /><span><strong>Bank deliveries need attention</strong><small>{c.failed_actions} failed · {c.pending_actions} pending actions</small></span><span>Review deliveries <ArrowRight size={16} /></span></Link>}
     <div className="dashboard-charts"><ActivityChart snapshot={snapshot} /><ChannelChart snapshot={snapshot} /></div>
-    <div className="dashboard-worklists"><section className="ops-section priority-panel"><div className="section-heading"><div><h2>Next to investigate</h2><p>Highest risk scores among the latest {snapshot.cases.length} cases</p></div><Link href="/cases" className="section-text-link">View queue <ArrowUpRight size={15} /></Link></div>
+    <div className="dashboard-worklists"><section className="ops-section priority-panel"><div className="section-heading"><div><h2>Next to investigate</h2><p>Highest agent priority among the latest {snapshot.cases.length} cases</p></div><Link href="/cases" className="section-text-link">View queue <ArrowUpRight size={15} /></Link></div>
       {priority.map((item) => <Link key={item.case_id} className="focus-case-row" href={`/case?case_id=${encodeURIComponent(item.case_id)}`}><span className={`risk-score ${item.severity}`}>{(item.score * 100).toFixed(1)}</span><span className="focus-case-main"><strong>{item.account_id}<small>{channelName(item.channel)}</small></strong><span>{item.reasons[0] ?? "Review detection evidence"}</span><small className="identifier">{item.case_id}</small></span><span className="focus-case-value"><strong>{money(item.amount_minor)}</strong><small>{human(item.status)}</small></span><ArrowUpRight size={17} /></Link>)}
       {!priority.length && <Empty>The investigation queue is clear. New alerts will appear here.</Empty>}
     </section><section className="ops-section recent-events-panel"><div className="section-heading"><div><h2>Latest activity</h2><p>Payments, protection and review</p></div><Link href="/audit" className="section-text-link">Audit trail <ArrowUpRight size={15} /></Link></div><Timeline events={snapshot.events.slice(0, 4)} /></section></div>

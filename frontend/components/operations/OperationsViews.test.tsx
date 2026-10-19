@@ -63,3 +63,12 @@ it("groups regulatory requirements by issuer and flags unverified ones", async (
   expect(screen.getByRole("heading", { name: "NPCI" })).toBeInTheDocument();
   expect(screen.getByText(/modelled on \(unverified\)/)).toBeInTheDocument();
 });
+it("orders Next to investigate by agent priority, not raw score", () => {
+  mocks.snapshot = { ...mocks.snapshot!, cases: [
+    { ...fixtureCase("case-high-score", "acct-1", "unreviewed", "upi"), score: .95, priority: 52 },
+    { ...fixtureCase("case-complaint", "acct-2", "unreviewed", "upi"), score: .2, priority: 71 },
+  ] };
+  render(<DashboardView />);
+  const ids = screen.getAllByText(/^case-(high-score|complaint)$/).map((node) => node.textContent);
+  expect(ids).toEqual(["case-complaint", "case-high-score"]);
+});
