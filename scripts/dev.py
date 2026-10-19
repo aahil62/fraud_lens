@@ -31,6 +31,14 @@ def ensure_ports_available(ports):
                 raise RuntimeError(f"{name} port {port} is unavailable. Stop its owner or choose another port in .env.") from error
 
 
+def uvicorn_command(python, app, port):
+    # Open SSE streams (/ops/events) never finish on their own; without a graceful
+    # timeout uvicorn waits on them forever and ignores SIGTERM. Stay under the 5 s
+    # that stop_processes allows before SIGKILL.
+    return [str(python), "-m", "uvicorn", app, "--host", "127.0.0.1", "--port", str(port),
+            "--timeout-graceful-shutdown", "3"]
+
+
 def start_process(command, cwd, env):
     return subprocess.Popen(command, cwd=cwd, env=env, start_new_session=os.name != "nt")
 
@@ -116,8 +124,8 @@ def main():
 
     signal.signal(signal.SIGTERM, interrupt)
     services = [
-        ("Bank simulator", [str(PYTHON), "-m", "uvicorn", "fraudlens.bank_simulator.main:app", "--host", "127.0.0.1", "--port", str(ports["bank"])], ROOT, f"http://127.0.0.1:{ports['bank']}/health"),
-        ("API", [str(PYTHON), "-m", "uvicorn", "fraudlens.api.main:app", "--host", "127.0.0.1", "--port", str(ports["api"])], ROOT, f"http://127.0.0.1:{ports['api']}/health"),
+        ("Bank simulator", uvicorn_command(PYTHON, "fraudlens.bank_simulator.main:app", ports["bank"]), ROOT, f"http://127.0.0.1:{ports['bank']}/health"),
+        ("API", uvicorn_command(PYTHON, "fraudlens.api.main:app", ports["api"]), ROOT, f"http://127.0.0.1:{ports['api']}/health"),
         ("Console", [npm, "run", "dev", "--", "--hostname", "127.0.0.1", "--port", str(ports["frontend"])], ROOT / "frontend", f"http://127.0.0.1:{ports['frontend']}")]
     try:
         for label, command, cwd, url in services:

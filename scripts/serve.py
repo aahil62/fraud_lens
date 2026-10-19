@@ -12,7 +12,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dev import start_process, stop_processes, wait_ready  # noqa: E402
+from dev import start_process, stop_processes, uvicorn_command, wait_ready  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,8 +33,8 @@ def main():
     node_env = {**env, "PORT": str(port), "HOSTNAME": "0.0.0.0", "NODE_ENV": "production"}
     python = sys.executable
     services = [
-        ("Bank simulator", [python, "-m", "uvicorn", "fraudlens.bank_simulator.main:app", "--host", "127.0.0.1", "--port", "8002"], ROOT, env, "http://127.0.0.1:8002/health"),
-        ("API", [python, "-m", "uvicorn", "fraudlens.api.main:app", "--host", "127.0.0.1", "--port", "8001"], ROOT, env, "http://127.0.0.1:8001/health"),
+        ("Bank simulator", uvicorn_command(python, "fraudlens.bank_simulator.main:app", 8002), ROOT, env, "http://127.0.0.1:8002/health"),
+        ("API", uvicorn_command(python, "fraudlens.api.main:app", 8001), ROOT, env, "http://127.0.0.1:8001/health"),
         ("Console", ["node", "server.js"], ROOT / "frontend/.next/standalone", node_env, f"http://127.0.0.1:{port}/"),
     ]
     processes = []
