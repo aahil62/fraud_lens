@@ -66,7 +66,12 @@ Two live problems found and fixed in `781adbd` (verified locally in the containe
 - **Rate limits did not trigger.** 21 failed logins all returned 401: behind Render's Cloudflare edge the right-most `X-Forwarded-For` entry changes per request. Limits now key on `CF-Connecting-IP`, which Cloudflare sets itself (`FRAUDLENS_CLIENT_IP_HEADER`, trusted only from the console proxy).
 - **Live push was buffered.** Next.js gzipped `/ops/events` behind the `/backend` rewrite (Cloudflare always accepts gzip), so consoles updated only on the 10 s poll. Compression is now off in Next and left to the edge; the container stream now delivers its first event immediately with gzip accepted.
 
-Not measured: cold-start time after Render's 15-minute sleep (Render's wake-up plus the 82 s boot), and the rate limit with two different real visitor addresses.
+**Redeployed and rechecked live (19 October 2026, `main` at `a61859a`):**
+- Live updates: after `babe951`, `/ops/events` delivered its first event immediately with `Accept-Encoding: gzip, br`.
+- Rate limit: still did not trigger after `babe951`. Root cause: uvicorn's default proxy-header handling trusts 127.0.0.1 and replaced the request peer with the `X-Forwarded-For` value before `client_ip()` ran (unit tests use a test client that bypasses uvicorn). Fixed in `7bd4d67` by starting uvicorn with `--no-proxy-headers`, with a real-server regression test. Live after redeploy: 21 failed logins → 20 × 401 then **429**, and a forged `X-Forwarded-For` on the next attempt still got 429. Cloudflare rejects requests that forge `CF-Connecting-IP` (403).
+- Backend suite at `7bd4d67`: 446 tests OK, 1 skipped.
+
+Not measured: cold-start time after Render's 15-minute sleep (Render's wake-up plus the 82 s boot), and the limit with two different real visitor addresses (only one address was available; the per-visitor split is covered by local tests).
 
 ## Earlier record (17 October 2026)
 
