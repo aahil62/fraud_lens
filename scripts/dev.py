@@ -50,8 +50,10 @@ def uvicorn_command(python, app, port):
     # timeout uvicorn waits on them forever and ignores SIGTERM. Keep it short:
     # Docker Desktop's default `docker stop` deadline measured ~3.3 s, and clients
     # reconnect to the stream on their own.
+    # --no-proxy-headers: uvicorn would otherwise replace the loopback peer with the
+    # X-Forwarded-For value, bypassing fraudlens.api.limits.client_ip's trust rules.
     return [str(python), "-m", "uvicorn", app, "--host", "127.0.0.1", "--port", str(port),
-            "--timeout-graceful-shutdown", "1"]
+            "--timeout-graceful-shutdown", "1", "--no-proxy-headers"]
 
 
 def start_process(command, cwd, env):
