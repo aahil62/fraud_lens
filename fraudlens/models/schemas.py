@@ -13,6 +13,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
+from fraudlens.core.auth.roles import Role
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -284,12 +286,14 @@ class AnalystAccount(BaseModel):
     display_name: str
     password_hash: str
     created_at: str
+    role: Role = "l1_analyst"
 
 
 class AnalystProfile(BaseModel):
     """The public-safe view of an AnalystAccount — no password_hash."""
     username: str
     display_name: str
+    role: Role
 
 
 class SignupRequest(BaseModel):

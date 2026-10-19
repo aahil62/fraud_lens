@@ -4,10 +4,12 @@ is usable immediately; signup lets a new analyst create their own account.
 """
 
 from __future__ import annotations
+import os
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from fraudlens.api.deps import get_current_analyst
+from fraudlens.api.limits import client_ip
 from fraudlens.api.state import state
 from fraudlens.core.auth.security import create_access_token
 from fraudlens.models.schemas import AnalystProfile, LoginRequest, SignupRequest, TokenResponse
@@ -17,6 +19,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=TokenResponse)
 def signup(payload: SignupRequest) -> TokenResponse:
+    if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
+        raise HTTPException(403, "Self-service analyst registration is available only in the local demonstration")
+    if os.environ.get("FRAUDLENS_PUBLIC_DEMO") == "1":
+        raise HTTPException(403, "Sign-up is turned off on the public demo. Use a demo role on the sign-in page.")
     store = state.runtime.analyst_store
     username = payload.username.strip().lower()
     if not username or not payload.password:
@@ -29,22 +35,35 @@ def signup(payload: SignupRequest) -> TokenResponse:
         raise HTTPException(status_code=409, detail=str(exc))
 
     token = create_access_token(account.username)
-    profile = AnalystProfile(username=account.username, display_name=account.display_name)
+    profile = AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
+    if state.operations is not None:
+        state.operations.record_session(profile, True)
     return TokenResponse(access_token=token, analyst=profile)
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest) -> TokenResponse:
+def login(payload: LoginRequest, request: Request) -> TokenResponse:
+    if not state.login_limiter.allow(client_ip(request)):
+        raise HTTPException(status_code=429, detail="Too many sign-in attempts. Try again in a few minutes.")
     store = state.runtime.analyst_store
     account = store.verify(payload.username.strip().lower(), payload.password)
     if account is None:
         raise HTTPException(status_code=401, detail="Invalid username or password.")
 
     token = create_access_token(account.username)
-    profile = AnalystProfile(username=account.username, display_name=account.display_name)
+    profile = AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
+    if state.operations is not None:
+        state.operations.record_session(profile, True)
     return TokenResponse(access_token=token, analyst=profile)
 
 
 @router.get("/me", response_model=AnalystProfile)
 def me(current: AnalystProfile = Depends(get_current_analyst)) -> AnalystProfile:
     return current
+
+
+@router.post("/logout")
+def logout(current: AnalystProfile = Depends(get_current_analyst)):
+    if state.operations is not None:
+        state.operations.record_session(current, False)
+    return {"ok": True}

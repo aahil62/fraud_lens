@@ -13,6 +13,7 @@ import hashlib
 import os
 import secrets
 import time
+from pathlib import Path
 from typing import Optional
 
 import jwt
@@ -21,11 +22,31 @@ _PBKDF2_ITERATIONS = 200_000
 _JWT_ALGORITHM = "HS256"
 _JWT_TTL_SECONDS = 24 * 60 * 60  # 24h session — a hackathon demo, not a bank
 
-# A real secret in production would come from a secrets manager; for this
-# demo it's env-overridable with a fixed dev fallback so every teammate's
-# locally-issued tokens verify against every other teammate's locally-run
-# backend without extra setup.
-_JWT_SECRET = os.environ.get("FRAUDLENS_JWT_SECRET", "fraudlens-hackathon-dev-secret-not-for-prod")
+def load_session_secret(path, *, configured=None, mode="demo"):
+    """No shared signing fallback; local sessions survive a backend restart."""
+    if configured:
+        if len(configured) < 32:
+            raise ValueError("FRAUDLENS_JWT_SECRET must be at least 32 characters")
+        return configured
+    if mode != "demo":
+        raise ValueError("An explicit strong FRAUDLENS_JWT_SECRET is required outside demo mode")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        value = path.read_text().strip()
+        if len(value) < 32:
+            raise ValueError("Stored session secret is invalid")
+        return value
+    value = secrets.token_urlsafe(48)
+    with os.fdopen(descriptor, "w") as file:
+        file.write(value)
+    return value
+
+
+_JWT_SECRET = load_session_secret(os.environ.get("FRAUDLENS_SESSION_SECRET_PATH", "var/session.key"),
+    configured=os.environ.get("FRAUDLENS_JWT_SECRET"), mode=os.environ.get("FRAUDLENS_MODE", "demo"))
 
 
 def hash_password(password: str) -> str:

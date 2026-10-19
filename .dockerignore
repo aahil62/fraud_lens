@@ -1,0 +1,16 @@
+.git
+.venv
+.claude
+**/__pycache__
+**/*.pyc
+frontend/node_modules
+frontend/.next
+frontend/tsconfig.tsbuildinfo
+var
+work
+.env
+docs
+scrollcraft
+fraudlens/data/external
+fraudlens/data/*.json
+!fraudlens/data/ulb_validation.json

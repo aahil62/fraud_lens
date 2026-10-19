@@ -31,3 +31,5 @@ def use_isolated_data_dir() -> None:
     os.environ["FRAUDLENS_AUDIT_PATH"] = os.path.join(data_dir, "audit_log.json")
     os.environ["FRAUDLENS_ANALYSTS_PATH"] = os.path.join(data_dir, "analysts.json")
     os.environ["FRAUDLENS_ACCOUNT_RESTRICTIONS_PATH"] = os.path.join(data_dir, "account_restrictions.json")
+    os.environ["FRAUDLENS_OPS_DB"] = os.path.join(data_dir, "operations.sqlite3")
+    os.environ["FRAUDLENS_SEED_DEMO"] = "0"

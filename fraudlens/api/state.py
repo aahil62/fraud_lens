@@ -6,11 +6,16 @@ circular import back to the app factory.
 
 from __future__ import annotations
 
+from fraudlens.api.limits import LoginLimiter
 from fraudlens.runtime import FraudLensRuntime
 
 
 class AppState:
     runtime: FraudLensRuntime | None = None
+    operations = None
+    attacks = None
+    started_at: str | None = None
+    login_limiter = LoginLimiter()
 
 
 state = AppState()

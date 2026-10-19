@@ -245,6 +245,7 @@ export interface NetworkSummary {
 export interface AnalystProfile {
   username: string;
   display_name: string;
+  role: "l1_analyst" | "l2_analyst" | "supervisor";
 }
 
 export interface TokenResponse {

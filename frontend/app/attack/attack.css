@@ -1,0 +1,51 @@
+/* The attacker's side: dark charcoal, red for the attacker, cobalt for FraudLens.
+   The launch button uses a darker red (#c23f45) so white text meets 4.5:1. */
+.attack-page { --attack-bg: #171b24; --attack-panel: #202634; --attack-line: #343c4f; --attack-text: #f3f5fa; --attack-muted: #aab2c4; --attack-red: #e0565b; --attack-cobalt: #8fa2ff;
+  min-height: 100vh; background: var(--attack-bg); color: var(--attack-text); padding: 0 16px 40px; }
+.attack-page main, .attack-header, .attack-footer { max-width: 480px; margin: 0 auto; }
+.attack-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; }
+.attack-brand { font-weight: 650; font-size: 14px; }
+.attack-chip { padding: 4px 9px; border-radius: 999px; border: 1px solid var(--attack-red); color: #ffb3b5; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.attack-page h1 { font-size: 28px; line-height: 1.2; margin: 18px 0 10px; color: white; }
+.attack-lede { color: var(--attack-muted); font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
+.attack-scams { border: 0; padding: 0; margin: 0 0 18px; display: grid; gap: 10px; }
+.attack-scams legend { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; color: var(--attack-muted); margin-bottom: 10px; }
+.attack-scam { position: relative; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; padding: 14px; border-radius: 12px; background: var(--attack-panel); border: 1px solid var(--attack-line); color: var(--attack-text); cursor: pointer; font-weight: 400; transition: border-color 160ms, background 160ms; }
+.attack-scam input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.attack-scam svg { color: var(--attack-red); margin-top: 2px; }
+.attack-scam strong { display: block; font-size: 15px; }
+.attack-scam small { display: block; color: var(--attack-muted); font-size: 13px; line-height: 1.5; margin-top: 3px; }
+.attack-scam[data-selected="true"] { border-color: var(--attack-red); background: #2a2027; }
+.attack-scam:has(input:focus-visible) { outline: 3px solid var(--attack-cobalt); outline-offset: 2px; }
+.attack-amount { display: grid; gap: 8px; margin: 0 0 18px; color: var(--attack-text); font-size: 13px; font-weight: 500; }
+.attack-amount > span:first-child { display: flex; justify-content: space-between; }
+.attack-amount input[type="range"] { padding: 0; border: 0; background: transparent; accent-color: var(--attack-red); }
+.attack-range { display: flex; justify-content: space-between; color: var(--attack-muted); }
+.attack-launch, .attack-report { width: 100%; min-height: 48px; border-radius: 10px; font-size: 15px; font-weight: 650; }
+.attack-launch { background: #c23f45; border-color: #c23f45; color: white; }
+.attack-launch:hover { background: #ad353b; border-color: #ad353b; color: white; }
+.attack-report { margin-top: 14px; background: #4058d5; border-color: #4058d5; color: white; }
+.attack-report:hover { background: #3249bf; color: white; }
+.attack-page :where(button, a):focus-visible { outline: 3px solid var(--attack-cobalt); outline-offset: 3px; }
+.attack-error { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #3a1f24; color: #ffc4c6; font-size: 14px; }
+.attack-timeline { margin-top: 26px; padding: 18px; border-radius: 14px; background: var(--attack-panel); border: 1px solid var(--attack-line); }
+.attack-timeline h2 { display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; color: white; margin-bottom: 12px; }
+.attack-timeline h2 small { font-size: 12px; color: var(--attack-muted); font-weight: 500; }
+.attack-timeline ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.attack-timeline li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; padding: 9px 0; color: var(--attack-muted); font-size: 14px; transition: color 300ms; }
+.attack-timeline li small { display: block; font-size: 12px; margin-top: 2px; }
+.attack-step-icon { display: inline-grid; transition: transform 300ms, color 300ms; color: #808a9e; }
+.attack-timeline li[data-status="done"] { color: white; }
+.attack-timeline li[data-status="done"] .attack-step-icon { color: var(--attack-cobalt); animation: attack-pop 360ms ease-out; }
+.attack-timeline li[data-status="blocked"] { color: #ffc4c6; }
+.attack-timeline li[data-status="blocked"] .attack-step-icon { color: var(--attack-red); animation: attack-pop 360ms ease-out; }
+@keyframes attack-pop { from { transform: scale(.6); } to { transform: scale(1); } }
+.attack-outcome, .attack-note, .attack-complaint { margin-top: 12px; font-size: 14px; line-height: 1.6; }
+.attack-note { color: var(--attack-muted); }
+.attack-complaint { padding: 12px 14px; border-radius: 10px; background: #1d2a4a; color: #dfe5ff; }
+.attack-footer { margin-top: 28px; color: var(--attack-muted); font-size: 13px; line-height: 1.6; }
+.attack-footer a { color: var(--attack-cobalt); text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) {
+  .attack-timeline li .attack-step-icon { animation: none !important; }
+  .attack-scam, .attack-timeline li { transition: none; }
+}
