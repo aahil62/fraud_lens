@@ -98,4 +98,4 @@ Results and what was checked by hand are in [docs/VERIFICATION.md](docs/VERIFICA
 
 ## Credits
 
-FraudLens began as a team project. This repository's git history records only the author's commits, so earlier teammates are not listed by name here. This version — roles and approvals, bank ladder, 1930 trace, attack console, agent and console redesign — is the author's solo rebuild.
+Built by [@aahil62](https://github.com/aahil62). FraudLens started as a hackathon project; this version — roles and approvals, the bank ladder, the 1930 fund trace, the attack console, the agent and the console redesign — is a solo rebuild.

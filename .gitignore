@@ -32,3 +32,4 @@ var/
 work/
 frontend/work-report.md
 *.tsbuildinfo
+.claude/
