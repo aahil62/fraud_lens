@@ -1,5 +1,17 @@
 # Verification record
 
+## Detection no longer slows as the ledger grows (20 October 2026)
+
+Branch `feature/fraudlens-v3`, after Stages C and D. Fixes K7 from the section below. The graph agent treated `127.0.0.1`, the API's "no IP supplied" default that every simulated payment carries, as an identifier shared by every simulated account, so each payment ran Louvain over one clique of hundreds of accounts. Now loopback and unspecified addresses are not evidence, and an identifier shared by more than 50 accounts still counts as sharing but is left out of the ring projection (a group that size is infrastructure or a default value, and its edges grow with the square of its size).
+
+| Check | Observed result |
+| --- | --- |
+| One `detect()` on a copy of the local ledger (836 payments) | **6.4–10.2 s → 16 ms** per payment. |
+| New tests | `test_detector_scaling` (1,000 prior default-IP payments, under 2 s and no `127.0.0.1` ring reason); two graph-agent tests (loopback/unspecified IPs; a 60-account shared device is reported but is not a ring). They failed before the fix. |
+| Backend suite | **241 tests, OK** (44.9 s). Frontend 64 passed; lint, types, ruff and prettier clean. |
+| Evaluation | Re-run: same corpus hash, same overall metrics, and all 376 records have the same score and reasons (the fixtures use a test-net IP), so `operations-evaluation.json` and the README table are unchanged. |
+| Simulated payments | Sampled ledger payments: the graph signal falls from 0.95 ("fraud ring of 662 accounts", which was never true) to 0.05, and final scores fall by about 0.09 (for example 0.2285 → 0.1385). All sampled payments were below the 0.5 review threshold before and after. |
+
 ## Code review, refactor and repository tidy, Stages C and D (20 October 2026)
 
 Branch `feature/fraudlens-v3`, local machine. Not yet pushed or deployed (see the end of this section). Every Python, TypeScript and script file was reviewed with `code-review` (high), `improve-codebase-architecture`, `simplify`, `vercel-react-best-practices` and `vibesec-skill`; the findings and what happened to each are in the [revamp plan](superpowers/plans/2026-10-20-revamp-cleanup-redesign.md#stage-c-review-findings-20-october-2026) (R1–R8, E1–E5, S1–S7, K1–K7).
@@ -31,7 +43,7 @@ Behaviour was held fixed by comparison, not only by the test suite:
 
 ### Found and recorded, not fixed
 
-- **Detection slows as the ledger grows (K7).** Every simulated payment uses IP 127.0.0.1, so the graph agent's Louvain pass sees one clique of every simulated account. On the 836-payment local ledger one `detect()` took 6–10 s, 99% of it in Louvain; a public attack launch took 43 s. The code is unchanged by this stage; fixing it changes scores, so it is a separate task. The live demo resets its ledger on every boot and starts with the stream paused, which keeps it small.
+- **Detection slows as the ledger grows (K7, since fixed; see the section above).** Every simulated payment uses IP 127.0.0.1, so the graph agent's Louvain pass sees one clique of every simulated account. On the 836-payment local ledger one `detect()` took 6–10 s, 99% of it in Louvain; a public attack launch took 43 s. The code is unchanged by this stage; fixing it changes scores, so it is a separate task. The live demo resets its ledger on every boot and starts with the stream paused, which keeps it small.
 - **Occasional slow snapshot under load.** With the stream running every 5 s, snapshots took about 100 ms but spiked to about 3 s while a scenario was being scored (same cause as above).
 - K1–K6 in the plan: the service lock is held across bank calls; audit actors are display names on three routes; the token sits in `localStorage` and logout does not revoke it; any analyst can change the shared simulation controls; test-only scoring modules remain; the attack status route is unthrottled.
 
@@ -39,7 +51,15 @@ Behaviour was held fixed by comparison, not only by the test suite:
 
 - `docker build` (Docker was not running on this machine). The only container-relevant change is that `frontend/public/` now holds just the fetched fonts, which `fetch-fonts.mjs` creates before the Dockerfile copies it.
 - Lighthouse was not re-run; the expected change is SEO now that `/robots.txt` is valid.
-- The deployed site: nothing is pushed until the user approves.
+- The detector fix in the section above is not deployed yet (it came after the push).
+
+### Live site (after the user approved the push)
+
+`feature/fraudlens-v3` was merged into `main` with `--no-ff` (`bea4981`; the merge tree equals the branch tip, so nothing on `main` was dropped) and pushed; Render served the new build about 90 s later (`started_at` 2026-10-20T14:05:55Z). Checked at 1280 × 800 with GPU Chromium against https://fraud-lens-r3t0.onrender.com:
+- Landing (3D lens rendered), `/attack`, `/login`, demo sign-in as R. Iyer, dashboard, investigation queue and a case page: **0 px overflow and 0 console errors** on each.
+- `/robots.txt` returns the robots rules instead of the sign-in page.
+- A mule-layering attack launched in 1 s and showed four of six steps done, waiting for an analyst. "Report it to 1930" (1 s) traced ₹28,000 across two hops with ₹20,000 cashed out, and both liens were held (₹28,000) after the bank acknowledged them.
+- Not checked on the live site: a phone, a second analyst session, or Lighthouse.
 
 ## Same-origin display fonts (20 October 2026)
 

@@ -12,6 +12,7 @@ being a flat default.
 
 from __future__ import annotations
 
+import ipaddress
 from collections import Counter, defaultdict
 from typing import Any
 
@@ -26,7 +27,20 @@ _RING_MAJOR = 4  # connected accounts
 _RING_MINOR = 2
 
 _QUIET_SCORE = 0.05
+# An identifier shared by more accounts than this is shared infrastructure or a
+# default value, not a ring: it still counts as sharing but is left out of the
+# community projection, whose edges grow with the square of the group.
+_MAX_RING_GROUP = 50
 _BASE_CONFIDENCE = 0.4
+
+
+def _is_evidence_ip(value: str) -> bool:
+    """Loopback and unspecified addresses (the "no IP supplied" default) never identify a customer."""
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return True
+    return not (address.is_loopback or address.is_unspecified)
 
 
 class GraphAgent:
@@ -51,7 +65,8 @@ class GraphAgent:
 
         for txn in transactions:
             device_accounts[txn.device_id].add(txn.account_id)
-            ip_accounts[txn.ip_address].add(txn.account_id)
+            if _is_evidence_ip(txn.ip_address):
+                ip_accounts[txn.ip_address].add(txn.account_id)
             account_devices[txn.account_id].add(txn.device_id)
             all_accounts.add(txn.account_id)
 
@@ -61,6 +76,8 @@ class GraphAgent:
         # pair of clusters into two rings instead of one over-counted one.
         projection_weights: Counter[tuple[str, str]] = Counter()
         for accounts in list(device_accounts.values()) + list(ip_accounts.values()):
+            if len(accounts) > _MAX_RING_GROUP:
+                continue
             unique_accounts = sorted(accounts)
             for i in range(len(unique_accounts)):
                 for j in range(i + 1, len(unique_accounts)):
