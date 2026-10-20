@@ -107,7 +107,7 @@ The corpus deliberately includes authorised-but-unusual payments (false positive
 ## Verify
 
 ```bash
-.venv/bin/python -m unittest discover -s tests     # 238 tests
+.venv/bin/python -m unittest discover -s tests     # 241 tests
 npm --prefix frontend run test                      # 64 tests
 npm --prefix frontend run lint
 (cd frontend && npx tsc --noEmit)

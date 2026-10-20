@@ -96,7 +96,7 @@ Whole-repo review of `fraudlens/`, `scripts/` and `frontend/{app,components,lib,
 - K3. The token sits in `localStorage` and a non-httpOnly cookie, and logout does not revoke it (24 h expiry). Documented trade-off of the demo; moving to an httpOnly cookie is an auth redesign.
 - K4. Any signed-in analyst (including the public demo's L1 button) can switch bank mode or pause the stream for everyone. This is the simulation desk's purpose; restricting it is a role change.
 - K5. `EnsembleScorer`, `core/scoring/base.py`, the `Decision`/`ScoringResult`/`GraphEvidence` schemas and `AccountRestrictionStore` are reachable only from tests. Removing them deletes tests, which this stage does not do; candidate for a later cleanup.
-- K7. Detection cost grows with the ledger: every simulated payment uses IP 127.0.0.1, so the graph agent's Louvain pass sees one clique of every simulated account (6–10 s per payment at 836 payments). Fixing it changes detector scores; separate task.
+- K7. Detection cost grew with the ledger: every simulated payment uses the default IP 127.0.0.1, so the graph agent's Louvain pass saw one clique of every simulated account (6–10 s per payment at 836 payments). **Fixed after Stage D** (graph agent: loopback/unspecified IPs are not evidence; identifiers shared by more than 50 accounts are left out of the ring projection); see VERIFICATION.md.
 - K6. `GET /public/attacks/{id}` is unauthenticated and unthrottled and builds full case views. Attack ids are 48 random bits; E2 makes each call cheap.
 
 **Stage C steps (one commit each, all checks after each):**

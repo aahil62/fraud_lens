@@ -19,6 +19,25 @@ def _txn(txn_id, account_id, device_id, ip_address, amount=50.0) -> Transaction:
 
 
 class GraphAgentTests(unittest.TestCase):
+    def test_loopback_and_unspecified_ips_are_not_shared_evidence(self) -> None:
+        # 127.0.0.1 is the "no IP supplied" default; it never identifies a customer.
+        for ip in ("127.0.0.1", "::1", "0.0.0.0"):
+            txns = [_txn("T1", "A1", "D1", ip), _txn("T2", "A2", "D2", ip), _txn("T3", "A3", "D3", ip)]
+            agent = GraphAgent()
+            agent.build_index(txns)
+            result = agent.score(txns[0])
+            self.assertEqual(result.metadata["other_accounts_on_ip"], 0, ip)
+            self.assertEqual(result.metadata["estimated_ring_size"], 1, ip)
+
+    def test_identifier_shared_by_a_crowd_is_reported_but_not_a_ring(self) -> None:
+        # 60 accounts on one device: shared infrastructure or a default value, not a fraud ring.
+        txns = [_txn(f"T{i}", f"A{i}", "device-known", f"IP{i}") for i in range(60)]
+        agent = GraphAgent()
+        agent.build_index(txns)
+        result = agent.score(txns[0])
+        self.assertEqual(result.metadata["other_accounts_on_device"], 59)
+        self.assertEqual(result.metadata["estimated_ring_size"], 1)
+
     def test_satisfies_scoring_agent_protocol(self) -> None:
         agent = GraphAgent()
         self.assertIsInstance(agent, ScoringAgent)

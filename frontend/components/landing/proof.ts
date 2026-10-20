@@ -9,5 +9,5 @@ export const PROOF = {
   recall: 0.8148,
   evaluationSamples: 376,
   /** Backend unittest count from the last full run (Stage C+D, 20 October 2026). */
-  backendTests: 238,
+  backendTests: 241,
 };
