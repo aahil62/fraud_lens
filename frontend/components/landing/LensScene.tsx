@@ -7,6 +7,16 @@ import { LensPoster } from "./LensPoster";
 
 const channelOrder: ChannelKey[] = ["upi", "netbanking", "card", "atm"];
 
+/** True when WebGL is missing or runs in software (no GPU): the scene would then
+ * render every frame on the main thread, so the static lens is the better page. */
+function softwareWebGL() {
+  const gl = document.createElement("canvas").getContext("webgl2") ?? document.createElement("canvas").getContext("webgl");
+  if (!gl) return true;
+  const info = gl.getExtension("WEBGL_debug_renderer_info");
+  const rendererName = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+  return /swiftshader|llvmpipe|software|basic render/i.test(rendererName);
+}
+
 export default function LensScene({ channel, animated = true }: { channel: ChannelKey; animated?: boolean }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef(channel);
@@ -24,7 +34,7 @@ export default function LensScene({ channel, animated = true }: { channel: Chann
 
     async function createScene() {
       const ticket = ++generation;
-      if (motion.matches || disposed || !host) return;
+      if (motion.matches || disposed || !host || softwareWebGL()) return;
       const THREE = await import("three");
       if (disposed || motion.matches || ticket !== generation) return;
       let renderer: Three.WebGLRenderer;
@@ -63,7 +73,8 @@ export default function LensScene({ channel, animated = true }: { channel: Chann
       // Studio reflections give the blackened metal and brass something to mirror.
       const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
       const pmrem = new THREE.PMREMGenerator(renderer);
-      const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      // 64 px is plenty for blurred reflections and a fraction of the default 256 px cost.
+      const environment = pmrem.fromScene(new RoomEnvironment(), 0.04, 0.1, 100, { size: 64 }).texture;
       pmrem.dispose();
       scene.environment = environment;
       scene.environmentIntensity = 0.55;

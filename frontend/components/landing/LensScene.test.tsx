@@ -14,6 +14,16 @@ it("keeps a complete static optic without initializing WebGL under reduced motio
  expect(renderer).not.toHaveBeenCalled();
  unmount();expect(remove).toHaveBeenCalled();
 });
+it("keeps the static optic when the browser only has software WebGL",async()=>{
+ vi.stubGlobal("matchMedia",vi.fn(()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
+ const gl={getExtension:()=>({UNMASKED_RENDERER_WEBGL:1}),getParameter:()=>"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device))"};
+ const getContext=vi.spyOn(HTMLCanvasElement.prototype,"getContext").mockReturnValue(gl as unknown as RenderingContext);
+ const {container}=render(<LensScene channel="upi"/>);
+ await new Promise(resolve=>setTimeout(resolve,20));
+ expect(container.querySelector(".lens-poster")).toBeInTheDocument();
+ expect(renderer).not.toHaveBeenCalled();
+ getContext.mockRestore();
+});
 it("does not initialize motion APIs or WebGL when the visitor pauses 3D",()=>{
  const media=vi.fn();vi.stubGlobal("matchMedia",media);
  const {container}=render(<LensScene channel="upi" animated={false}/>);
