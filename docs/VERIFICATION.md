@@ -186,7 +186,7 @@ The launcher started three separate services on loopback: bank simulator 8002, o
 
 The rendered interface was checked at a 1280 × 720 desktop viewport. An analyst entered a rationale and confirmed simulated case `CASE-FB7B4407F436`, which became Resolved / Fraud with an attributed timeline event. The analyst then documented a false-positive reversal: the interface first showed Release pending / Investigating, then Release confirmed / Resolved after bank acknowledgement. This demonstrates the distinction between a request and its confirmed effect.
 
-The responsive overview was also inspected inside a 390-pixel-wide browser iframe. Navigation scrolls horizontally and metrics stack into two columns. This checks responsive CSS, not a physical-device or browser-matrix certification. Screenshots: [desktop overview](screenshots/overview.png), [resolved case](screenshots/case-reversal.png), [mobile viewport](screenshots/mobile.png). The temporary QA wrapper was removed from the deliverable.
+The responsive overview was also inspected inside a 390-pixel-wide browser iframe. Navigation scrolls horizontally and metrics stack into two columns. This checks responsive CSS, not a physical-device or browser-matrix certification. Screenshots: [desktop overview](history/screenshots/overview.png), [resolved case](history/screenshots/case-reversal.png), [mobile viewport](history/screenshots/mobile.png). The temporary QA wrapper was removed from the deliverable.
 
 ## Regression review
 
