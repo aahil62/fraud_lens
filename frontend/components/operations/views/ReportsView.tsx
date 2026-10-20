@@ -4,7 +4,8 @@ import { useState } from "react";
 import { ArrowUpRight, FileText, MagnifyingGlass } from "@phosphor-icons/react";
 import { channelName, dateTime, human } from "@/lib/operations";
 import { useOperations } from "../OperationsProvider";
-import { Empty, Loading, PageHeading, ReportButtons } from "../Primitives";
+import { Empty, Loading, PageHeading } from "../Primitives";
+import { ReportButtons } from "../ReportButtons";
 
 export function ReportsView() {
   const { snapshot } = useOperations();

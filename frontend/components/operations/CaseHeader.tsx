@@ -16,7 +16,8 @@ import {
   money,
 } from "@/lib/operations";
 import { useOperations } from "./OperationsProvider";
-import { PageHeading, ReportButtons, Status } from "./Primitives";
+import { PageHeading, Status } from "./Primitives";
+import { ReportButtons } from "./ReportButtons";
 import { RoleChip } from "./RoleChip";
 import { useAnalyst } from "./useAnalyst";
 
@@ -165,7 +166,9 @@ export function CaseHeader({
       </div>
       <PageHeading
         title={`${brief?.typology ?? channelName(item.channel)} · ${item.case_id}`}
-        description={`${channelName(item.channel)} · ${item.account_id} · ${money(item.amount_minor)}${complaint}`}
+        description={
+          [channelName(item.channel), item.account_id, money(item.amount_minor)].join(" · ") + complaint
+        }
       >
         <ReportButtons caseId={item.case_id} />
       </PageHeading>

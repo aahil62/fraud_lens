@@ -11,7 +11,8 @@ import {
 } from "@phosphor-icons/react";
 import { CHANNELS, type Snapshot, channelName, dateTime, human, money } from "@/lib/operations";
 import { useOperations } from "../OperationsProvider";
-import { Empty, Loading, PageHeading, Timeline } from "../Primitives";
+import { Empty, Loading, PageHeading } from "../Primitives";
+import { Timeline } from "../Records";
 
 const BIN_COUNT = 6;
 const BIN_MS = 5 * 60 * 1000;

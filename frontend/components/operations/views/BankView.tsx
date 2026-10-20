@@ -2,7 +2,8 @@
 import { Bank, ShieldCheck } from "@phosphor-icons/react";
 import { type Snapshot, human, money } from "@/lib/operations";
 import { useOperations } from "../OperationsProvider";
-import { ActionLedger, CaseLink, Empty, Loading, PageHeading } from "../Primitives";
+import { ActionLedger } from "../ActionLedger";
+import { CaseLink, Empty, Loading, PageHeading } from "../Primitives";
 
 type Account = Snapshot["bank"]["accounts"][number];
 

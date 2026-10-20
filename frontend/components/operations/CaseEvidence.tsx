@@ -1,5 +1,7 @@
 import { CheckCircle, ShieldCheck } from "@phosphor-icons/react";
 import { type Case, human } from "@/lib/operations";
+import { EvidenceGraph } from "./EvidenceGraph";
+import { Timeline } from "./Records";
 
 /** Detection reasons and each signal's contribution. */
 export function FlaggedReasons({ item }: { item: Case }) {
@@ -55,5 +57,31 @@ export function VerdictNote({ item }: { item: Case }) {
       </strong>
       <p>{text}</p>
     </section>
+  );
+}
+
+/** The right-hand column: how the evidence connects, and the case timeline. */
+export function CaseConnections({ item }: { item: Case }) {
+  return (
+    <div>
+      <section className="ops-section">
+        <div className="section-heading">
+          <h2>Evidence connections</h2>
+        </div>
+        <EvidenceGraph cases={[item]} />
+        <p className="fine-print graph-caption">
+          Connections show shared account, beneficiary or instrument identifiers present in the case evidence.
+        </p>
+      </section>
+      <section className="ops-section">
+        <div className="section-heading">
+          <div>
+            <h2>Incident timeline</h2>
+            <p>Payment → protection → analyst review</p>
+          </div>
+        </div>
+        <Timeline events={[...item.timeline].sort((a, b) => a.id - b.id)} />
+      </section>
+    </div>
   );
 }

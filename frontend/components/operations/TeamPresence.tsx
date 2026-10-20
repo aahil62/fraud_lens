@@ -7,7 +7,8 @@ export function TeamPresence({ team, max = 5 }: { team: TeamMember[]; max?: numb
   return (
     <ul className="team-presence" aria-label={`${online.length} analysts online`}>
       {online.slice(0, max).map((member) => {
-        const label = `${member.display_name} · ${member.role_label}${member.current_case_id ? ` · on ${member.current_case_id}` : ""}`;
+        const onCase = member.current_case_id ? ` · on ${member.current_case_id}` : "";
+        const label = `${member.display_name} · ${member.role_label}${onCase}`;
         return (
           <li key={member.username} title={label}>
             <span className="presence-avatar" aria-label={label}>

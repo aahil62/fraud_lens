@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getToken } from "@/lib/auth";
 import {
   heartbeat,
@@ -152,11 +152,11 @@ export function OperationsProvider({ children }: { children: React.ReactNode }) 
     },
     [refresh],
   );
-  return (
-    <Context.Provider value={{ snapshot, error, connected, refresh, mutate, setCurrentCase }}>
-      {children}
-    </Context.Provider>
+  const value = useMemo(
+    () => ({ snapshot, error, connected, refresh, mutate, setCurrentCase }),
+    [snapshot, error, connected, refresh, mutate, setCurrentCase],
   );
+  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useOperations() {
   const value = useContext(Context);

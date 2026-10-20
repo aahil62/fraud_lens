@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   ACTION_LABEL,
   type ApprovalAction,
-  type Brief,
   type Case,
   type CaseAction,
   type TraceHop,
@@ -12,22 +11,22 @@ import {
   can,
   decideApproval,
   explainError,
-  getBrief,
-  opsFetch,
   requestApproval,
   required,
   runCaseAction,
 } from "@/lib/operations";
 import { useOperations } from "./OperationsProvider";
-import { ActionLedger, Empty, Loading, PageHeading, Timeline, TransactionTable } from "./Primitives";
-import { EvidenceGraph } from "./EvidenceGraph";
+import { ActionLedger } from "./ActionLedger";
+import { Empty, Loading, PageHeading } from "./Primitives";
+import { TransactionTable } from "./Records";
 import { AgentBrief } from "./AgentBrief";
 import { ApprovalPanel } from "./ApprovalPanel";
 import { CaseHeader, StateStrip, nameOf } from "./CaseHeader";
-import { FlaggedReasons, VerdictNote } from "./CaseEvidence";
+import { CaseConnections, FlaggedReasons, VerdictNote } from "./CaseEvidence";
 import { DecisionPanel } from "./DecisionPanel";
 import { FundTrail } from "./FundTrail";
 import { useAnalyst } from "./useAnalyst";
+import { useCase } from "./useCase";
 
 export { DecisionPanel } from "./DecisionPanel";
 
@@ -37,44 +36,6 @@ const NEEDS_RATIONALE: CaseAction[] = [
   "close_account",
   "file_ncrp_report",
 ];
-
-/** Loads the case and its agent brief, refreshing both when the snapshot moves on. */
-function useCase(caseId: string, cursor: number | undefined) {
-  const [item, setItem] = useState<Case | null>(null);
-  const [brief, setBrief] = useState<Brief | null>(null);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    if (!caseId) return;
-    let active = true;
-    void opsFetch<Case>(`/cases/${encodeURIComponent(caseId)}`)
-      .then((value) => {
-        if (active) {
-          setItem(value);
-          setError("");
-        }
-      })
-      .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : "Case unavailable.");
-      });
-    return () => {
-      active = false;
-    };
-  }, [caseId, cursor]);
-  const version = item?.version;
-  useEffect(() => {
-    if (!caseId || version === undefined) return;
-    let active = true;
-    void getBrief(caseId)
-      .then((value) => {
-        if (active) setBrief(value);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [caseId, version]);
-  return { item, setItem, brief, error };
-}
 
 export default function CaseWorkspace({ caseId }: { caseId: string }) {
   const { snapshot, refresh, setCurrentCase } = useOperations();
@@ -299,27 +260,7 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
             <TransactionTable transactions={item.related_transactions} />
           </section>
         </div>
-        <div>
-          <section className="ops-section">
-            <div className="section-heading">
-              <h2>Evidence connections</h2>
-            </div>
-            <EvidenceGraph cases={[item]} />
-            <p className="fine-print graph-caption">
-              Connections show shared account, beneficiary or instrument identifiers present in the case
-              evidence.
-            </p>
-          </section>
-          <section className="ops-section">
-            <div className="section-heading">
-              <div>
-                <h2>Incident timeline</h2>
-                <p>Payment → protection → analyst review</p>
-              </div>
-            </div>
-            <Timeline events={[...item.timeline].sort((a, b) => a.id - b.id)} />
-          </section>
-        </div>
+        <CaseConnections item={item} />
       </div>
     </>
   );

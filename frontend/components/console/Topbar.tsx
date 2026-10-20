@@ -8,6 +8,7 @@ import type { AnalystProfile } from "@/lib/types";
 import type { Snapshot } from "@/lib/operations";
 import { RoleChip } from "../operations/RoleChip";
 import { TeamPresence } from "../operations/TeamPresence";
+import { initials } from "../operations/useAnalyst";
 import { LensMark } from "./LensMark";
 
 type TopbarProps = {
@@ -21,15 +22,6 @@ type TopbarProps = {
   hasError: boolean;
   onSearch: () => void;
 };
-
-function initialsOf(name: string) {
-  return name
-    .split(/[ .]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
-}
 
 function connectionLabel(live: boolean, snapshot: Snapshot | null, hasError: boolean) {
   if (live) return "System live";
@@ -81,7 +73,7 @@ export function Topbar(props: TopbarProps) {
         </span>
         <details className="analyst-menu">
           <summary aria-label={`Account: ${name}`}>
-            <span className="analyst-avatar">{initialsOf(name)}</span>
+            <span className="analyst-avatar">{initials(name)}</span>
             <span>{name}</span>
             <CaretDown size={11} />
           </summary>

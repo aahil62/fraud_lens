@@ -1,4 +1,4 @@
-// ── Auth (POST /auth/login, /auth/signup, GET /auth/me) ─────────────────
+// Auth responses: POST /auth/login, POST /auth/signup, GET /auth/me.
 
 export interface AnalystProfile {
   username: string;

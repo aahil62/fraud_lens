@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { human } from "@/lib/operations";
 import { useOperations } from "../OperationsProvider";
-import { Empty, Loading, PageHeading, Timeline } from "../Primitives";
+import { Empty, Loading, PageHeading } from "../Primitives";
+import { Timeline } from "../Records";
 
 export function AuditView() {
   const { snapshot } = useOperations();

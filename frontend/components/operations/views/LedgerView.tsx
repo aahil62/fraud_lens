@@ -13,7 +13,8 @@ import {
 } from "@/lib/operations";
 import { useOperations } from "../OperationsProvider";
 import { useAnalyst } from "../useAnalyst";
-import { CaseTable, Loading, PageHeading, TransactionTable } from "../Primitives";
+import { Loading, PageHeading } from "../Primitives";
+import { CaseTable, TransactionTable } from "../Records";
 import ScenarioControls from "../ScenarioControls";
 
 const PAGE_SIZE = 25;

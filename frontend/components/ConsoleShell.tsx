@@ -1,19 +1,17 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { Flask } from "@phosphor-icons/react";
-import { getStoredAnalyst } from "@/lib/auth";
 import { dateTime, decidableApprovals } from "@/lib/operations";
 import { OperationsProvider, useOperations } from "./operations/OperationsProvider";
+import { useAnalyst } from "./operations/useAnalyst";
 import { currentNavItem } from "./console/nav";
 import { SearchDialog } from "./console/SearchDialog";
 import { Sidebar } from "./console/Sidebar";
 import { Topbar } from "./console/Topbar";
 
 export { LensMark } from "./console/LensMark";
-
-const subscribe = () => () => {};
 
 /** Keeps Tab inside the open mobile drawer and closes it on Escape; focus returns to the trigger. */
 function useDrawerFocus(
@@ -56,7 +54,7 @@ function useDrawerFocus(
 
 function Workspace({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const analyst = useSyncExternalStore(subscribe, getStoredAnalyst, () => null);
+  const analyst = useAnalyst();
   const { snapshot, error, connected, refresh } = useOperations();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -70,24 +68,23 @@ function Workspace({ children }: { children: React.ReactNode }) {
 
   useDrawerFocus(menuOpen, closeMenu, navigationRef, menuButton);
 
-  function openSearch() {
+  const openSearch = useCallback(() => {
     setQuery("");
     dialog.current?.showModal();
     search.current?.focus();
-  }
+  }, []);
 
   useEffect(() => {
     function keyboard(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        dialog.current?.showModal();
-        search.current?.focus();
+        openSearch();
       }
       if (event.key === "Escape") setMenuOpen(false);
     }
     window.addEventListener("keydown", keyboard);
     return () => window.removeEventListener("keydown", keyboard);
-  }, []);
+  }, [openSearch]);
 
   return (
     <div className="ops-shell">
