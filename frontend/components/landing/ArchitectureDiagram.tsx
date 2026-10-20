@@ -23,13 +23,13 @@ export default function ArchitectureDiagram() {
   return <figure className="fl-arch">
     <svg className="fl-arch-wide" viewBox="0 0 720 260" role="img" aria-labelledby="arch-title">
       <title id="arch-title">FraudLens architecture: synthetic stream and attack console feed the detector; cases go to a transactional ledger and outbox; bank actions go to a separate bank server; acknowledgements and live events reach the multi-analyst console.</title>
-      <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#4058d5" /></marker></defs>
-      {ARROWS.map((a) => <g key={a.label}><path d={a.d} fill="none" stroke="#4058d5" strokeWidth="1.6" markerEnd="url(#arch-arrow)" />
-        <text x={a.lx} y={a.ly} textAnchor="middle" fontSize="11" fill="#626d80">{a.label}</text></g>)}
+      <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path className="arch-arrowhead" d="M0 0 L10 5 L0 10 z" /></marker></defs>
+      {ARROWS.map((a) => <g key={a.label}><path className="arch-line" d={a.d} fill="none" strokeWidth="1.6" markerEnd="url(#arch-arrow)" />
+        <text className="arch-flow" x={a.lx} y={a.ly} textAnchor="middle" fontSize="11">{a.label}</text></g>)}
       {BOXES.map((b) => <g key={b.id}>
-        <rect x={b.x} y={b.y} width={b.w} height="78" rx="12" fill="#fff" stroke="#dce2ed" />
-        <text x={b.x + 16} y={b.y + 28} fontSize="15" fontWeight="650" fill="#202635">{b.title}</text>
-        {b.sub.map((line, i) => <text key={line} x={b.x + 16} y={b.y + 48 + i * 16} fontSize="11.5" fill="#626d80">{line}</text>)}
+        <rect className="arch-box" x={b.x} y={b.y} width={b.w} height="78" rx="8" />
+        <text className="arch-title" x={b.x + 16} y={b.y + 28} fontSize="15">{b.title}</text>
+        {b.sub.map((line, i) => <text className="arch-sub" key={line} x={b.x + 16} y={b.y + 48 + i * 16} fontSize="11.5">{line}</text>)}
       </g>)}
     </svg>
     <ol className="fl-arch-steps">{STEPS.map(([name, flow]) => <li key={name}><strong>{name}</strong>{flow && <span>↓ {flow}</span>}</li>)}</ol>

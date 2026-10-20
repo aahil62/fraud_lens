@@ -57,9 +57,9 @@ export function EvidenceGraph({ cases }: { cases: Case[] }) {
         role="group"
         aria-label="Evidence graph connecting accounts, investigations, beneficiaries and payment instruments"
       >
-        <text x="85" y="28" textAnchor="middle" fill="#626d80" fontSize="9">INVESTIGATIONS</text>
-        <text x="253" y="28" textAnchor="middle" fill="#626d80" fontSize="9">ACCOUNTS</text>
-        <text x="425" y="28" textAnchor="middle" fill="#626d80" fontSize="9">CONNECTED REFERENCES</text>
+        <text x="85" y="28" textAnchor="middle" className="graph-heading" fontSize="9">INVESTIGATIONS</text>
+        <text x="253" y="28" textAnchor="middle" className="graph-heading" fontSize="9">ACCOUNTS</text>
+        <text x="425" y="28" textAnchor="middle" className="graph-heading" fontSize="9">CONNECTED REFERENCES</text>
         <g>
           {edges.map((edge, i) => {
             const a = positions.get(edge.from),
@@ -69,7 +69,7 @@ export function EvidenceGraph({ cases }: { cases: Case[] }) {
                 key={i}
                 d={`M${a.x},${a.y} C${(a.x+b.x)/2},${a.y} ${(a.x+b.x)/2},${b.y} ${b.x},${b.y}`}
                 fill="none"
-                stroke={selected && (edge.from === selectedNode || edge.to === selectedNode) ? "#7187dc" : "#d9e0f1"}
+                className={selected && (edge.from === selectedNode || edge.to === selectedNode) ? "graph-edge is-active" : "graph-edge"}
                 strokeWidth="1.4"
                 opacity={selected && edge.from !== selectedNode && edge.to !== selectedNode ? .3 : 1}
               >
@@ -84,24 +84,18 @@ export function EvidenceGraph({ cases }: { cases: Case[] }) {
           const p = positions.get(node.id)!;
           return (
             <g key={node.id} role="button" tabIndex={0} aria-label={`Inspect ${node.kind} ${node.id}`} onClick={()=>setSelectedNode(selectedNode===node.id?"":node.id)} onKeyDown={event=>{if(event.key==="Enter" || event.key===" "){event.preventDefault();setSelectedNode(selectedNode===node.id?"":node.id);}}} style={{cursor:"pointer",opacity:selected && !linked.has(node.id) && node.id!==selectedNode? .35:1}}>
-              <circle cx={p.x} cy={p.y} r={node.kind==="account"?22:16} fill="white" stroke={selectedNode===node.id?"#637bd5":"#e0e6f3"} strokeWidth="1.4"/>
+              <circle cx={p.x} cy={p.y} r={node.kind==="account"?22:16} className={selectedNode===node.id?"graph-node-ring is-selected":"graph-node-ring"} strokeWidth="1.4"/>
               <circle
                 cx={p.x}
                 cy={p.y}
                 r={node.kind === "account" ? 13 : 8}
-                fill={
-                  node.kind === "case"
-                    ? "#d8a051"
-                    : node.kind === "account"
-                      ? "#677fce"
-                      : "#92a2be"
-                }
+                className={`graph-node-dot graph-node-${node.kind === "case" || node.kind === "account" ? node.kind : "reference"}`}
               />
               <text
                 x={p.x}
                 y={p.y + 35}
                 textAnchor="middle"
-                fill="#596b8c"
+                className="graph-label"
                 fontSize="9"
               >
                 {node.id.length > 16 ? node.id.slice(0, 12) + "…" : node.id}

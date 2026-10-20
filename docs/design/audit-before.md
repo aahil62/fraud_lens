@@ -12,7 +12,7 @@ Screenshots: [landing](before/landing/) and [attack](before/attack/) at 375/768/
 | Spacing | 1 / 2 | S3 (touch targets) not measured, excluded |
 | Colour | 2 / 5 | Accent in the rejected blue family; contrast failures |
 | Surfaces | 2 / 3 | 15 radii, no roles |
-| Icons and imagery | 3 / 3 | Lucide only, no emoji, no stock imagery |
+| Icons and imagery | 3 / 3 | Phosphor only, no emoji, no stock imagery |
 | Motion | 4 / 4 | Reduced-motion rules exist on every stylesheet |
 | States | 3 / 3 | No overflow at any width; labelled forms |
 | Layout | 0 / 4 | Template hero, same section skeleton, flat surfaces |
@@ -53,7 +53,7 @@ Screenshots: [landing](before/landing/) and [attack](before/attack/) at 375/768/
 
 ## What already works (keep)
 - No horizontal overflow at 375, 768, 1024 or 1440 px on landing and attack; none at 390 or 1280 px on dashboard and case.
-- One icon system (lucide-react), no emoji, no stock images, no gradient text, no glow, no glass.
+- One icon system (Phosphor, `@phosphor-icons/react`), no emoji, no stock images, no gradient text, no glow, no glass.
 - A real signature object exists: the Three.js lens with payment paths. It needs to be restyled, not replaced.
 - Reduced-motion handling in all four stylesheets; content is visible without animation.
 - Status colours are paired with text labels (C5); money uses tabular figures; IDs use a monospace.

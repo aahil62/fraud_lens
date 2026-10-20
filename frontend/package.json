@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fontsource-variable/mona-sans": "^5.3.0",
+    "@fontsource/courier-prime": "^5.2.8",
     "@phosphor-icons/react": "^2.1.10",
     "@types/cytoscape": "^3.21.9",
     "cytoscape": "^3.34.2",
