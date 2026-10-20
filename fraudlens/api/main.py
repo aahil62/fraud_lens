@@ -5,9 +5,9 @@ Run with: uvicorn fraudlens.api.main:app --reload --port 8001
 
 from __future__ import annotations
 
-import os
 import asyncio
 import logging
+import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -15,22 +15,25 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from fraudlens.api.routes.auth import router as auth_router
-from fraudlens.api.routes.health import public_status_router, router as health_router
-from fraudlens.api.routes.operations import router as operations_router
-from fraudlens.api.state import state
-from fraudlens.runtime import build_runtime
-from fraudlens.operations.service import OperationsService
-from fraudlens.operations.detector import CHANNELS
-from fraudlens.operations.attacks import PublicAttacks
-from fraudlens.api.routes.public import mount_public_routes
 from fraudlens.api.limits import LoginLimiter
+from fraudlens.api.routes.auth import router as auth_router
+from fraudlens.api.routes.health import public_status_router
+from fraudlens.api.routes.health import router as health_router
+from fraudlens.api.routes.operations import router as operations_router
+from fraudlens.api.routes.public import mount_public_routes
+from fraudlens.api.state import state
+from fraudlens.operations.attacks import PublicAttacks
+from fraudlens.operations.detector import CHANNELS
+from fraudlens.operations.service import OperationsService
+from fraudlens.runtime import build_runtime
 
 
 def initial_simulation_config():
     """Synthetic stream on first seed. The public container starts it paused and slow."""
-    return {"running": os.environ.get("FRAUDLENS_SIMULATION_RUNNING", "1") == "1",
-            "interval_seconds": float(os.environ.get("FRAUDLENS_SIMULATION_INTERVAL", "5"))}
+    return {
+        "running": os.environ.get("FRAUDLENS_SIMULATION_RUNNING", "1") == "1",
+        "interval_seconds": float(os.environ.get("FRAUDLENS_SIMULATION_INTERVAL", "5")),
+    }
 
 
 async def operation_worker(operations):
@@ -43,22 +46,29 @@ async def operation_worker(operations):
                 config = operations.store.setting(db, "simulation", {"running": False, "interval_seconds": 5})
             if config["running"] and time.monotonic() - last_tick >= config["interval_seconds"]:
                 channel = CHANNELS[tick % len(CHANNELS)]
-                await asyncio.to_thread(operations.run_scenario, channel, "fraud" if tick % 7 == 6 else "normal")
+                await asyncio.to_thread(
+                    operations.run_scenario, channel, "fraud" if tick % 7 == 6 else "normal"
+                )
                 tick += 1
                 last_tick = time.monotonic()
         except asyncio.CancelledError:
             raise
         except Exception:
-            logging.getLogger("fraudlens.operations").exception("Operational worker failed; durable jobs remain queued")
-        await asyncio.sleep(.5)
+            logging.getLogger("fraudlens.operations").exception(
+                "Operational worker failed; durable jobs remain queued"
+            )
+        await asyncio.sleep(0.5)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     state.runtime = build_runtime()
-    state.operations = OperationsService(os.environ.get("FRAUDLENS_OPS_DB", "var/operations.sqlite3"),
+    state.operations = OperationsService(
+        os.environ.get("FRAUDLENS_OPS_DB", "var/operations.sqlite3"),
         bank_url=os.environ.get("FRAUDLENS_BANK_URL", "http://127.0.0.1:8002"),
-        bank_key=os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator"), analysts=state.runtime.analyst_store)
+        bank_key=os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator"),
+        analysts=state.runtime.analyst_store,
+    )
     if os.environ.get("FRAUDLENS_SEED_DEMO") == "1":
         await asyncio.to_thread(state.operations.seed_baseline)
         with state.operations.store.connect(write=True) as db:
@@ -91,9 +101,9 @@ app = FastAPI(
 # Wildcard origin + credentials is an invalid combination — pin to the
 # local frontend dev origin, override via FRAUDLENS_CORS_ORIGINS (comma
 # separated) once feature/frontend has a deployed URL.
-_cors_origins = os.environ.get(
-    "FRAUDLENS_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
-).split(",")
+_cors_origins = os.environ.get("FRAUDLENS_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(
+    ","
+)
 
 app.add_middleware(
     CORSMiddleware,

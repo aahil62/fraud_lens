@@ -1,4 +1,5 @@
 """Roles are persisted, fail closed, and cannot be chosen at registration."""
+
 import json
 import tempfile
 import unittest
@@ -20,10 +21,14 @@ class RoleTests(unittest.TestCase):
 
     def test_can_respects_rank(self):
         for role, action, allowed in [
-            ("l1_analyst", "place_lien", True), ("l1_analyst", "restrict", False),
-            ("l2_analyst", "close_account", False), ("supervisor", "close_account", True),
-            ("l2_analyst", "release_lien", True), ("l1_analyst", "confirm_fraud", False),
-            ("supervisor", "agent_settings", True), ("unknown", "claim", False),
+            ("l1_analyst", "place_lien", True),
+            ("l1_analyst", "restrict", False),
+            ("l2_analyst", "close_account", False),
+            ("supervisor", "close_account", True),
+            ("l2_analyst", "release_lien", True),
+            ("l1_analyst", "confirm_fraud", False),
+            ("supervisor", "agent_settings", True),
+            ("unknown", "claim", False),
         ]:
             with self.subTest(role=role, action=action):
                 self.assertEqual(can(role, action), allowed)
@@ -35,17 +40,27 @@ class RoleTests(unittest.TestCase):
 
     def test_seed_roles(self):
         store = AnalystStore(str(self.path))
-        for username, role in [("asharma", "supervisor"), ("riyer", "l2_analyst"),
-                               ("kmehta", "l1_analyst"), ("pnair", "l1_analyst")]:
+        for username, role in [
+            ("asharma", "supervisor"),
+            ("riyer", "l2_analyst"),
+            ("kmehta", "l1_analyst"),
+            ("pnair", "l1_analyst"),
+        ]:
             self.assertEqual(store.get(username).role, role)
         AnalystStore(str(self.path))
         self.assertEqual(len(json.loads(self.path.read_text())), 4)
 
     def test_legacy_json_without_role_loads_as_l1(self):
-        self.path.write_text(json.dumps([
-            dict(username=name, display_name=name, password_hash="legacy-hash", created_at="2026-10-18")
-            for name in ("legacy", "asharma")
-        ]))
+        self.path.write_text(
+            json.dumps(
+                [
+                    dict(
+                        username=name, display_name=name, password_hash="legacy-hash", created_at="2026-10-18"
+                    )
+                    for name in ("legacy", "asharma")
+                ]
+            )
+        )
         store = AnalystStore(str(self.path))
         self.assertEqual(store.get("legacy").role, "l1_analyst")
         self.assertEqual(store.get("asharma").role, "supervisor")

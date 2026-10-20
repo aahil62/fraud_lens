@@ -5,7 +5,6 @@ from fraudlens.testing import use_isolated_data_dir
 use_isolated_data_dir()
 
 from fastapi.testclient import TestClient
-
 from fraudlens.api.main import app
 
 

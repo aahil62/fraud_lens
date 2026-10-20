@@ -1,12 +1,5 @@
 "use client";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { getToken } from "@/lib/auth";
 import {
   heartbeat,
@@ -27,11 +20,7 @@ type State = {
   setCurrentCase: (caseId: string | null) => void;
 };
 const Context = createContext<State | null>(null);
-export function OperationsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function OperationsProvider({ children }: { children: React.ReactNode }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
@@ -67,11 +56,7 @@ export function OperationsProvider({
         setError(null);
       })
       .catch((err) => {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Operations service unavailable.",
-        );
+        setError(err instanceof Error ? err.message : "Operations service unavailable.");
         throw err;
       })
       .finally(() => {
@@ -97,20 +82,14 @@ export function OperationsProvider({
     async function stream() {
       try {
         const token = getToken();
-        if (!token)
-          throw new OperationsError(401, "Sign in to open operations.");
-        const response = await fetch(
-          `${OPS_BASE}/events?after=${cursor.current}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: controller.signal,
-            cache: "no-store",
-          },
-        );
+        if (!token) throw new OperationsError(401, "Sign in to open operations.");
+        const response = await fetch(`${OPS_BASE}/events?after=${cursor.current}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+          cache: "no-store",
+        });
         if (!response.ok || !response.body)
-          throw new Error(
-            "Live connection unavailable. Retrying; the last snapshot remains visible.",
-          );
+          throw new Error("Live connection unavailable. Retrying; the last snapshot remains visible.");
         setConnected(true);
         await refresh();
         const reader = response.body.getReader();
@@ -119,22 +98,16 @@ export function OperationsProvider({
         while (!stopped) {
           const { done, value } = await reader.read();
           if (done) break;
-          buffer += decoder
-            .decode(value, { stream: true })
-            .replaceAll("\r\n", "\n");
+          buffer += decoder.decode(value, { stream: true }).replaceAll("\r\n", "\n");
           let boundary: number;
           while ((boundary = buffer.indexOf("\n\n")) >= 0) {
             const event = buffer.slice(0, boundary);
             buffer = buffer.slice(boundary + 2);
-            if (event.split("\n").some((line) => line.startsWith("data:")))
-              await refresh();
+            if (event.split("\n").some((line) => line.startsWith("data:"))) await refresh();
           }
         }
       } catch (err) {
-        if (!stopped)
-          setError(
-            err instanceof Error ? err.message : "Live connection interrupted.",
-          );
+        if (!stopped) setError(err instanceof Error ? err.message : "Live connection interrupted.");
       } finally {
         if (!stopped) {
           setConnected(false);
@@ -170,9 +143,7 @@ export function OperationsProvider({
     [refresh],
   );
   return (
-    <Context.Provider
-      value={{ snapshot, error, connected, refresh, mutate, setCurrentCase }}
-    >
+    <Context.Provider value={{ snapshot, error, connected, refresh, mutate, setCurrentCase }}>
       {children}
     </Context.Provider>
   );

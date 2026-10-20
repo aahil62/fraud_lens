@@ -1,18 +1,17 @@
 """Durable, local bank simulator: ``uvicorn fraudlens.bank_simulator.app:app --port 8002``."""
 
-from contextlib import contextmanager
-from datetime import datetime, timezone
 import hmac
 import json
 import os
-from pathlib import Path
 import sqlite3
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Annotated, Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 
 Identifier = Annotated[str, Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_.:@-]+$")]
 Mode = Literal["normal", "reject", "timeout_after_commit"]
@@ -111,7 +110,9 @@ class Ledger:
                 INSERT OR IGNORE INTO settings VALUES ('mode','normal');
             """)
             if "status" not in {row["name"] for row in db.execute("PRAGMA table_info(accounts)")}:
-                db.execute("ALTER TABLE accounts ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','closed'))")
+                db.execute(
+                    "ALTER TABLE accounts ADD COLUMN status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','closed'))"
+                )
 
     @contextmanager
     def connection(self, write=False):
@@ -135,7 +136,9 @@ class Ledger:
 
     @staticmethod
     def ensure_account(db, account_id):
-        db.execute("INSERT OR IGNORE INTO accounts(account_id,balance_minor) VALUES (?,100000000)", (account_id,))
+        db.execute(
+            "INSERT OR IGNORE INTO accounts(account_id,balance_minor) VALUES (?,100000000)", (account_id,)
+        )
 
     @staticmethod
     def existing(db, table, column, identifier, payload):
@@ -148,7 +151,9 @@ class Ledger:
         return json.loads(row["response"])
 
     def payment(self, request):
-        payload = _json(request.model_dump(exclude={"beneficiary_id"} if request.beneficiary_id is None else set()))
+        payload = _json(
+            request.model_dump(exclude={"beneficiary_id"} if request.beneficiary_id is None else set())
+        )
         with self.connection(write=True) as db:
             existing = self.existing(db, "payments", "txn_id", request.txn_id, payload)
             if existing is not None:
@@ -156,12 +161,32 @@ class Ledger:
             if self.mode(db) == "reject":
                 raise HTTPException(503, "Simulator rejected the request")
             self.ensure_account(db, request.account_id)
-            account = db.execute("SELECT balance_minor,status FROM accounts WHERE account_id=?", (request.account_id,)).fetchone()
+            account = db.execute(
+                "SELECT balance_minor,status FROM accounts WHERE account_id=?", (request.account_id,)
+            ).fetchone()
             balance = account["balance_minor"]
-            lien = db.execute("SELECT COALESCE(SUM(amount_minor),0) FROM liens WHERE account_id=?", (request.account_id,)).fetchone()[0]
-            beneficiary = db.execute("SELECT status FROM accounts WHERE account_id=?", (request.beneficiary_id,)).fetchone() if request.beneficiary_id else None
-            restricted = db.execute("SELECT 1 FROM restrictions WHERE target_type='account' AND target_id=? LIMIT 1", (request.account_id,)).fetchone()
-            card_restricted = db.execute("SELECT 1 FROM restrictions WHERE target_type='card' AND target_id=? LIMIT 1", (request.instrument_id,)).fetchone() if request.channel in {"card", "atm"} else None
+            lien = db.execute(
+                "SELECT COALESCE(SUM(amount_minor),0) FROM liens WHERE account_id=?", (request.account_id,)
+            ).fetchone()[0]
+            beneficiary = (
+                db.execute(
+                    "SELECT status FROM accounts WHERE account_id=?", (request.beneficiary_id,)
+                ).fetchone()
+                if request.beneficiary_id
+                else None
+            )
+            restricted = db.execute(
+                "SELECT 1 FROM restrictions WHERE target_type='account' AND target_id=? LIMIT 1",
+                (request.account_id,),
+            ).fetchone()
+            card_restricted = (
+                db.execute(
+                    "SELECT 1 FROM restrictions WHERE target_type='card' AND target_id=? LIMIT 1",
+                    (request.instrument_id,),
+                ).fetchone()
+                if request.channel in {"card", "atm"}
+                else None
+            )
             if account["status"] == "closed":
                 reason = "account_closed"
             elif restricted:
@@ -175,17 +200,31 @@ class Ledger:
             else:
                 reason = "posted"
                 balance -= request.amount_minor
-                db.execute("UPDATE accounts SET balance_minor=? WHERE account_id=?", (balance, request.account_id))
+                db.execute(
+                    "UPDATE accounts SET balance_minor=? WHERE account_id=?", (balance, request.account_id)
+                )
                 if beneficiary:
-                    db.execute("UPDATE accounts SET balance_minor=balance_minor+? WHERE account_id=?", (request.amount_minor, request.beneficiary_id))
-                balance = db.execute("SELECT balance_minor FROM accounts WHERE account_id=?", (request.account_id,)).fetchone()[0]
-            response = {"txn_id": request.txn_id, "status": "posted" if reason == "posted" else "declined",
-                        "reason": reason, "balance_minor": balance, "bank_reference": f"sim-payment-{uuid4().hex}"}
+                    db.execute(
+                        "UPDATE accounts SET balance_minor=balance_minor+? WHERE account_id=?",
+                        (request.amount_minor, request.beneficiary_id),
+                    )
+                balance = db.execute(
+                    "SELECT balance_minor FROM accounts WHERE account_id=?", (request.account_id,)
+                ).fetchone()[0]
+            response = {
+                "txn_id": request.txn_id,
+                "status": "posted" if reason == "posted" else "declined",
+                "reason": reason,
+                "balance_minor": balance,
+                "bank_reference": f"sim-payment-{uuid4().hex}",
+            }
             db.execute("INSERT INTO payments VALUES (?,?,?)", (request.txn_id, payload, _json(response)))
             return response
 
     def action(self, request):
-        payload = _json(request.model_dump(exclude={"amount_minor"} if request.amount_minor is None else set()))
+        payload = _json(
+            request.model_dump(exclude={"amount_minor"} if request.amount_minor is None else set())
+        )
         with self.connection(write=True) as db:
             existing = self.existing(db, "actions", "action_id", request.action_id, payload)
             if existing is not None:
@@ -199,21 +238,49 @@ class Ledger:
             if request.operation == "restrict":
                 db.execute("INSERT OR IGNORE INTO restrictions VALUES (?,?,?)", target)
             elif request.operation == "release":
-                db.execute("DELETE FROM restrictions WHERE case_id=? AND target_type=? AND target_id=?", target)
+                db.execute(
+                    "DELETE FROM restrictions WHERE case_id=? AND target_type=? AND target_id=?", target
+                )
             elif request.operation == "lien":
-                account = db.execute("SELECT balance_minor,status FROM accounts WHERE account_id=?", (request.target_id,)).fetchone()
-                held = db.execute("SELECT COALESCE(SUM(amount_minor),0) FROM liens WHERE account_id=?", (request.target_id,)).fetchone()[0]
+                account = db.execute(
+                    "SELECT balance_minor,status FROM accounts WHERE account_id=?", (request.target_id,)
+                ).fetchone()
+                held = db.execute(
+                    "SELECT COALESCE(SUM(amount_minor),0) FROM liens WHERE account_id=?", (request.target_id,)
+                ).fetchone()[0]
                 if account["status"] == "closed" or request.amount_minor > account["balance_minor"] - held:
-                    raise HTTPException(409, "Account is closed or has insufficient available funds for this lien")
-                db.execute("INSERT INTO liens VALUES(?,?,?,?,?)", (request.action_id, request.case_id, request.target_id,
-                           request.amount_minor, datetime.now(timezone.utc).isoformat()))
+                    raise HTTPException(
+                        409, "Account is closed or has insufficient available funds for this lien"
+                    )
+                db.execute(
+                    "INSERT INTO liens VALUES(?,?,?,?,?)",
+                    (
+                        request.action_id,
+                        request.case_id,
+                        request.target_id,
+                        request.amount_minor,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
             elif request.operation == "lien_release":
-                db.execute("DELETE FROM liens WHERE case_id=? AND account_id=?", (request.case_id, request.target_id))
+                db.execute(
+                    "DELETE FROM liens WHERE case_id=? AND account_id=?", (request.case_id, request.target_id)
+                )
             elif request.operation == "close":
                 db.execute("UPDATE accounts SET status='closed' WHERE account_id=?", (request.target_id,))
-            active = db.execute("SELECT 1 FROM restrictions WHERE target_type=? AND target_id=? LIMIT 1", (request.target_type, request.target_id)).fetchone() is not None
-            response = {"action_id": request.action_id, "status": "confirmed", "restriction_active": active,
-                        "bank_reference": f"sim-action-{uuid4().hex}"}
+            active = (
+                db.execute(
+                    "SELECT 1 FROM restrictions WHERE target_type=? AND target_id=? LIMIT 1",
+                    (request.target_type, request.target_id),
+                ).fetchone()
+                is not None
+            )
+            response = {
+                "action_id": request.action_id,
+                "status": "confirmed",
+                "restriction_active": active,
+                "bank_reference": f"sim-action-{uuid4().hex}",
+            }
             if request.operation == "lien":
                 response["amount_minor"] = request.amount_minor
             db.execute("INSERT INTO actions VALUES (?,?,?)", (request.action_id, payload, _json(response)))
@@ -225,26 +292,43 @@ class Ledger:
 
     def accounts(self):
         with self.connection() as db:
-            accounts = [dict(row) for row in db.execute("""
+            accounts = [
+                dict(row)
+                for row in db.execute("""
                 SELECT a.account_id,a.balance_minor,a.status,
                     (SELECT COUNT(*) FROM restrictions r WHERE r.target_type='account'
                         AND r.target_id=a.account_id) AS active_restrictions
                 FROM accounts a ORDER BY a.account_id
-            """)]
+            """)
+            ]
             for account in accounts:
                 account["restricted"] = account["active_restrictions"] > 0
-                account["liens"] = [dict(row) for row in db.execute(
-                    "SELECT lien_id,case_id,amount_minor FROM liens WHERE account_id=? ORDER BY created_at,lien_id", (account["account_id"],))]
-                account["available_minor"] = account["balance_minor"] - sum(lien["amount_minor"] for lien in account["liens"])
+                account["liens"] = [
+                    dict(row)
+                    for row in db.execute(
+                        "SELECT lien_id,case_id,amount_minor FROM liens WHERE account_id=? ORDER BY created_at,lien_id",
+                        (account["account_id"],),
+                    )
+                ]
+                account["available_minor"] = account["balance_minor"] - sum(
+                    lien["amount_minor"] for lien in account["liens"]
+                )
                 if account["status"] != "closed" and account["restricted"]:
                     account["status"] = "frozen"
-            restrictions = [dict(row) for row in db.execute("SELECT * FROM restrictions ORDER BY case_id,target_type,target_id")]
+            restrictions = [
+                dict(row)
+                for row in db.execute("SELECT * FROM restrictions ORDER BY case_id,target_type,target_id")
+            ]
             return {"accounts": accounts, "restrictions": restrictions}
 
 
 def create_app(db_path=None, api_key=None):
-    key = api_key if api_key is not None else os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator")
-    if os.environ.get("FRAUDLENS_MODE", "demo") != "demo" and (key == "fraudlens-local-simulator" or len(key) < 32):
+    key = (
+        api_key if api_key is not None else os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator")
+    )
+    if os.environ.get("FRAUDLENS_MODE", "demo") != "demo" and (
+        key == "fraudlens-local-simulator" or len(key) < 32
+    ):
         raise ValueError("A private simulator key of at least 32 characters is required outside demo mode")
     ledger = Ledger(db_path or os.environ.get("FRAUDLENS_BANK_DB", "var/bank.sqlite3"))
     if not key:
@@ -288,8 +372,10 @@ def create_app(db_path=None, api_key=None):
             raise HTTPException(404, "Not found")
         with ledger.connection(write=True) as db:
             for account in request.accounts:
-                db.execute("INSERT OR IGNORE INTO accounts(account_id,balance_minor) VALUES(?,?)",
-                           (account.account_id, account.balance_minor))
+                db.execute(
+                    "INSERT OR IGNORE INTO accounts(account_id,balance_minor) VALUES(?,?)",
+                    (account.account_id, account.balance_minor),
+                )
         return {"simulation": True, "accounts": [a.account_id for a in request.accounts]}
 
     @bank.post("/control")

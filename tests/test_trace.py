@@ -1,4 +1,5 @@
 """Causal fund attribution and bank-acknowledged golden-hour holds."""
+
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -7,7 +8,6 @@ from unittest.mock import patch
 
 import httpx
 from fastapi.testclient import TestClient
-
 from fraudlens.bank_simulator.main import create_app
 from fraudlens.models.schemas import AnalystProfile
 from fraudlens.operations.models import ComplaintInput, TransactionInput
@@ -33,9 +33,16 @@ class TraceTests(unittest.TestCase):
         self.root = self.row("ROOT", "VICTIM", "M1", 5000000)
 
     def row(self, txn_id, sender, beneficiary, amount, minute=0, **changes):
-        return dict(txn_id=txn_id, account_id=sender, beneficiary_id=beneficiary,
-                    amount_minor=amount, timestamp=(self.t0 + timedelta(minutes=minute)).isoformat(),
-                    channel="upi", payment_status="posted", **changes)
+        return dict(
+            txn_id=txn_id,
+            account_id=sender,
+            beneficiary_id=beneficiary,
+            amount_minor=amount,
+            timestamp=(self.t0 + timedelta(minutes=minute)).isoformat(),
+            channel="upi",
+            payment_status="posted",
+            **changes,
+        )
 
     def post(self, *rows):
         for row in rows:
@@ -43,8 +50,18 @@ class TraceTests(unittest.TestCase):
             self.service.process_jobs()
 
     def complaint(self, **changes):
-        return ComplaintInput(**{**dict(complaint_id="NCRP-123456", source="1930_helpline", victim_account_id="VICTIM",
-            reported_txn_id="ROOT", reported_at=self.t0+timedelta(minutes=20)), **changes})
+        return ComplaintInput(
+            **{
+                **dict(
+                    complaint_id="NCRP-123456",
+                    source="1930_helpline",
+                    victim_account_id="VICTIM",
+                    reported_txn_id="ROOT",
+                    reported_at=self.t0 + timedelta(minutes=20),
+                ),
+                **changes,
+            }
+        )
 
     def file(self, **changes):
         case = self.service.file_complaint(self.complaint(**changes), self.actor)
@@ -56,16 +73,20 @@ class TraceTests(unittest.TestCase):
         self.post(self.root)
         case = self.file()
         hop = case["trace"][0]
-        self.assertEqual((hop["hop"], hop["account_id"], hop["traced_minor"], hop["lien_minor"], hop["outcome"]),
-                         (1, "M1", 5000000, 5000000, "held"))
+        self.assertEqual(
+            (hop["hop"], hop["account_id"], hop["traced_minor"], hop["lien_minor"], hop["outcome"]),
+            (1, "M1", 5000000, 5000000, "held"),
+        )
         self.assertEqual(case["held_total_minor"], 5000000)
         self.assertEqual(self.service.snapshot()["counts"]["held_total_minor"], 5000000)
 
     def test_fan_out_two_hops_fifo(self):
         rows = [self.root, self.row("T2", "M1", "M2", 3000000, 3), self.row("T3", "M1", "M3", 1500000, 4)]
         hops = trace_funds(rows, self.root)
-        self.assertEqual([(h["hop"], h["account_id"], h["traced_minor"]) for h in hops],
-                         [(1, "M1", 500000), (2, "M2", 3000000), (2, "M3", 1500000)])
+        self.assertEqual(
+            [(h["hop"], h["account_id"], h["traced_minor"]) for h in hops],
+            [(1, "M1", 500000), (2, "M2", 3000000), (2, "M3", 1500000)],
+        )
 
     def test_atm_cashout_marks_funds_moved(self):
         cash = self.row("CASH", "M1", None, 2000000, 3)
@@ -85,7 +106,7 @@ class TraceTests(unittest.TestCase):
         self.assertEqual(case["traced_total_minor"], 5000000)
 
     def test_window_excludes_old_transactions(self):
-        future = self.row("LATE", "M1", "M2", 3000000, 25*60)
+        future = self.row("LATE", "M1", "M2", 3000000, 25 * 60)
         declined = {**self.row("DECLINE", "M1", "M2", 1000000, 1), "payment_status": "declined"}
         hops = trace_funds([self.root, future, declined], self.root)
         self.assertEqual([(h["account_id"], h["traced_minor"]) for h in hops], [("M1", 5000000)])
@@ -110,17 +131,28 @@ class TraceTests(unittest.TestCase):
         self.assertIn("Golden-hour lien on traced funds", events[0]["message"])
 
     def test_prearrival_outgoing_and_cycles_do_not_create_money(self):
-        rows = [self.root, self.row("PREARRIVAL", "M2", "M3", 1000000, 1),
-                self.row("TO-M2", "M1", "M2", 3000000, 3), self.row("BACK", "M2", "M1", 1000000, 5)]
+        rows = [
+            self.root,
+            self.row("PREARRIVAL", "M2", "M3", 1000000, 1),
+            self.row("TO-M2", "M1", "M2", 3000000, 3),
+            self.row("BACK", "M2", "M1", 1000000, 5),
+        ]
         hops = trace_funds(rows, self.root)
         self.assertEqual({h["account_id"]: h["traced_minor"] for h in hops}, {"M1": 3000000, "M2": 2000000})
         self.assertEqual(sum(h["traced_minor"] for h in hops), 5000000)
 
     def test_reconverging_paths_merge_without_duplicate_spending(self):
-        rows = [self.root, self.row("A", "M1", "M2", 2000000, 1), self.row("B", "M1", "M3", 2000000, 2),
-                self.row("C", "M3", "M2", 2000000, 3), self.row("D", "M2", None, 3000000, 4)]
+        rows = [
+            self.root,
+            self.row("A", "M1", "M2", 2000000, 1),
+            self.row("B", "M1", "M3", 2000000, 2),
+            self.row("C", "M3", "M2", 2000000, 3),
+            self.row("D", "M2", None, 3000000, 4),
+        ]
         hops = trace_funds(rows, self.root)
-        self.assertEqual({h["account_id"]: h["traced_minor"] for h in hops}, {"M1": 1000000, "M2": 1000000, "M3": 0})
+        self.assertEqual(
+            {h["account_id"]: h["traced_minor"] for h in hops}, {"M1": 1000000, "M2": 1000000, "M3": 0}
+        )
         self.assertEqual(sum(h["moved_minor"] for h in hops), 3000000)
 
     def test_pending_and_failed_bank_holds_are_not_recovered_funds(self):
@@ -145,6 +177,7 @@ class TraceTests(unittest.TestCase):
 
     def test_report_includes_fund_trail_and_confirmed_amount(self):
         from fraudlens.operations.reports import markdown, pdf, report
+
         self.post(self.root)
         case = self.file()
         value = report(case)
@@ -156,12 +189,18 @@ class TraceTests(unittest.TestCase):
     def test_victim_account_rejected_for_all_complaint_protection(self):
         from fraudlens.operations.models import DecisionInput
         from fraudlens.operations.team import OperationError
+
         self.post(self.root)
         case = self.file()
         supervisor = self.actor.model_copy(update={"role": "supervisor"})
         for action in ("close_account", "restrict", "place_lien"):
             with self.subTest(action=action), self.assertRaises(OperationError) as caught:
-                data = dict(action=action, expected_version=case["version"], notes="Test target", target_account_id="VICTIM")
+                data = dict(
+                    action=action,
+                    expected_version=case["version"],
+                    notes="Test target",
+                    target_account_id="VICTIM",
+                )
                 if action == "place_lien":
                     data["amount_minor"] = 100
                 self.service.decide(case["case_id"], DecisionInput(**data), supervisor)
@@ -171,13 +210,24 @@ class TraceTests(unittest.TestCase):
 
     def test_closing_hop_two_leaves_hop_one_untouched(self):
         from fraudlens.operations.models import DecisionInput
+
         self.post(self.root, self.row("NEXT", "M1", "M2", 3000000, 3))
         case = self.file()
         supervisor = self.actor.model_copy(update={"role": "supervisor"})
-        case = self.service.decide(case["case_id"], DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Verified complaint"), supervisor)
+        case = self.service.decide(
+            case["case_id"],
+            DecisionInput(
+                action="confirm_fraud", expected_version=case["version"], notes="Verified complaint"
+            ),
+            supervisor,
+        )
         self.service.process_jobs()
         case = self.service.get_case(case["case_id"])
-        self.service.decide(case["case_id"], DecisionInput(action="close_account", expected_version=case["version"], target_account_id="M2"), supervisor)
+        self.service.decide(
+            case["case_id"],
+            DecisionInput(action="close_account", expected_version=case["version"], target_account_id="M2"),
+            supervisor,
+        )
         self.service.process_jobs()
         bank = {a["account_id"]: a for a in self.bank.get("/bank/accounts").json()["accounts"]}
         self.assertEqual(bank["M2"]["status"], "closed")
@@ -186,9 +236,19 @@ class TraceTests(unittest.TestCase):
         case = self.service.get_case(case["case_id"])
         closes = [a for a in case["actions"] if a["operation"] == "close"]
         self.assertEqual([a["target_id"] for a in closes], ["M2"])
-        self.assertTrue(any("M2" in e["message"] and e["actor"] == "kmehta" for e in case["timeline"] if e["event_type"] == "close_requested"))
+        self.assertTrue(
+            any(
+                "M2" in e["message"] and e["actor"] == "kmehta"
+                for e in case["timeline"]
+                if e["event_type"] == "close_requested"
+            )
+        )
         # Closure is per traced account, so another mule can subsequently close.
-        self.service.decide(case["case_id"], DecisionInput(action="close_account", expected_version=case["version"], target_account_id="M1"), supervisor)
+        self.service.decide(
+            case["case_id"],
+            DecisionInput(action="close_account", expected_version=case["version"], target_account_id="M1"),
+            supervisor,
+        )
         self.service.process_jobs()
         bank = {a["account_id"]: a for a in self.bank.get("/bank/accounts").json()["accounts"]}
         self.assertEqual(bank["M1"]["status"], "closed")
@@ -196,10 +256,17 @@ class TraceTests(unittest.TestCase):
     def test_close_on_account_not_in_trace_is_rejected(self):
         from fraudlens.operations.models import DecisionInput
         from fraudlens.operations.team import OperationError
+
         self.post(self.root)
         case = self.file()
         with self.assertRaises(OperationError) as caught:
-            self.service.decide(case["case_id"], DecisionInput(action="close_account", expected_version=case["version"], target_account_id="M3"), self.actor.model_copy(update={"role": "supervisor"}))
+            self.service.decide(
+                case["case_id"],
+                DecisionInput(
+                    action="close_account", expected_version=case["version"], target_account_id="M3"
+                ),
+                self.actor.model_copy(update={"role": "supervisor"}),
+            )
         self.assertEqual(caught.exception.status_code, 400)
         self.assertEqual(self.service.get_case(case["case_id"])["version"], case["version"])
 
@@ -211,9 +278,14 @@ class TraceTests(unittest.TestCase):
 
     def test_preexisting_pending_victim_restriction_cannot_execute_after_complaint(self):
         from fraudlens.operations.models import DecisionInput
+
         self.post({**self.root, "new_device": True})
         case = self.service.snapshot()["cases"][0]
-        self.service.decide(case["case_id"], DecisionInput(action="restrict", expected_version=case["version"]), self.actor.model_copy(update={"role": "l2_analyst"}))
+        self.service.decide(
+            case["case_id"],
+            DecisionInput(action="restrict", expected_version=case["version"]),
+            self.actor.model_copy(update={"role": "l2_analyst"}),
+        )
         case = self.file()
         bank = {a["account_id"]: a for a in self.bank.get("/bank/accounts").json()["accounts"]}
         self.assertEqual(bank["VICTIM"]["status"], "active")
@@ -221,19 +293,38 @@ class TraceTests(unittest.TestCase):
         self.assertEqual(stale["status"], "superseded")
 
     def test_selected_hop_survives_approval(self):
-        from fraudlens.operations.models import ApprovalRequestInput, ApprovalDecisionInput, DecisionInput
+        from fraudlens.operations.models import ApprovalDecisionInput, ApprovalRequestInput, DecisionInput
+
         self.post(self.root, self.row("NEXT", "M1", "M2", 3000000, 3))
         case = self.file()
-        l2 = self.actor.model_copy(update={"username": "riyer", "display_name": "R. Iyer", "role": "l2_analyst"})
+        l2 = self.actor.model_copy(
+            update={"username": "riyer", "display_name": "R. Iyer", "role": "l2_analyst"}
+        )
         supervisor = self.actor.model_copy(update={"username": "asharma", "role": "supervisor"})
-        case = self.service.decide(case["case_id"], DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Verified evidence"), l2)
-        case = self.service.request_approval(case["case_id"], ApprovalRequestInput(action="close_account", expected_version=case["version"], notes="Close second-hop mule", target_account_id="M2"), l2)
+        case = self.service.decide(
+            case["case_id"],
+            DecisionInput(
+                action="confirm_fraud", expected_version=case["version"], notes="Verified evidence"
+            ),
+            l2,
+        )
+        case = self.service.request_approval(
+            case["case_id"],
+            ApprovalRequestInput(
+                action="close_account",
+                expected_version=case["version"],
+                notes="Close second-hop mule",
+                target_account_id="M2",
+            ),
+            l2,
+        )
         self.assertEqual(case["pending_approval"]["target_account_id"], "M2")
         case = self.service.decide_approval(case["case_id"], ApprovalDecisionInput(approve=True), supervisor)
         self.assertEqual(next(a for a in case["actions"] if a["operation"] == "close")["target_id"], "M2")
 
     def test_report_formats_paise_with_indian_grouping(self):
         from fraudlens.operations.reports import markdown, report
+
         self.post(self.root)
         case = self.file()
         case["amount_minor"] = 123456789
@@ -242,11 +333,18 @@ class TraceTests(unittest.TestCase):
     def test_explicit_victim_target_has_required_400_even_for_l1(self):
         from fraudlens.operations.models import DecisionInput
         from fraudlens.operations.team import OperationError
+
         self.post(self.root)
         case = self.file()
         for action in ("close_account", "restrict"):
             with self.subTest(action=action):
                 with self.assertRaises(OperationError) as caught:
-                    self.service.decide(case["case_id"], DecisionInput(action=action, expected_version=case["version"], target_account_id="VICTIM"), self.actor)
+                    self.service.decide(
+                        case["case_id"],
+                        DecisionInput(
+                            action=action, expected_version=case["version"], target_account_id="VICTIM"
+                        ),
+                        self.actor,
+                    )
                 self.assertEqual(caught.exception.status_code, 400)
                 self.assertEqual(str(caught.exception), "This is the complainant's account.")

@@ -1,4 +1,14 @@
-import { Bank, FileText, FolderOpen, Graph, ListChecks, ShieldCheck, SquaresFour, Swap, UsersThree } from "@phosphor-icons/react";
+import {
+  Bank,
+  FileText,
+  FolderOpen,
+  Graph,
+  ListChecks,
+  ShieldCheck,
+  SquaresFour,
+  Swap,
+  UsersThree,
+} from "@phosphor-icons/react";
 
 export const NAV = [
   { href: "/dashboard", label: "Overview", icon: SquaresFour },

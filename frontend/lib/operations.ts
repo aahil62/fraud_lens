@@ -1,13 +1,10 @@
 import { getToken } from "./auth";
 
-export const OPS_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001") + "/ops";
+export const OPS_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001") + "/ops";
 export const CHANNELS = ["upi", "net_banking", "card", "atm"] as const;
 export type Channel = (typeof CHANNELS)[number];
 export const channelName = (channel: string) =>
-  ({ upi: "UPI", net_banking: "Net banking", card: "Cards", atm: "ATMs" })[
-    channel
-  ] ?? channel;
+  ({ upi: "UPI", net_banking: "Net banking", card: "Cards", atm: "ATMs" })[channel] ?? channel;
 export type Transaction = {
   txn_id: string;
   account_id: string;
@@ -149,20 +146,11 @@ export type Snapshot = {
   simulation_state: { running: boolean; interval_seconds: number };
   detection: { version: string; coverage: Record<string, unknown>[] };
 };
-export type Decision =
-  "investigate" | "escalate" | "confirm_fraud" | "false_positive";
+export type Decision = "investigate" | "escalate" | "confirm_fraud" | "false_positive";
 export type Role = "l1_analyst" | "l2_analyst" | "supervisor";
 export type CaseAction =
-  | Decision
-  | "restrict"
-  | "place_lien"
-  | "release_lien"
-  | "close_account"
-  | "file_ncrp_report";
-export type ApprovalAction = Exclude<
-  CaseAction,
-  "investigate" | "escalate" | "place_lien"
->;
+  Decision | "restrict" | "place_lien" | "release_lien" | "close_account" | "file_ncrp_report";
+export type ApprovalAction = Exclude<CaseAction, "investigate" | "escalate" | "place_lien">;
 export const ROLE_RANK: Record<Role, number> = {
   l1_analyst: 1,
   l2_analyst: 2,
@@ -196,8 +184,7 @@ export const ACTION_MIN_ROLE: Record<string, Role> = {
   approve_supervisor: "supervisor",
   agent_settings: "supervisor",
 };
-export const required = (action: string): Role =>
-  ACTION_MIN_ROLE[action] ?? "supervisor";
+export const required = (action: string): Role => ACTION_MIN_ROLE[action] ?? "supervisor";
 export function can(role: Role | undefined, action: string) {
   const needed = ACTION_MIN_ROLE[action];
   return Boolean(role && needed && ROLE_RANK[role] >= ROLE_RANK[needed]);
@@ -208,10 +195,7 @@ export function decidableApprovals(
   analyst: { username: string; role: Role } | null,
 ) {
   return (snapshot?.approvals ?? []).filter(
-    (a) =>
-      analyst &&
-      a.requested_by !== analyst.username &&
-      can(analyst.role, a.action),
+    (a) => analyst && a.requested_by !== analyst.username && can(analyst.role, a.action),
   );
 }
 export const ACTION_LABEL: Record<CaseAction, string> = {
@@ -243,13 +227,7 @@ export type TraceHop = {
   lien_minor: number;
   moved_minor?: number;
   lien_status?: string;
-  outcome:
-    | "held"
-    | "partially_recovered"
-    | "funds_moved"
-    | "account_closed"
-    | "pending"
-    | "released";
+  outcome: "held" | "partially_recovered" | "funds_moved" | "account_closed" | "pending" | "released";
 };
 export type Brief = {
   typology: string;
@@ -318,32 +296,23 @@ export class OperationsError extends Error {
 }
 const article = (label: string) => (/^[AEIOUL]/.test(label) ? "an" : "a");
 /** Turns role (403) and ownership (409) refusals into the console's copy. */
-export function explainError(
-  err: unknown,
-  team: TeamMember[] = [],
-  fallback = "Request failed.",
-) {
+export function explainError(err: unknown, team: TeamMember[] = [], fallback = "Request failed.") {
   if (err instanceof OperationsError) {
     const role = err.data.required_role as Role | undefined;
     if (err.status === 403 && role && ROLE_LABEL[role])
       return `This needs ${article(ROLE_LABEL[role])} ${ROLE_LABEL[role]}. Request approval instead.`;
     const owner = err.data.assignee as string | undefined;
     if (err.status === 409 && owner) {
-      const name =
-        team.find((m) => m.username === owner)?.display_name ?? owner;
+      const name = team.find((m) => m.username === owner)?.display_name ?? owner;
       return `${name} already claimed this case.`;
     }
     return err.message;
   }
   return err instanceof Error ? err.message : fallback;
 }
-export async function opsFetch<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function opsFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
-  if (!token)
-    throw new OperationsError(401, "Your session has ended. Sign in again.");
+  if (!token) throw new OperationsError(401, "Your session has ended. Sign in again.");
   const response = await fetch(OPS_BASE + path, {
     ...init,
     cache: "no-store",
@@ -357,28 +326,15 @@ export async function opsFetch<T>(
     const data = await response.json().catch(() => null);
     throw new OperationsError(
       response.status,
-      typeof data?.detail === "string"
-        ? data.detail
-        : `Request failed (${response.status}).`,
+      typeof data?.detail === "string" ? data.detail : `Request failed (${response.status}).`,
       data && typeof data === "object" ? data : {},
     );
   }
   return response.json() as Promise<T>;
 }
-export function decideCase(
-  caseId: string,
-  action: Decision,
-  version: number,
-  notes: string,
-) {
-  if (
-    (action === "confirm_fraud" || action === "false_positive") &&
-    !notes.trim()
-  )
-    throw new OperationsError(
-      422,
-      "Add investigation notes before recording a verdict.",
-    );
+export function decideCase(caseId: string, action: Decision, version: number, notes: string) {
+  if ((action === "confirm_fraud" || action === "false_positive") && !notes.trim())
+    throw new OperationsError(422, "Add investigation notes before recording a verdict.");
   return opsFetch<Case>(`/cases/${encodeURIComponent(caseId)}/decision`, {
     method: "POST",
     body: JSON.stringify({
@@ -388,9 +344,8 @@ export function decideCase(
     }),
   });
 }
-const casePath = (caseId: string, suffix: string) =>
-  `/cases/${encodeURIComponent(caseId)}/${suffix}`;
-const post = <T,>(path: string, body: unknown) =>
+const casePath = (caseId: string, suffix: string) => `/cases/${encodeURIComponent(caseId)}/${suffix}`;
+const post = <T>(path: string, body: unknown) =>
   opsFetch<T>(path, { method: "POST", body: JSON.stringify(body) });
 export function runCaseAction(
   caseId: string,
@@ -404,9 +359,7 @@ export function runCaseAction(
     expected_version: version,
     notes: notes.trim(),
     ...(extra.amount_minor ? { amount_minor: extra.amount_minor } : {}),
-    ...(extra.target_account_id
-      ? { target_account_id: extra.target_account_id }
-      : {}),
+    ...(extra.target_account_id ? { target_account_id: extra.target_account_id } : {}),
   });
 }
 export const claimCase = (caseId: string, version: number) =>
@@ -444,24 +397,14 @@ export const setAgentSettings = (autoAssign: boolean) =>
   post<{ auto_assign: boolean }>("/agent/settings", {
     auto_assign: autoAssign,
   });
-export const getBrief = (caseId: string) =>
-  opsFetch<Brief>(casePath(caseId, "brief"));
-export async function exportReport(
-  caseId: string,
-  format: "json" | "markdown" | "pdf",
-) {
+export const getBrief = (caseId: string) => opsFetch<Brief>(casePath(caseId, "brief"));
+export async function exportReport(caseId: string, format: "json" | "markdown" | "pdf") {
   const token = getToken();
-  if (!token)
-    throw new OperationsError(401, "Sign in again to export a report.");
-  const response = await fetch(
-    `${OPS_BASE}/cases/${encodeURIComponent(caseId)}/report?format=${format}`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!response.ok)
-    throw new OperationsError(
-      response.status,
-      "Report export failed. Try again.",
-    );
+  if (!token) throw new OperationsError(401, "Sign in again to export a report.");
+  const response = await fetch(`${OPS_BASE}/cases/${encodeURIComponent(caseId)}/report?format=${format}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new OperationsError(response.status, "Report export failed. Try again.");
   const url = URL.createObjectURL(await response.blob());
   const link = document.createElement("a");
   link.href = url;
@@ -492,9 +435,6 @@ export const dateTime = (iso: string) =>
     timeZone: "Asia/Kolkata",
   });
 export const human = (value: string) => value.replaceAll("_", " ");
-export function newestSnapshot(
-  current: Snapshot | null,
-  incoming: Snapshot,
-): Snapshot {
+export function newestSnapshot(current: Snapshot | null, incoming: Snapshot): Snapshot {
   return current && current.cursor > incoming.cursor ? current : incoming;
 }

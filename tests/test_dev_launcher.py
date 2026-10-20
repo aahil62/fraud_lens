@@ -1,20 +1,26 @@
 import http.client
 import json
 import os
-from pathlib import Path
 import signal
 import socket
 import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import threading  # noqa: E402
 import time  # noqa: E402
 
-from dev import ensure_ports_available, start_process, stop_processes, uvicorn_command, wait_ready  # noqa: E402
+from dev import (  # noqa: E402
+    ensure_ports_available,
+    start_process,
+    stop_processes,
+    uvicorn_command,
+    wait_ready,
+)
 
 
 def free_port():
@@ -29,22 +35,38 @@ class ApiShutdownTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         port = free_port()
-        env = {**os.environ, "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
-               "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}", "FRAUDLENS_BANK_KEY": "test",
-               "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3", "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
-               "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
-               "FRAUDLENS_ANALYSTS_PATH": f"{tmp.name}/analysts.json"}
+        env = {
+            **os.environ,
+            "FRAUDLENS_SEED_DEMO": "1",
+            "FRAUDLENS_MODE": "demo",
+            "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}",
+            "FRAUDLENS_BANK_KEY": "test",
+            "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3",
+            "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
+            "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
+            "FRAUDLENS_ANALYSTS_PATH": f"{tmp.name}/analysts.json",
+        }
         log = open(Path(tmp.name) / "api.log", "w+")
         self.addCleanup(log.close)
-        process = subprocess.Popen(uvicorn_command(sys.executable, "fraudlens.api.main:app", port), cwd=ROOT, env=env,
-                                   stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        process = subprocess.Popen(
+            uvicorn_command(sys.executable, "fraudlens.api.main:app", port),
+            cwd=ROOT,
+            env=env,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
         self.addCleanup(stop_processes, [process])
         wait_ready(f"http://127.0.0.1:{port}/health", process, 60)
 
         conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
         self.addCleanup(conn.close)
-        conn.request("POST", "/auth/login", json.dumps({"username": "kmehta", "password": "fraudlens123"}),
-                     {"Content-Type": "application/json"})
+        conn.request(
+            "POST",
+            "/auth/login",
+            json.dumps({"username": "kmehta", "password": "fraudlens123"}),
+            {"Content-Type": "application/json"},
+        )
         token = json.loads(conn.getresponse().read())["access_token"]
         stream = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
         self.addCleanup(stream.close)
@@ -73,11 +95,18 @@ class RealServerClientIpTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         port = free_port()
-        env = {**os.environ, "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
-               "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}", "FRAUDLENS_BANK_KEY": "test",
-               "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3", "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
-               "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
-               "FRAUDLENS_ANALYSTS_PATH": f"{tmp.name}/analysts.json", "FRAUDLENS_CLIENT_IP_HEADER": "cf-connecting-ip"}
+        env = {
+            **os.environ,
+            "FRAUDLENS_SEED_DEMO": "1",
+            "FRAUDLENS_MODE": "demo",
+            "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}",
+            "FRAUDLENS_BANK_KEY": "test",
+            "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3",
+            "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
+            "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
+            "FRAUDLENS_ANALYSTS_PATH": f"{tmp.name}/analysts.json",
+            "FRAUDLENS_CLIENT_IP_HEADER": "cf-connecting-ip",
+        }
         process = start_process(uvicorn_command(sys.executable, "fraudlens.api.main:app", port), ROOT, env)
         self.addCleanup(stop_processes, [process])
         wait_ready(f"http://127.0.0.1:{port}/health", process, 60)
@@ -85,14 +114,21 @@ class RealServerClientIpTests(unittest.TestCase):
         def attempt(**headers):
             conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
             try:
-                conn.request("POST", "/auth/login", json.dumps({"username": "riyer", "password": "wrong-password"}),
-                             {"Content-Type": "application/json", **headers})
+                conn.request(
+                    "POST",
+                    "/auth/login",
+                    json.dumps({"username": "riyer", "password": "wrong-password"}),
+                    {"Content-Type": "application/json", **headers},
+                )
                 return conn.getresponse().status
             finally:
                 conn.close()
 
         # On Render the forwarded chain differs on every request; the visitor header stays the same.
-        statuses = [attempt(**{"CF-Connecting-IP": "203.0.113.50", "X-Forwarded-For": f"10.0.0.{i}"}) for i in range(21)]
+        statuses = [
+            attempt(**{"CF-Connecting-IP": "203.0.113.50", "X-Forwarded-For": f"10.0.0.{i}"})
+            for i in range(21)
+        ]
         self.assertEqual(statuses[:20], [401] * 20)
         self.assertEqual(statuses[20], 429)
         self.assertEqual(attempt(**{"CF-Connecting-IP": "203.0.113.51", "X-Forwarded-For": "10.0.0.1"}), 401)
@@ -108,7 +144,7 @@ class PortProbeTests(unittest.TestCase):
     def test_port_released_during_wait_is_accepted(self):
         sock = self.listener()
         port = sock.getsockname()[1]
-        threading.Timer(.5, sock.close).start()
+        threading.Timer(0.5, sock.close).start()
         ensure_ports_available({"bank": port}, wait=5)
 
     def test_port_still_held_after_wait_is_rejected(self):
@@ -118,7 +154,7 @@ class PortProbeTests(unittest.TestCase):
         started = time.monotonic()
         with self.assertRaisesRegex(RuntimeError, str(port)):
             ensure_ports_available({"bank": port}, wait=1)
-        self.assertGreaterEqual(time.monotonic() - started, .9)
+        self.assertGreaterEqual(time.monotonic() - started, 0.9)
 
     def test_recently_closed_connection_does_not_block_restart(self):
         sock = self.listener()

@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "public/fonts");
 // src: url("/fonts/<file>") format("woff2"), url("<CDN url>") format("woff2")
-const FACE = /url\("\/fonts\/([^"]+)"\)\s*format\("woff2"\),\s*url\("(https:\/\/cdn\.fontshare\.com\/[^"]+)"\)/g;
+const FACE =
+  /url\("\/fonts\/([^"]+)"\)\s*format\("woff2"\),\s*url\("(https:\/\/cdn\.fontshare\.com\/[^"]+)"\)/g;
 
 /** @param {string} css @returns {{ file: string, url: string }[]} */
 export function fontsFromCss(css) {
@@ -19,7 +20,13 @@ export function fontsFromCss(css) {
 
 async function fetchFont({ file, url }) {
   const target = join(OUT, file);
-  if (await stat(target).then(() => true, () => false)) return "present";
+  if (
+    await stat(target).then(
+      () => true,
+      () => false,
+    )
+  )
+    return "present";
   const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const body = Buffer.from(await response.arrayBuffer());

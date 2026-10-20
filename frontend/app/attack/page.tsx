@@ -1,19 +1,53 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Bank, CheckCircle, Circle, CreditCard, Money, ShieldWarning, SimCard } from "@phosphor-icons/react";
-import { AttackError, getAttack, launchAttack, reportTo1930, type AttackStatus, type Typology } from "@/lib/attacks";
+import {
+  ArrowRight,
+  Bank,
+  CheckCircle,
+  Circle,
+  CreditCard,
+  Money,
+  ShieldWarning,
+  SimCard,
+} from "@phosphor-icons/react";
+import {
+  AttackError,
+  getAttack,
+  launchAttack,
+  reportTo1930,
+  type AttackStatus,
+  type Typology,
+} from "@/lib/attacks";
 import { LensMark } from "@/components/console/LensMark";
 import "./attack.css";
 const SCAMS: { id: Typology; name: string; description: string; icon: typeof Bank }[] = [
-  { id: "mule_layering", name: "Mule layering", icon: Bank,
-    description: "A victim is tricked into a UPI payment; the money hops through mule accounts and is withdrawn at an ATM." },
-  { id: "sim_swap_takeover", name: "SIM-swap takeover", icon: SimCard,
-    description: "An attacker ports the victim's number, fails a few logins, then moves a large sum from a new device." },
-  { id: "card_testing", name: "Card testing", icon: CreditCard,
-    description: "Small charges probe a stolen card before one big purchase." },
-  { id: "atm_cashout", name: "ATM cash-out", icon: Money,
-    description: "Rapid withdrawals across several ATMs on one card." },
+  {
+    id: "mule_layering",
+    name: "Mule layering",
+    icon: Bank,
+    description:
+      "A victim is tricked into a UPI payment; the money hops through mule accounts and is withdrawn at an ATM.",
+  },
+  {
+    id: "sim_swap_takeover",
+    name: "SIM-swap takeover",
+    icon: SimCard,
+    description:
+      "An attacker ports the victim's number, fails a few logins, then moves a large sum from a new device.",
+  },
+  {
+    id: "card_testing",
+    name: "Card testing",
+    icon: CreditCard,
+    description: "Small charges probe a stolen card before one big purchase.",
+  },
+  {
+    id: "atm_cashout",
+    name: "ATM cash-out",
+    icon: Money,
+    description: "Rapid withdrawals across several ATMs on one card.",
+  },
 ];
 const OUTCOME_TEXT: Record<Exclude<AttackStatus["outcome"], "in_progress">, string> = {
   caught: "Caught: an analyst confirmed fraud and the bank held the money.",
@@ -36,7 +70,9 @@ function stepLabel(step: AttackStatus["steps"][number]) {
 const POLL_MS = 1500;
 const POLL_LIMIT_MS = 120000;
 const rupees = (minor: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(minor / 100);
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
+    minor / 100,
+  );
 export default function AttackPage() {
   const [typology, setTypology] = useState<Typology>("mule_layering");
   const [amount, setAmount] = useState(48000);
@@ -62,10 +98,16 @@ export default function AttackPage() {
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Status unavailable.");
       }
-      if (!cancelled) timer = setTimeout(() => { void tick(); }, POLL_MS);
+      if (!cancelled)
+        timer = setTimeout(() => {
+          void tick();
+        }, POLL_MS);
     };
     void tick();
-    return () => { cancelled = true; clearTimeout(timer); };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [attackId, polling]);
   function startPolling() {
     pollStarted.current = Date.now();
@@ -104,14 +146,18 @@ export default function AttackPage() {
   return (
     <div className="attack-page">
       <header className="attack-header">
-        <span className="attack-brand"><LensMark size={24} />FraudLens · Attack console</span>
+        <span className="attack-brand">
+          <LensMark size={24} />
+          FraudLens · Attack console
+        </span>
         <span className="attack-chip">Fictional money only</span>
       </header>
       <main>
         <div className="attack-intro">
           <h1>Launch a scam. Watch the bank react.</h1>
           <p className="attack-lede">
-            Every payment here is fictional and runs against a simulated bank. Analysts on the FraudLens console see it arrive in real time.
+            Every payment here is fictional and runs against a simulated bank. Analysts on the FraudLens
+            console see it arrive in real time.
           </p>
         </div>
         <div className="attack-console">
@@ -119,15 +165,26 @@ export default function AttackPage() {
             <legend>Step 1 · Pick a scam</legend>
             {SCAMS.map(({ id, name, description, icon: Icon }) => (
               <label key={id} className="attack-scam" data-selected={typology === id}>
-                <input type="radio" name="typology" value={id} checked={typology === id} onChange={() => setTypology(id)} />
+                <input
+                  type="radio"
+                  name="typology"
+                  value={id}
+                  checked={typology === id}
+                  onChange={() => setTypology(id)}
+                />
                 <Icon size={22} weight="duotone" aria-hidden="true" />
-                <span><strong>{name}</strong><small>{description}</small></span>
+                <span>
+                  <strong>{name}</strong>
+                  <small>{description}</small>
+                </span>
               </label>
             ))}
           </fieldset>
           {typology === "mule_layering" && (
             <label className="attack-amount">
-              <span>Scam amount <strong>{rupees(amount * 100)}</strong></span>
+              <span>
+                Scam amount <strong>{rupees(amount * 100)}</strong>
+              </span>
               <input
                 type="range"
                 min={1000}
@@ -138,41 +195,75 @@ export default function AttackPage() {
                 aria-valuetext={rupees(amount * 100)}
                 onChange={(e) => setAmount(Number(e.target.value))}
               />
-              <span className="attack-range"><small>₹1,000</small><small>₹2,00,000</small></span>
+              <span className="attack-range">
+                <small>₹1,000</small>
+                <small>₹2,00,000</small>
+              </span>
             </label>
           )}
-          <button className="attack-launch" disabled={busy} onClick={() => { void launch(); }}>
-            {busy && !status ? "Launching…" : "Launch attack"}<ArrowRight size={16} aria-hidden="true" />
+          <button
+            className="attack-launch"
+            disabled={busy}
+            onClick={() => {
+              void launch();
+            }}
+          >
+            {busy && !status ? "Launching…" : "Launch attack"}
+            <ArrowRight size={16} aria-hidden="true" />
           </button>
-          {error && <p className="attack-error" role="alert">{error}</p>}
+          {error && (
+            <p className="attack-error" role="alert">
+              {error}
+            </p>
+          )}
           {status && (
             <section className="attack-timeline" aria-live="polite" aria-label="What happened">
               <h2>What happened {status.case_id_masked && <small>Case {status.case_id_masked}</small>}</h2>
               <ol>
                 {status.steps.map((step) => (
                   <li key={step.label} data-status={step.status}>
-                    <span className="attack-step-icon" aria-hidden="true"><StepIcon status={step.status} /></span>
-                    <span>{step.label}<small>{stepLabel(step)}</small></span>
+                    <span className="attack-step-icon" aria-hidden="true">
+                      <StepIcon status={step.status} />
+                    </span>
+                    <span>
+                      {step.label}
+                      <small>{stepLabel(step)}</small>
+                    </span>
                   </li>
                 ))}
               </ol>
-              {status.outcome !== "in_progress" && <p className="attack-outcome">{OUTCOME_TEXT[status.outcome]}</p>}
+              {status.outcome !== "in_progress" && (
+                <p className="attack-outcome">{OUTCOME_TEXT[status.outcome]}</p>
+              )}
               {status.outcome === "in_progress" && !polling && (
-                <p className="attack-note">Still waiting for an analyst. The case stays open on the console.</p>
+                <p className="attack-note">
+                  Still waiting for an analyst. The case stays open on the console.
+                </p>
               )}
               {canReport && !status.complaint_id && (
-                <button className="attack-report" disabled={busy} onClick={() => { void report(); }}>Report it to 1930 as the victim</button>
+                <button
+                  className="attack-report"
+                  disabled={busy}
+                  onClick={() => {
+                    void report();
+                  }}
+                >
+                  Report it to 1930 as the victim
+                </button>
               )}
               {status.complaint_id && (
                 <p className="attack-complaint" role="status">
-                  Complaint {status.complaint_id} filed. FraudLens traced {rupees(status.traced_total_minor)} and held {rupees(status.held_total_minor)}.
+                  Complaint {status.complaint_id} filed. FraudLens traced {rupees(status.traced_total_minor)}{" "}
+                  and held {rupees(status.held_total_minor)}.
                 </p>
               )}
             </section>
           )}
         </div>
       </main>
-      <footer className="attack-footer">Analysts are watching this live at /dashboard · <Link href="/login">Open the operations centre</Link></footer>
+      <footer className="attack-footer">
+        Analysts are watching this live at /dashboard · <Link href="/login">Open the operations centre</Link>
+      </footer>
     </div>
   );
 }

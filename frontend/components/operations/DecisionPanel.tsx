@@ -17,7 +17,8 @@ import { useOperations } from "./OperationsProvider";
 import { ApprovalPanel } from "./ApprovalPanel";
 import { useAnalyst } from "./useAnalyst";
 
-const STALE_VERSION = "Another update changed this case. The latest record is being loaded. Review it before submitting again.";
+const STALE_VERSION =
+  "Another update changed this case. The latest record is being loaded. Review it before submitting again.";
 
 export function DecisionPanel({ item, onUpdated }: { item: Case; onUpdated: (item: Case) => void }) {
   const { refresh, snapshot } = useOperations();
@@ -63,7 +64,10 @@ export function DecisionPanel({ item, onUpdated }: { item: Case; onUpdated: (ite
         setMessage(`Approval requested from ${ROLE_SHORT[required(action)]}.`);
       })
       .catch((err) => setError(explainError(err, snapshot?.team)))
-      .finally(() => { setBusy(false); void refresh().catch(() => {}); });
+      .finally(() => {
+        setBusy(false);
+        void refresh().catch(() => {});
+      });
   }
 
   return (
@@ -83,7 +87,8 @@ export function DecisionPanel({ item, onUpdated }: { item: Case; onUpdated: (ite
       )}
       {canReverseFraud && (
         <p className="fine-print">
-          This fraud verdict is resolved. You can reverse it with documented evidence by marking a false positive and requesting release.
+          This fraud verdict is resolved. You can reverse it with documented evidence by marking a false
+          positive and requesting release.
         </p>
       )}
       <label>
@@ -97,23 +102,55 @@ export function DecisionPanel({ item, onUpdated }: { item: Case; onUpdated: (ite
         />
       </label>
       <div className="decision-actions">
-        <button disabled={locked} onClick={() => { void decide("investigate"); }}>Start investigation</button>
-        <button disabled={locked} onClick={() => { void decide("escalate"); }}>Escalate</button>
+        <button
+          disabled={locked}
+          onClick={() => {
+            void decide("investigate");
+          }}
+        >
+          Start investigation
+        </button>
+        <button
+          disabled={locked}
+          onClick={() => {
+            void decide("escalate");
+          }}
+        >
+          Escalate
+        </button>
         {permitted("confirm_fraud") ? (
-          <button className="danger-button" disabled={locked || !notes.trim()} onClick={() => { void decide("confirm_fraud"); }}>
+          <button
+            className="danger-button"
+            disabled={locked || !notes.trim()}
+            onClick={() => {
+              void decide("confirm_fraud");
+            }}
+          >
             Confirm fraud
           </button>
         ) : (
-          <button disabled={locked || Boolean(item.pending_approval)} onClick={() => setRequesting("confirm_fraud")}>
+          <button
+            disabled={locked || Boolean(item.pending_approval)}
+            onClick={() => setRequesting("confirm_fraud")}
+          >
             Request approval to confirm fraud
           </button>
         )}
         {permitted("false_positive") ? (
-          <button className="primary-button" disabled={releaseLocked || !notes.trim()} onClick={() => { void decide("false_positive"); }}>
+          <button
+            className="primary-button"
+            disabled={releaseLocked || !notes.trim()}
+            onClick={() => {
+              void decide("false_positive");
+            }}
+          >
             Mark false positive & release
           </button>
         ) : (
-          <button disabled={releaseLocked || Boolean(item.pending_approval)} onClick={() => setRequesting("false_positive")}>
+          <button
+            disabled={releaseLocked || Boolean(item.pending_approval)}
+            onClick={() => setRequesting("false_positive")}
+          >
             Request approval to mark false positive
           </button>
         )}
@@ -129,11 +166,20 @@ export function DecisionPanel({ item, onUpdated }: { item: Case; onUpdated: (ite
         />
       )}
       <p className="fine-print">
-        A false-positive verdict requests release of this case’s restriction. It cannot remove restrictions owned by another case.
+        A false-positive verdict requests release of this case’s restriction. It cannot remove restrictions
+        owned by another case.
       </p>
       {busy && <p role="status">Recording decision…</p>}
-      {error && <p className="form-error" role="alert">{error}</p>}
-      {message && <p className="success-message" role="status">{message}</p>}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="success-message" role="status">
+          {message}
+        </p>
+      )}
     </section>
   );
 }

@@ -22,6 +22,7 @@ _PBKDF2_ITERATIONS = 200_000
 _JWT_ALGORITHM = "HS256"
 _JWT_TTL_SECONDS = 24 * 60 * 60  # 24h session — a hackathon demo, not a bank
 
+
 def load_session_secret(path, *, configured=None, mode="demo"):
     """No shared signing fallback; local sessions survive a backend restart."""
     if configured:
@@ -45,8 +46,11 @@ def load_session_secret(path, *, configured=None, mode="demo"):
     return value
 
 
-_JWT_SECRET = load_session_secret(os.environ.get("FRAUDLENS_SESSION_SECRET_PATH", "var/session.key"),
-    configured=os.environ.get("FRAUDLENS_JWT_SECRET"), mode=os.environ.get("FRAUDLENS_MODE", "demo"))
+_JWT_SECRET = load_session_secret(
+    os.environ.get("FRAUDLENS_SESSION_SECRET_PATH", "var/session.key"),
+    configured=os.environ.get("FRAUDLENS_JWT_SECRET"),
+    mode=os.environ.get("FRAUDLENS_MODE", "demo"),
+)
 
 
 def hash_password(password: str) -> str:

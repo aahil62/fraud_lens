@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  decideCase,
-  newestSnapshot,
-  OperationsError,
-  opsFetch,
-  type Snapshot,
-} from "../operations";
+import { decideCase, newestSnapshot, OperationsError, opsFetch, type Snapshot } from "../operations";
 const session = vi.hoisted(() => ({ token: "test-session" as string | null }));
 vi.mock("../auth", () => ({ getToken: () => session.token }));
 describe("authenticated operations contract", () => {
@@ -16,16 +10,9 @@ describe("authenticated operations contract", () => {
     vi.unstubAllGlobals();
   });
   it("uses the case version and authenticated actor session for a verdict", async () => {
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: async () => ({ version: 4 }) });
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ version: 4 }) });
     vi.stubGlobal("fetch", fetcher);
-    await decideCase(
-      "case/a",
-      "confirm_fraud",
-      3,
-      " Observed linked transfers ",
-    );
+    await decideCase("case/a", "confirm_fraud", 3, " Observed linked transfers ");
     expect(fetcher).toHaveBeenCalledWith(
       expect.stringContaining("/ops/cases/case%2Fa/decision"),
       expect.objectContaining({
@@ -40,31 +27,25 @@ describe("authenticated operations contract", () => {
       }),
     );
   });
-  it.each(["confirm_fraud", "false_positive"] as const)(
-    "requires evidence notes for %s",
-    (action) => {
-      const fetcher = vi.fn();
-      vi.stubGlobal("fetch", fetcher);
-      expect(() => decideCase("case1", action, 1, "  ")).toThrow(
-        "Add investigation notes",
-      );
-      expect(fetcher).not.toHaveBeenCalled();
-    },
-  );
+  it.each(["confirm_fraud", "false_positive"] as const)("requires evidence notes for %s", (action) => {
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    expect(() => decideCase("case1", action, 1, "  ")).toThrow("Add investigation notes");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it("preserves HTTP409 so the interface can require a fresh review", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          status: 409,
-          json: async () => ({ detail: "Stale version" }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ detail: "Stale version" }),
+      }),
     );
-    await expect(
-      decideCase("case1", "investigate", 1, "reviewing"),
-    ).rejects.toMatchObject({ status: 409, message: "Stale version" });
+    await expect(decideCase("case1", "investigate", 1, "reviewing")).rejects.toMatchObject({
+      status: 409,
+      message: "Stale version",
+    });
   });
   it("rejects unauthenticated operations without issuing a request", async () => {
     session.token = null;
@@ -76,13 +57,11 @@ describe("authenticated operations contract", () => {
   it("retains a meaningful server rejection", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          status: 503,
-          json: async () => ({ detail: "Bank unavailable" }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({ detail: "Bank unavailable" }),
+      }),
     );
     await expect(opsFetch("/process")).rejects.toMatchObject({
       status: 503,

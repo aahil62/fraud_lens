@@ -42,9 +42,14 @@ class MLAgentTests(unittest.TestCase):
     def test_fit_then_score_produces_valid_agent_score(self) -> None:
         agent = MLAgent()
         training_data = generate_synthetic_transactions(
-            num_normal=60, num_high_amount=15, num_risky_merchant=15,
-            num_odd_hour=10, num_card_testing_bursts=0,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=1,
+            num_normal=60,
+            num_high_amount=15,
+            num_risky_merchant=15,
+            num_odd_hour=10,
+            num_card_testing_bursts=0,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=1,
         )
         agent.fit(training_data)
 
@@ -58,9 +63,14 @@ class MLAgentTests(unittest.TestCase):
 
     def test_fraud_leaning_transactions_score_higher_than_normal_on_average(self) -> None:
         training_data = generate_synthetic_transactions(
-            num_normal=150, num_high_amount=40, num_risky_merchant=40,
-            num_odd_hour=30, num_card_testing_bursts=0,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=2,
+            num_normal=150,
+            num_high_amount=40,
+            num_risky_merchant=40,
+            num_odd_hour=30,
+            num_card_testing_bursts=0,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=2,
         )
         agent = MLAgent()
         agent.fit(training_data)
@@ -76,9 +86,14 @@ class MLAgentTests(unittest.TestCase):
     def test_feature_importances_populated_after_fit(self) -> None:
         agent = MLAgent()
         training_data = generate_synthetic_transactions(
-            num_normal=40, num_high_amount=10, num_risky_merchant=10,
-            num_odd_hour=5, num_card_testing_bursts=0,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=3,
+            num_normal=40,
+            num_high_amount=10,
+            num_risky_merchant=10,
+            num_odd_hour=5,
+            num_card_testing_bursts=0,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=3,
         )
         agent.fit(training_data)
 
@@ -88,9 +103,14 @@ class MLAgentTests(unittest.TestCase):
     def test_bad_timestamp_does_not_raise(self) -> None:
         agent = MLAgent()
         training_data = generate_synthetic_transactions(
-            num_normal=30, num_high_amount=5, num_risky_merchant=5,
-            num_odd_hour=5, num_card_testing_bursts=0,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=4,
+            num_normal=30,
+            num_high_amount=5,
+            num_risky_merchant=5,
+            num_odd_hour=5,
+            num_card_testing_bursts=0,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=4,
         )
         agent.fit(training_data)
 
@@ -102,9 +122,14 @@ class MLAgentTests(unittest.TestCase):
     def test_missing_location_does_not_raise(self) -> None:
         agent = MLAgent()
         training_data = generate_synthetic_transactions(
-            num_normal=30, num_high_amount=5, num_risky_merchant=5,
-            num_odd_hour=5, num_card_testing_bursts=0,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=5,
+            num_normal=30,
+            num_high_amount=5,
+            num_risky_merchant=5,
+            num_odd_hour=5,
+            num_card_testing_bursts=0,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=5,
         )
         agent.fit(training_data)
 

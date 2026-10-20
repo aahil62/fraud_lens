@@ -6,11 +6,12 @@ and environment as scripts/dev.py, then the standalone Next.js server on
 0.0.0.0:$PORT. Data lives under /tmp/fraudlens and resets on every boot; the
 synthetic stream starts paused at one scenario every 8 s.
 """
+
 import os
-from pathlib import Path
 import signal
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dev import start_process, stop_processes, uvicorn_command, wait_ready  # noqa: E402
@@ -32,10 +33,17 @@ def main():
     data.mkdir(parents=True, exist_ok=True)
     reset_data(data)
     env = os.environ.copy()
-    env.update({"FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
-                "FRAUDLENS_SIMULATION_RUNNING": "0", "FRAUDLENS_SIMULATION_INTERVAL": "8",
-                "FRAUDLENS_BANK_URL": "http://127.0.0.1:8002",
-                "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{port},http://localhost:{port}"})
+    env.update(
+        {
+            "FRAUDLENS_SEED_DEMO": "1",
+            "FRAUDLENS_MODE": "demo",
+            "PYTHONUNBUFFERED": "1",
+            "FRAUDLENS_SIMULATION_RUNNING": "0",
+            "FRAUDLENS_SIMULATION_INTERVAL": "8",
+            "FRAUDLENS_BANK_URL": "http://127.0.0.1:8002",
+            "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{port},http://localhost:{port}",
+        }
+    )
     env.setdefault("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator")
     env.setdefault("FRAUDLENS_BANK_DB", str(data / "bank.sqlite3"))
     env.setdefault("FRAUDLENS_OPS_DB", str(data / "operations.sqlite3"))
@@ -44,9 +52,27 @@ def main():
     node_env = {**env, "PORT": str(port), "HOSTNAME": "0.0.0.0", "NODE_ENV": "production"}
     python = sys.executable
     services = [
-        ("Bank simulator", uvicorn_command(python, "fraudlens.bank_simulator.main:app", 8002), ROOT, env, "http://127.0.0.1:8002/health"),
-        ("API", uvicorn_command(python, "fraudlens.api.main:app", 8001), ROOT, env, "http://127.0.0.1:8001/health"),
-        ("Console", ["node", "server.js"], ROOT / "frontend/.next/standalone", node_env, f"http://127.0.0.1:{port}/"),
+        (
+            "Bank simulator",
+            uvicorn_command(python, "fraudlens.bank_simulator.main:app", 8002),
+            ROOT,
+            env,
+            "http://127.0.0.1:8002/health",
+        ),
+        (
+            "API",
+            uvicorn_command(python, "fraudlens.api.main:app", 8001),
+            ROOT,
+            env,
+            "http://127.0.0.1:8001/health",
+        ),
+        (
+            "Console",
+            ["node", "server.js"],
+            ROOT / "frontend/.next/standalone",
+            node_env,
+            f"http://127.0.0.1:{port}/",
+        ),
     ]
     processes = []
 
@@ -66,7 +92,7 @@ def main():
                 if process.poll() is not None:
                     print(f"A service exited with code {process.returncode}; stopping", flush=True)
                     return 1
-            time.sleep(.5)
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("Stopping FraudLens services...", flush=True)
         return 0

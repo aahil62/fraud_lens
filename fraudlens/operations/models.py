@@ -1,4 +1,5 @@
 """Strict operational inputs; currency is integer paise, never floating point."""
+
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
@@ -41,7 +42,17 @@ class TransactionInput(BaseModel):
 
 class DecisionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["investigate", "escalate", "confirm_fraud", "false_positive", "restrict", "place_lien", "release_lien", "close_account", "file_ncrp_report"]
+    action: Literal[
+        "investigate",
+        "escalate",
+        "confirm_fraud",
+        "false_positive",
+        "restrict",
+        "place_lien",
+        "release_lien",
+        "close_account",
+        "file_ncrp_report",
+    ]
     expected_version: Annotated[StrictInt, Field(ge=1)]
     notes: str = Field(default="", max_length=3000)
     amount_minor: Annotated[StrictInt, Field(gt=0, le=100_000_000)] | None = None
@@ -62,7 +73,16 @@ class DecisionInput(BaseModel):
 class ScenarioInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     channel: Channel
-    scenario: Literal["normal", "fraud", "false_positive", "cross_channel", "mule_layering", "sim_swap_takeover", "card_testing", "atm_cashout"]
+    scenario: Literal[
+        "normal",
+        "fraud",
+        "false_positive",
+        "cross_channel",
+        "mule_layering",
+        "sim_swap_takeover",
+        "card_testing",
+        "atm_cashout",
+    ]
 
 
 class ControlInput(BaseModel):
@@ -82,7 +102,9 @@ class AssignInput(ClaimInput):
 
 
 class ApprovalRequestInput(ClaimInput):
-    action: Literal["restrict", "confirm_fraud", "false_positive", "close_account", "file_ncrp_report", "release_lien"]
+    action: Literal[
+        "restrict", "confirm_fraud", "false_positive", "close_account", "file_ncrp_report", "release_lien"
+    ]
     target_account_id: Identifier | None = None
     notes: str = Field(min_length=1, max_length=3000)
 

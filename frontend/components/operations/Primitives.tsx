@@ -34,36 +34,51 @@ export function PageHeading({
   );
 }
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="empty-state"><Tray size={28} weight="duotone"/>{children}</div>;
+  return (
+    <div className="empty-state">
+      <Tray size={28} weight="duotone" />
+      {children}
+    </div>
+  );
 }
 export function Loading() {
   return (
     <div className="loading-skeleton" role="status">
-      <span aria-hidden="true"/><span aria-hidden="true"/><span aria-hidden="true"/><span aria-hidden="true"/>
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
       <p className="sr-only">Loading the operational ledger…</p>
     </div>
   );
 }
 export function Status({ value }: { value: string }) {
-  const risk = ["failed", "fraud", "critical", "high", "declined"].includes(
-    value,
-  )
+  const risk = ["failed", "fraud", "critical", "high", "declined"].includes(value)
     ? "bad"
     : ["confirmed", "resolved", "posted", "released"].includes(value)
       ? "good"
       : "";
   return <span className={`status ${value} ${risk}`}>{human(value)}</span>;
 }
-export function ChannelLabel({channel}:{channel:string}) {
-  const Icon = channel === "upi" ? ArrowsLeftRight : channel === "net_banking" ? Bank : channel === "card" ? CreditCard : Money;
-  return <span className="channel-label"><Icon size={15} weight="duotone"/>{channelName(channel)}</span>;
+export function ChannelLabel({ channel }: { channel: string }) {
+  const Icon =
+    channel === "upi"
+      ? ArrowsLeftRight
+      : channel === "net_banking"
+        ? Bank
+        : channel === "card"
+          ? CreditCard
+          : Money;
+  return (
+    <span className="channel-label">
+      <Icon size={15} weight="duotone" />
+      {channelName(channel)}
+    </span>
+  );
 }
 export function CaseLink({ id }: { id: string }) {
   return (
-    <Link
-      className="record-link"
-      href={`/case?case_id=${encodeURIComponent(id)}`}
-    >
+    <Link className="record-link" href={`/case?case_id=${encodeURIComponent(id)}`}>
       {id}
     </Link>
   );
@@ -71,9 +86,29 @@ export function CaseLink({ id }: { id: string }) {
 function Owner({ item }: { item: Case }) {
   if (!item.assignee) return <span className="muted">Unassigned</span>;
   const name = item.assigned_to ?? item.assignee;
-  return <span className="owner-cell"><span className="presence-avatar small" aria-hidden="true">{name.split(/[ .]+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("")}</span>{name}</span>;
+  return (
+    <span className="owner-cell">
+      <span className="presence-avatar small" aria-hidden="true">
+        {name
+          .split(/[ .]+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((x) => x[0])
+          .join("")}
+      </span>
+      {name}
+    </span>
+  );
 }
-export function CaseTable({ cases, onClaim, busyId }: { cases: Case[]; onClaim?: (item: Case) => void; busyId?: string | null }) {
+export function CaseTable({
+  cases,
+  onClaim,
+  busyId,
+}: {
+  cases: Case[];
+  onClaim?: (item: Case) => void;
+  busyId?: string | null;
+}) {
   return cases.length ? (
     <div className="table-scroll">
       <table>
@@ -98,20 +133,35 @@ export function CaseTable({ cases, onClaim, busyId }: { cases: Case[]; onClaim?:
                 <small className="record-sub">{item.account_id}</small>
               </td>
               <td>
-                <div className="priority-cell" title={item.priority_reason}><strong className="numeric">{item.priority ?? "—"}</strong>
-                  <span className="priority-bar" aria-hidden="true"><span style={{ width: `${item.priority ?? 0}%` }} /></span></div>
+                <div className="priority-cell" title={item.priority_reason}>
+                  <strong className="numeric">{item.priority ?? "—"}</strong>
+                  <span className="priority-bar" aria-hidden="true">
+                    <span style={{ width: `${item.priority ?? 0}%` }} />
+                  </span>
+                </div>
               </td>
               <td>
                 <Owner item={item} />
-                {onClaim && !item.assignee && item.status !== "resolved" && <button className="row-action" disabled={busyId === item.case_id}
-                  aria-label={`Claim ${item.case_id}`} onClick={() => onClaim(item)}>Claim</button>}
+                {onClaim && !item.assignee && item.status !== "resolved" && (
+                  <button
+                    className="row-action"
+                    disabled={busyId === item.case_id}
+                    aria-label={`Claim ${item.case_id}`}
+                    onClick={() => onClaim(item)}
+                  >
+                    Claim
+                  </button>
+                )}
               </td>
-              <td><ChannelLabel channel={item.channel}/></td>
+              <td>
+                <ChannelLabel channel={item.channel} />
+              </td>
               <td className="numeric">{money(item.amount_minor)}</td>
               <td>
-                <div className="risk-cell"><span className={`risk-score ${item.severity}`}>
-                  {(item.score * 100).toFixed(1)}
-                </span><meter min="0" max="100" value={item.score*100} aria-label="Risk score"/></div>
+                <div className="risk-cell">
+                  <span className={`risk-score ${item.severity}`}>{(item.score * 100).toFixed(1)}</span>
+                  <meter min="0" max="100" value={item.score * 100} aria-label="Risk score" />
+                </div>
               </td>
               <td>
                 <Status value={item.status} />
@@ -126,17 +176,10 @@ export function CaseTable({ cases, onClaim, busyId }: { cases: Case[]; onClaim?:
       </table>
     </div>
   ) : (
-    <Empty>
-      No investigations match this view. Generate a supported scenario in
-      Transactions.
-    </Empty>
+    <Empty>No investigations match this view. Generate a supported scenario in Transactions.</Empty>
   );
 }
-export function TransactionTable({
-  transactions,
-}: {
-  transactions: Transaction[];
-}) {
+export function TransactionTable({ transactions }: { transactions: Transaction[] }) {
   return transactions.length ? (
     <div className="table-scroll">
       <table>
@@ -158,21 +201,17 @@ export function TransactionTable({
                 <span className="identifier">{item.txn_id}</span>
                 <small className="record-sub">{item.account_id}</small>
               </td>
-              <td><ChannelLabel channel={item.channel}/></td>
+              <td>
+                <ChannelLabel channel={item.channel} />
+              </td>
               <td className="numeric">{money(item.amount_minor)}</td>
               <td className="numeric">{(item.score * 100).toFixed(1)}</td>
               <td>
                 <Status value={item.payment_status} />
-                {item.bank_reason && (
-                  <small className="record-sub">{item.bank_reason}</small>
-                )}
+                {item.bank_reason && <small className="record-sub">{item.bank_reason}</small>}
               </td>
               <td>
-                {item.case_id ? (
-                  <CaseLink id={item.case_id} />
-                ) : (
-                  <span className="muted">No alert</span>
-                )}
+                {item.case_id ? <CaseLink id={item.case_id} /> : <span className="muted">No alert</span>}
               </td>
               <td className="date-cell">{dateTime(item.timestamp)}</td>
             </tr>
@@ -190,9 +229,7 @@ export function Timeline({ events }: { events: AuditEvent[] }) {
       {events.map((event) => (
         <li key={event.id}>
           <div className="timeline-meta">
-            <time dateTime={event.occurred_at}>
-              {dateTime(event.occurred_at)} IST
-            </time>
+            <time dateTime={event.occurred_at}>{dateTime(event.occurred_at)} IST</time>
             <span>
               #{event.id} · {event.actor}
             </span>
@@ -251,9 +288,7 @@ export function ActionLedger({ actions }: { actions: BankAction[] }) {
                     <strong>
                       {human(action.operation)} {action.target_type}
                     </strong>
-                    <small className="record-sub identifier">
-                      {action.target_id}
-                    </small>
+                    <small className="record-sub identifier">{action.target_id}</small>
                   </td>
                   <td>
                     <CaseLink id={action.case_id} />
@@ -267,9 +302,7 @@ export function ActionLedger({ actions }: { actions: BankAction[] }) {
                     ) : (
                       (action.bank_reference ?? "Awaiting acknowledgement")
                     )}
-                    <small className="record-sub identifier">
-                      {action.action_id}
-                    </small>
+                    <small className="record-sub identifier">{action.action_id}</small>
                   </td>
                   <td className="numeric">{action.attempts}</td>
                   <td>
@@ -280,9 +313,7 @@ export function ActionLedger({ actions }: { actions: BankAction[] }) {
                           void retry(action.action_id);
                         }}
                       >
-                        {busy === action.action_id
-                          ? "Retrying…"
-                          : "Retry action"}
+                        {busy === action.action_id ? "Retrying…" : "Retry action"}
                       </button>
                     )}
                   </td>
@@ -292,10 +323,7 @@ export function ActionLedger({ actions }: { actions: BankAction[] }) {
           </table>
         </div>
       ) : (
-        <Empty>
-          No bank actions yet. Requests and confirmations appear here
-          separately.
-        </Empty>
+        <Empty>No bank actions yet. Requests and confirmations appear here separately.</Empty>
       )}
     </>
   );
@@ -326,7 +354,8 @@ export function ReportButtons({ caseId }: { caseId: string }) {
               void download(format);
             }}
           >
-            {format === "pdf" && <DownloadSimple size={13}/>} {format === "markdown" ? "MD" : format.toUpperCase()}
+            {format === "pdf" && <DownloadSimple size={13} />}{" "}
+            {format === "markdown" ? "MD" : format.toUpperCase()}
           </button>
         ))}
       </div>

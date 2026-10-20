@@ -92,7 +92,7 @@ export async function login(username: string, password: string): Promise<TokenRe
 export async function signup(
   username: string,
   displayName: string,
-  password: string
+  password: string,
 ): Promise<TokenResponse> {
   const result = await authFetch("/auth/signup", {
     username,
@@ -106,12 +106,13 @@ export async function signup(
 export async function logout(): Promise<void> {
   const token = getToken();
   try {
-    if (token) await fetch(`${API_BASE}/auth/logout`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(3000),
-    });
+    if (token)
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(3000),
+      });
   } catch {
     // Local sign-out still works while the API is unavailable.
   } finally {

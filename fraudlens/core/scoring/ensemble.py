@@ -129,7 +129,7 @@ class EnsembleScorer:
         scores = [a.score for a in agent_scores]
         mean = sum(scores) / len(scores)
         variance = sum((s - mean) ** 2 for s in scores) / len(scores)
-        confidence = max(0.0, min(1.0, 1.0 - variance ** 0.5))
+        confidence = max(0.0, min(1.0, 1.0 - variance**0.5))
 
         if max_agent.score >= 0.9 and max_agent.confidence >= 0.8:
             confidence = max(confidence, 0.85)

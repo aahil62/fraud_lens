@@ -11,4 +11,3 @@ export interface TokenResponse {
   token_type: string;
   analyst: AnalystProfile;
 }
-

@@ -9,17 +9,26 @@ export function Team() {
         <div>
           <RoleChip role="l1_analyst" />
           <h3>L1 Analyst</h3>
-          <p>Claims and investigates cases, escalates, and places liens on traced funds. Asks a senior analyst to approve anything bigger.</p>
+          <p>
+            Claims and investigates cases, escalates, and places liens on traced funds. Asks a senior analyst
+            to approve anything bigger.
+          </p>
         </div>
         <div>
           <RoleChip role="l2_analyst" />
           <h3>L2 Senior Analyst</h3>
-          <p>Freezes debits, releases liens, confirms fraud or clears false alarms, assigns work and approves L1 requests.</p>
+          <p>
+            Freezes debits, releases liens, confirms fraud or clears false alarms, assigns work and approves
+            L1 requests.
+          </p>
         </div>
         <div>
           <RoleChip role="supervisor" />
           <h3>Fraud Supervisor</h3>
-          <p>Closes mule accounts after confirmed fraud, records the NCRP report, approves the final calls and sets agent policy.</p>
+          <p>
+            Closes mule accounts after confirmed fraud, records the NCRP report, approves the final calls and
+            sets agent policy.
+          </p>
         </div>
         <div className="fl-team-agent">
           <span className="fl-agent-chip">Agent</span>

@@ -31,9 +31,7 @@ from networkx.algorithms.community import louvain_communities
 LOUVAIN_SEED = 42
 
 
-def detect_communities(
-    edges: Iterable[tuple[str, str, float]], nodes: Iterable[str] = ()
-) -> list[set[str]]:
+def detect_communities(edges: Iterable[tuple[str, str, float]], nodes: Iterable[str] = ()) -> list[set[str]]:
     """Communities (as sets of node ids) via Louvain modularity
     maximization over a weighted undirected graph.
 

@@ -40,9 +40,20 @@ export function LensPoster() {
         <ellipse className="poster-ring" cx="700" cy="277" rx="91" ry="115" strokeWidth="1" />
         <ellipse className="poster-core" cx="700" cy="277" rx="45" ry="57" strokeWidth="1" />
         {Array.from({ length: 48 }, (_, i) => (
-          <path key={i} className="poster-tick" d="M700 93v8" strokeWidth={i % 4 === 0 ? 2 : 1} transform={`rotate(${i * 7.5} 700 277)`} />
+          <path
+            key={i}
+            className="poster-tick"
+            d="M700 93v8"
+            strokeWidth={i % 4 === 0 ? 2 : 1}
+            transform={`rotate(${i * 7.5} 700 277)`}
+          />
         ))}
-        <path className="poster-glint" d="M634 140c-38 35-63 89-65 143" strokeWidth="6" strokeLinecap="round" />
+        <path
+          className="poster-glint"
+          d="M634 140c-38 35-63 89-65 143"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
       </g>
       <path className="poster-review" d="M712 292C855 293 815 110 1012 119" strokeWidth="2" />
       <circle className="poster-review-dot" cx="1012" cy="119" r="6" />

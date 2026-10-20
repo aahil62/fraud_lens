@@ -24,9 +24,7 @@ it("keeps verdict controls disabled until evidence notes are entered", () => {
   fireEvent.change(screen.getByRole("textbox"), {
     target: { value: "Transfer followed a new device login" },
   });
-  expect(
-    screen.getByRole("button", { name: "Confirm fraud" }),
-  ).not.toBeDisabled();
+  expect(screen.getByRole("button", { name: "Confirm fraud" })).not.toBeDisabled();
 });
 it("sends the rendered version and refreshes after a successful false-positive decision", async () => {
   const updated = { ...item, version: 8 };
@@ -36,9 +34,7 @@ it("sends the rendered version and refreshes after a successful false-positive d
   fireEvent.change(screen.getByRole("textbox"), {
     target: { value: "Customer verified legitimate activity" },
   });
-  fireEvent.click(
-    screen.getByRole("button", { name: "Mark false positive & release" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Mark false positive & release" }));
   await waitFor(() => expect(onUpdated).toHaveBeenCalledWith(updated));
   expect(mocks.decide).toHaveBeenCalledWith(
     "case-7",
@@ -53,9 +49,7 @@ it("shows a version conflict and does not silently resubmit an analyst verdict",
   render(<DecisionPanel item={item} onUpdated={vi.fn()} />);
   fireEvent.click(screen.getByRole("button", { name: "Start investigation" }));
   await screen.findByRole("alert");
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "Another update changed this case",
-  );
+  expect(screen.getByRole("alert")).toHaveTextContent("Another update changed this case");
   expect(mocks.decide).toHaveBeenCalledTimes(1);
   expect(mocks.refresh).toHaveBeenCalled();
 });
@@ -69,19 +63,35 @@ it("displays a service failure while preserving investigation notes", async () =
   await screen.findByRole("alert");
   expect(screen.getByRole("textbox")).toHaveValue("Evidence retained");
 });
-it.each(["investigating", "resolved"])("locks all decisions after a false-positive verdict while %s", (status) => {
-  render(<DecisionPanel item={{...item, status, verdict: "false_positive"}} onUpdated={vi.fn()} />);
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "Attempt to contradict release" } });
-  for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
-  expect(screen.getByText(status === "resolved" ? /False-positive verdict is final/ : /Release is awaiting bank confirmation/)).toBeInTheDocument();
-});
+it.each(["investigating", "resolved"])(
+  "locks all decisions after a false-positive verdict while %s",
+  (status) => {
+    render(<DecisionPanel item={{ ...item, status, verdict: "false_positive" }} onUpdated={vi.fn()} />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Attempt to contradict release" } });
+    for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
+    expect(
+      screen.getByText(
+        status === "resolved" ? /False-positive verdict is final/ : /Release is awaiting bank confirmation/,
+      ),
+    ).toBeInTheDocument();
+  },
+);
 it("allows reversing a resolved fraud verdict while preventing other resolved-case decisions", async () => {
-  mocks.decide.mockResolvedValue({...item, version:8, verdict:"false_positive"});
-  render(<DecisionPanel item={{...item, status:"resolved", verdict:"fraud"}} onUpdated={vi.fn()} />);
-  fireEvent.change(screen.getByRole("textbox"), {target:{value:"Verified account holder; fraud decision overturned"}});
-  expect(screen.getByRole("button",{name:"Start investigation"})).toBeDisabled();
-  expect(screen.getByRole("button",{name:"Escalate"})).toBeDisabled();
-  expect(screen.getByRole("button",{name:"Confirm fraud"})).toBeDisabled();
-  fireEvent.click(screen.getByRole("button",{name:"Mark false positive & release"}));
-  await waitFor(()=>expect(mocks.decide).toHaveBeenCalledWith("case-7","false_positive",7,"Verified account holder; fraud decision overturned"));
+  mocks.decide.mockResolvedValue({ ...item, version: 8, verdict: "false_positive" });
+  render(<DecisionPanel item={{ ...item, status: "resolved", verdict: "fraud" }} onUpdated={vi.fn()} />);
+  fireEvent.change(screen.getByRole("textbox"), {
+    target: { value: "Verified account holder; fraud decision overturned" },
+  });
+  expect(screen.getByRole("button", { name: "Start investigation" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Escalate" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Confirm fraud" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Mark false positive & release" }));
+  await waitFor(() =>
+    expect(mocks.decide).toHaveBeenCalledWith(
+      "case-7",
+      "false_positive",
+      7,
+      "Verified account holder; fraud decision overturned",
+    ),
+  );
 });

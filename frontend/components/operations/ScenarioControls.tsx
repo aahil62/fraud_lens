@@ -27,10 +27,14 @@ export default function ScenarioControls() {
   return (
     <section className="scenario-desk">
       <div className="scenario-desk-heading">
-        <Flask size={21} aria-hidden="true" /><h2>Simulation desk</h2><span>Test accounts only</span><p>Scenario labels are hidden from detection.</p>
+        <Flask size={21} aria-hidden="true" />
+        <h2>Simulation desk</h2>
+        <span>Test accounts only</span>
+        <p>Scenario labels are hidden from detection.</p>
       </div>
       <div className="scenario-command-strip">
-        <form className="scenario-generate-form"
+        <form
+          className="scenario-generate-form"
           onSubmit={(e) => {
             e.preventDefault();
             void execute(
@@ -43,10 +47,7 @@ export default function ScenarioControls() {
           <div className="scenario-inputs">
             <label>
               Payment channel
-              <select
-                value={channel}
-                onChange={(e) => setChannel(e.target.value as Channel)}
-              >
+              <select value={channel} onChange={(e) => setChannel(e.target.value as Channel)}>
                 {CHANNELS.map((c) => (
                   <option key={c} value={c}>
                     {channelName(c)}
@@ -56,18 +57,11 @@ export default function ScenarioControls() {
             </label>
             <label>
               Scenario
-              <select
-                value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
-              >
+              <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
                 <option value="normal">Normal activity</option>
                 <option value="fraud">Supported fraud pattern</option>
-                <option value="false_positive">
-                  Legitimate unusual activity
-                </option>
-                <option value="cross_channel">
-                  Cross-channel incident (all four)
-                </option>
+                <option value="false_positive">Legitimate unusual activity</option>
+                <option value="cross_channel">Cross-channel incident (all four)</option>
                 <option value="mule_layering">Mule layering (UPI → mules → ATM)</option>
                 <option value="sim_swap_takeover">SIM-swap takeover (net banking)</option>
                 <option value="card_testing">Card testing (cards)</option>
@@ -75,41 +69,46 @@ export default function ScenarioControls() {
               </select>
             </label>
           </div>
-          <button className="primary-button" disabled={busy}>{busy ? "Processing…" : "Generate scenario"}<Play size={14} weight="fill" aria-hidden="true" /></button>
+          <button className="primary-button" disabled={busy}>
+            {busy ? "Processing…" : "Generate scenario"}
+            <Play size={14} weight="fill" aria-hidden="true" />
+          </button>
         </form>
         <div className="scenario-stream">
-            <span>
-              <strong>Continuous stream</strong>
-              <small>
-                {snapshot?.simulation_state.running ? "Running" : "Paused"} ·
-                every {snapshot?.simulation_state.interval_seconds ?? "…"}{" "}
-                seconds
-              </small>
-            </span>
-            <button
-              disabled={busy || !snapshot}
-              onClick={() => {
-                void execute(
-                  "/simulation/control",
-                  { running: !snapshot?.simulation_state.running },
-                  "Stream control updated.",
-                );
-              }}
-            >
-              {snapshot?.simulation_state.running ? <Pause size={14} /> : <Play size={14} />}{snapshot?.simulation_state.running ? "Pause stream" : "Resume stream"}
-            </button>
+          <span>
+            <strong>Continuous stream</strong>
+            <small>
+              {snapshot?.simulation_state.running ? "Running" : "Paused"} · every{" "}
+              {snapshot?.simulation_state.interval_seconds ?? "…"} seconds
+            </small>
+          </span>
+          <button
+            disabled={busy || !snapshot}
+            onClick={() => {
+              void execute(
+                "/simulation/control",
+                { running: !snapshot?.simulation_state.running },
+                "Stream control updated.",
+              );
+            }}
+          >
+            {snapshot?.simulation_state.running ? <Pause size={14} /> : <Play size={14} />}
+            {snapshot?.simulation_state.running ? "Pause stream" : "Resume stream"}
+          </button>
         </div>
       </div>
-      <details className="scenario-advanced"><summary><SlidersHorizontal size={17} aria-hidden="true" />Stream & delivery settings<CaretDown size={15} aria-hidden="true" /></summary><div className="scenario-advanced-content">
+      <details className="scenario-advanced">
+        <summary>
+          <SlidersHorizontal size={17} aria-hidden="true" />
+          Stream & delivery settings
+          <CaretDown size={15} aria-hidden="true" />
+        </summary>
+        <div className="scenario-advanced-content">
           <form
             className="control-line"
             onSubmit={(e) => {
               e.preventDefault();
-              void execute(
-                "/simulation/control",
-                { interval_seconds: interval },
-                "Stream interval updated.",
-              );
+              void execute("/simulation/control", { interval_seconds: interval }, "Stream interval updated.");
             }}
           >
             <label>
@@ -125,44 +124,43 @@ export default function ScenarioControls() {
             </label>
             <button disabled={busy}>Apply interval</button>
           </form>
-        <div className="scenario-bank-control">
-          <label>
-            Bank delivery mode
-            <select
-              value={snapshot?.bank.mode ?? "normal"}
+          <div className="scenario-bank-control">
+            <label>
+              Bank delivery mode
+              <select
+                value={snapshot?.bank.mode ?? "normal"}
+                disabled={busy}
+                onChange={(e) => {
+                  void execute(
+                    "/simulation/control",
+                    { bank_mode: e.target.value },
+                    "Bank mode changed. Existing acknowledgements remain authoritative.",
+                  );
+                }}
+              >
+                <option value="normal">Normal responses</option>
+                <option value="reject">Reject new requests</option>
+                <option value="timeout_after_commit">Timeout after committing action</option>
+              </select>
+            </label>
+            <p className="fine-print">Failure modes exercise pending requests, reconciliation and retries.</p>
+          </div>
+          <div className="scenario-process">
+            <button
               disabled={busy}
-              onChange={(e) => {
+              onClick={() => {
                 void execute(
-                  "/simulation/control",
-                  { bank_mode: e.target.value },
-                  "Bank mode changed. Existing acknowledgements remain authoritative.",
+                  "/process",
+                  undefined,
+                  "Due jobs processed. Check the bank ledger for acknowledgements.",
                 );
               }}
             >
-              <option value="normal">Normal responses</option>
-              <option value="reject">Reject new requests</option>
-              <option value="timeout_after_commit">
-                Timeout after committing action
-              </option>
-            </select>
-          </label>
-          <p className="fine-print">
-            Failure modes exercise pending requests, reconciliation and retries.
-          </p>
-        </div><div className="scenario-process"><button
-            disabled={busy}
-            onClick={() => {
-              void execute(
-                "/process",
-                undefined,
-                "Due jobs processed. Check the bank ledger for acknowledgements.",
-              );
-            }}
-          >
-            Process pending jobs
-          </button>
+              Process pending jobs
+            </button>
+          </div>
         </div>
-      </div></details>
+      </details>
       {message && (
         <p className="success-message" role="status">
           {message}

@@ -1,0 +1,2 @@
+# Development tools, pinned. Install with: .venv/bin/python -m pip install -r requirements-dev.txt
+ruff==0.16.10

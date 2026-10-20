@@ -14,7 +14,14 @@ type SidebarProps = {
   navigationRef: RefObject<HTMLElement | null>;
 };
 
-export function Sidebar({ open, current, pendingReview, approvals, onNavigate, navigationRef }: SidebarProps) {
+export function Sidebar({
+  open,
+  current,
+  pendingReview,
+  approvals,
+  onNavigate,
+  navigationRef,
+}: SidebarProps) {
   function links(items: NavItem[], label: string) {
     return (
       <nav aria-label={label}>
@@ -39,11 +46,16 @@ export function Sidebar({ open, current, pendingReview, approvals, onNavigate, n
     <aside ref={navigationRef} className="ops-sidebar" id="workspace-navigation" data-open={open}>
       <Link href="/" className="ops-brand">
         <LensMark />
-        <span>FraudLens<small>Fraud intelligence</small></span>
+        <span>
+          FraudLens<small>Fraud intelligence</small>
+        </span>
       </Link>
       <div className="workspace-picker">
         <Stack size={22} weight="duotone" />
-        <span><strong>Analyst workspace</strong><small>Local environment</small></span>
+        <span>
+          <strong>Analyst workspace</strong>
+          <small>Local environment</small>
+        </span>
       </div>
       <div className="nav-group-label">Workspace</div>
       {links(NAV.slice(0, 6), "Main navigation")}
@@ -55,7 +67,11 @@ export function Sidebar({ open, current, pendingReview, approvals, onNavigate, n
           <strong>A safe place to investigate.</strong>
           <p>Four payment channels. Fictional accounts. Reversible bank actions.</p>
         </div>
-        <div className="sidebar-footer"><ShieldCheck size={14} /><span>Analyst access</span><span>Local</span></div>
+        <div className="sidebar-footer">
+          <ShieldCheck size={14} />
+          <span>Analyst access</span>
+          <span>Local</span>
+        </div>
       </div>
     </aside>
   );

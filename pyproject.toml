@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["fraudlens", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# ruff format wraps code at 110 columns; long string literals (sources, UI copy) stay whole.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test modules isolate the data directory before importing the app.
+"tests/*" = ["E402"]

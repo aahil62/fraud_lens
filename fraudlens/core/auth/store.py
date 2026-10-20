@@ -29,9 +29,16 @@ DEMO_ANALYSTS = {
 def _seed_accounts() -> list[AnalystAccount]:
     if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
         return []
-    return [AnalystAccount(username=username, display_name=display_name, role=role,
-                           password_hash=hash_password("fraudlens123"), created_at=_now_iso())
-            for username, (display_name, role) in DEMO_ANALYSTS.items()]
+    return [
+        AnalystAccount(
+            username=username,
+            display_name=display_name,
+            role=role,
+            password_hash=hash_password("fraudlens123"),
+            created_at=_now_iso(),
+        )
+        for username, (display_name, role) in DEMO_ANALYSTS.items()
+    ]
 
 
 class AnalystStore:

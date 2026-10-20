@@ -1,8 +1,22 @@
 const BOXES = [
   { id: "in", x: 0, y: 20, w: 180, title: "Synthetic stream", sub: ["+ public Attack console"] },
-  { id: "det", x: 250, y: 20, w: 210, title: "Detector", sub: ["rules · velocity · behaviour", "graph · reference ML"] },
+  {
+    id: "det",
+    x: 250,
+    y: 20,
+    w: 210,
+    title: "Detector",
+    sub: ["rules · velocity · behaviour", "graph · reference ML"],
+  },
   { id: "led", x: 510, y: 20, w: 200, title: "Case ledger + outbox", sub: ["SQLite, transactional"] },
-  { id: "bank", x: 510, y: 160, w: 200, title: "Bank server", sub: ["separate service", "lien · freeze · close"] },
+  {
+    id: "bank",
+    x: 510,
+    y: 160,
+    w: 200,
+    title: "Bank server",
+    sub: ["separate service", "lien · freeze · close"],
+  },
   { id: "ui", x: 250, y: 160, w: 210, title: "Live console", sub: ["multi-analyst", "roles + approvals"] },
 ];
 const ARROWS = [
@@ -20,18 +34,57 @@ const STEPS = [
   ["Live console — multi-analyst, roles + approvals", ""],
 ];
 export default function ArchitectureDiagram() {
-  return <figure className="fl-arch">
-    <svg className="fl-arch-wide" viewBox="0 0 720 260" role="img" aria-labelledby="arch-title">
-      <title id="arch-title">FraudLens architecture: synthetic stream and attack console feed the detector; cases go to a transactional ledger and outbox; bank actions go to a separate bank server; acknowledgements and live events reach the multi-analyst console.</title>
-      <defs><marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path className="arch-arrowhead" d="M0 0 L10 5 L0 10 z" /></marker></defs>
-      {ARROWS.map((a) => <g key={a.label}><path className="arch-line" d={a.d} fill="none" strokeWidth="1.6" markerEnd="url(#arch-arrow)" />
-        <text className="arch-flow" x={a.lx} y={a.ly} textAnchor="middle" fontSize="11">{a.label}</text></g>)}
-      {BOXES.map((b) => <g key={b.id}>
-        <rect className="arch-box" x={b.x} y={b.y} width={b.w} height="78" rx="8" />
-        <text className="arch-title" x={b.x + 16} y={b.y + 28} fontSize="15">{b.title}</text>
-        {b.sub.map((line, i) => <text className="arch-sub" key={line} x={b.x + 16} y={b.y + 48 + i * 16} fontSize="11.5">{line}</text>)}
-      </g>)}
-    </svg>
-    <ol className="fl-arch-steps">{STEPS.map(([name, flow]) => <li key={name}><strong>{name}</strong>{flow && <span>↓ {flow}</span>}</li>)}</ol>
-  </figure>;
+  return (
+    <figure className="fl-arch">
+      <svg className="fl-arch-wide" viewBox="0 0 720 260" role="img" aria-labelledby="arch-title">
+        <title id="arch-title">
+          FraudLens architecture: synthetic stream and attack console feed the detector; cases go to a
+          transactional ledger and outbox; bank actions go to a separate bank server; acknowledgements and
+          live events reach the multi-analyst console.
+        </title>
+        <defs>
+          <marker
+            id="arch-arrow"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="7"
+            markerHeight="7"
+            orient="auto-start-reverse"
+          >
+            <path className="arch-arrowhead" d="M0 0 L10 5 L0 10 z" />
+          </marker>
+        </defs>
+        {ARROWS.map((a) => (
+          <g key={a.label}>
+            <path className="arch-line" d={a.d} fill="none" strokeWidth="1.6" markerEnd="url(#arch-arrow)" />
+            <text className="arch-flow" x={a.lx} y={a.ly} textAnchor="middle" fontSize="11">
+              {a.label}
+            </text>
+          </g>
+        ))}
+        {BOXES.map((b) => (
+          <g key={b.id}>
+            <rect className="arch-box" x={b.x} y={b.y} width={b.w} height="78" rx="8" />
+            <text className="arch-title" x={b.x + 16} y={b.y + 28} fontSize="15">
+              {b.title}
+            </text>
+            {b.sub.map((line, i) => (
+              <text className="arch-sub" key={line} x={b.x + 16} y={b.y + 48 + i * 16} fontSize="11.5">
+                {line}
+              </text>
+            ))}
+          </g>
+        ))}
+      </svg>
+      <ol className="fl-arch-steps">
+        {STEPS.map(([name, flow]) => (
+          <li key={name}>
+            <strong>{name}</strong>
+            {flow && <span>↓ {flow}</span>}
+          </li>
+        ))}
+      </ol>
+    </figure>
+  );
 }

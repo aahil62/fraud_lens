@@ -11,8 +11,13 @@ _now = "2026-09-04T10:00:00+00:00"
 
 def _txn(txn_id: str, account_id: str = "ACC-RESTRICT-1", timestamp: str = _now) -> Transaction:
     return Transaction(
-        txn_id=txn_id, account_id=account_id, amount=5000.0, merchant_id="M1",
-        merchant_category="electronics", device_id="D1", ip_address="1.2.3.4",
+        txn_id=txn_id,
+        account_id=account_id,
+        amount=5000.0,
+        merchant_id="M1",
+        merchant_category="electronics",
+        device_id="D1",
+        ip_address="1.2.3.4",
         timestamp=timestamp,
     )
 

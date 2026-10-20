@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, it } from "vitest";
 import { PROOF } from "./proof";
-const evaluation = JSON.parse(readFileSync(resolve(process.cwd(), "../docs/verification/operations-evaluation.json"), "utf8"));
+const evaluation = JSON.parse(
+  readFileSync(resolve(process.cwd(), "../docs/verification/operations-evaluation.json"), "utf8"),
+);
 it("quotes the automatic-protection precision and recall exactly as evaluated", () => {
   expect(PROOF.protectionThreshold).toBe(evaluation.overall.protection.threshold);
   expect(PROOF.precision).toBe(evaluation.overall.protection.precision);

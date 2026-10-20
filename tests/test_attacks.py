@@ -1,12 +1,13 @@
 """Public demo attacks expose their own progress, never the private ledger."""
+
 import tempfile
 import unittest
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from fraudlens.api.state import state
 from fraudlens.api.routes.public import mount_public_routes
+from fraudlens.api.state import state
 from fraudlens.bank_simulator.main import create_app
 from fraudlens.operations.attacks import PublicAttacks
 from fraudlens.operations.service import OperationsService
@@ -16,7 +17,9 @@ class AttackTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.bank = TestClient(create_app(Path(self.tmp.name) / "bank.sqlite", api_key="test"), headers={"X-Bank-Key": "test"})
+        self.bank = TestClient(
+            create_app(Path(self.tmp.name) / "bank.sqlite", api_key="test"), headers={"X-Bank-Key": "test"}
+        )
         self.addCleanup(self.bank.close)
         self.service = OperationsService(Path(self.tmp.name) / "ops.sqlite", bank_client=self.bank)
         self.clock = 1000.0
@@ -33,7 +36,14 @@ class AttackTests(unittest.TestCase):
         return self.client.post("/public/attacks", json={"typology": typology, **changes})
 
     def test_each_typology_flags_from_real_ledger(self):
-        labels = ["Scam payment sent", "FraudLens flagged it", "Bank protection requested", "Bank confirmed protection", "Analyst picked it up", "Verdict recorded"]
+        labels = [
+            "Scam payment sent",
+            "FraudLens flagged it",
+            "Bank protection requested",
+            "Bank confirmed protection",
+            "Analyst picked it up",
+            "Verdict recorded",
+        ]
         for typology in ("mule_layering", "sim_swap_takeover", "card_testing", "atm_cashout"):
             with self.subTest(typology=typology):
                 launch = self.launch(typology)
@@ -58,7 +68,12 @@ class AttackTests(unittest.TestCase):
     def test_limit_is_per_visitor_behind_the_console_proxy(self):
         proxied = TestClient(self.client.app, client=("127.0.0.1", 40000))
         self.addCleanup(proxied.close)
-        launch = lambda ip: proxied.post("/public/attacks", json={"typology": "card_testing"}, headers={"X-Forwarded-For": ip})
+
+        def launch(ip):
+            return proxied.post(
+                "/public/attacks", json={"typology": "card_testing"}, headers={"X-Forwarded-For": ip}
+            )
+
         for _ in range(10):
             self.assertEqual(launch("203.0.113.7").status_code, 200)
         self.assertEqual(launch("203.0.113.7").status_code, 429)
@@ -68,9 +83,13 @@ class AttackTests(unittest.TestCase):
         app = FastAPI()
         mount_public_routes(app, mode="production")
         with TestClient(app) as client:
-            self.assertEqual(client.post("/public/attacks", json={"typology": "atm_cashout"}).status_code, 404)
+            self.assertEqual(
+                client.post("/public/attacks", json={"typology": "atm_cashout"}).status_code, 404
+            )
             self.assertEqual(client.get("/public/attacks/ATK-123456789abc").status_code, 404)
-            self.assertFalse(any(route.startswith("/public/") for route in client.get("/openapi.json").json()["paths"]))
+            self.assertFalse(
+                any(route.startswith("/public/") for route in client.get("/openapi.json").json()["paths"])
+            )
 
     def test_public_status_and_report_do_not_leak_private_fields(self):
         launch = self.launch().json()
@@ -78,10 +97,21 @@ class AttackTests(unittest.TestCase):
         self.assertEqual(report.status_code, 200, report.text)
         self.service.process_jobs()
         status = self.client.get(launch["status_url"]).json()
+
         def inspect(value):
             if isinstance(value, dict):
                 for key, item in value.items():
-                    self.assertNotIn(key, {"display_name", "balance_minor", "available_minor", "case_id", "account_id", "username"})
+                    self.assertNotIn(
+                        key,
+                        {
+                            "display_name",
+                            "balance_minor",
+                            "available_minor",
+                            "case_id",
+                            "account_id",
+                            "username",
+                        },
+                    )
                     inspect(item)
             elif isinstance(value, list):
                 for item in value:
@@ -89,6 +119,7 @@ class AttackTests(unittest.TestCase):
             elif isinstance(value, str):
                 for case in self.service.snapshot()["cases"]:
                     self.assertNotIn(case["case_id"], value)
+
         inspect(status)
         inspect(report.json())
 
@@ -125,6 +156,7 @@ class AttackTests(unittest.TestCase):
     def test_human_claim_and_verdict_update_public_progress(self):
         from fraudlens.models.schemas import AnalystProfile
         from fraudlens.operations.models import ClaimInput, DecisionInput
+
         launch = self.launch("sim_swap_takeover").json()
         before = self.client.get(launch["status_url"]).json()
         self.assertEqual(before["outcome"], "in_progress")
@@ -134,8 +166,11 @@ class AttackTests(unittest.TestCase):
         picked = self.client.get(launch["status_url"]).json()
         self.assertEqual(picked["steps"][4]["status"], "done")
         self.assertEqual(picked["steps"][5]["status"], "pending")
-        self.service.decide(case["case_id"], DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Verified attack"),
-                            AnalystProfile(username="riyer", display_name="R. Iyer", role="l2_analyst"))
+        self.service.decide(
+            case["case_id"],
+            DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Verified attack"),
+            AnalystProfile(username="riyer", display_name="R. Iyer", role="l2_analyst"),
+        )
         final = self.client.get(launch["status_url"]).json()
         self.assertEqual(final["steps"][5]["status"], "done")
         self.assertEqual(final["outcome"], "caught")

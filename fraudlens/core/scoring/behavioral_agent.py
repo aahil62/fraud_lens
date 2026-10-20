@@ -102,14 +102,10 @@ class BehavioralAgent:
             metadata["amount_ratio"] = round(ratio, 2)
             if ratio >= _AMOUNT_RATIO_MAJOR:
                 signal_scores.append(0.85)
-                reasons.append(
-                    f"Amount is {ratio:.1f}x the account's average (₹{avg:.2f})"
-                )
+                reasons.append(f"Amount is {ratio:.1f}x the account's average (₹{avg:.2f})")
             elif ratio >= _AMOUNT_RATIO_MINOR:
                 signal_scores.append(0.5)
-                reasons.append(
-                    f"Amount is {ratio:.1f}x the account's average (₹{avg:.2f})"
-                )
+                reasons.append(f"Amount is {ratio:.1f}x the account's average (₹{avg:.2f})")
 
         categories = {e.category for e in history}
         if txn.merchant_category not in categories:
@@ -150,9 +146,7 @@ class BehavioralAgent:
             elif hour != mean:
                 # No historical variance at all — any deviation is notable.
                 signal_scores.append(0.5)
-                reasons.append(
-                    f"Transaction hour ({hour}:00) differs from account's consistent history"
-                )
+                reasons.append(f"Transaction hour ({hour}:00) differs from account's consistent history")
 
         score = max(signal_scores) if signal_scores else _QUIET_SCORE
         confidence = 0.8 if len(history) >= _CONFIDENT_HISTORY_SIZE else 0.6

@@ -26,10 +26,14 @@ export default function LandingExperience() {
       // The scroll engine stays unchanged. Only decorative depth uses scroll
       // progress; essential text and controls have no entrance attributes.
       await import("./scrollcraft.js");
-      if (!canceled && rootRef.current) instance = (window as ScrollCraftWindow).ScrollCraft?.mount(rootRef.current);
+      if (!canceled && rootRef.current)
+        instance = (window as ScrollCraftWindow).ScrollCraft?.mount(rootRef.current);
     }
     void mount();
-    return () => { canceled = true; instance?.destroy(); };
+    return () => {
+      canceled = true;
+      instance?.destroy();
+    };
   }, []);
 
   /** Choosing a channel restarts the sample incident on that channel. */
@@ -41,14 +45,26 @@ export default function LandingExperience() {
 
   return (
     <main ref={rootRef} className="fl-landing">
-      <a className="fl-skip" href="#sample-incident">Skip to the sample investigation</a>
+      <a className="fl-skip" href="#sample-incident">
+        Skip to the sample investigation
+      </a>
       <div className="fl-opening">
         <LandingNav />
-        <Hero channel={channelKey} motionPaused={motionPaused} onToggleMotion={() => setMotionPaused(!motionPaused)} />
+        <Hero
+          channel={channelKey}
+          motionPaused={motionPaused}
+          onToggleMotion={() => setMotionPaused(!motionPaused)}
+        />
       </div>
       <GoldenHour paused={motionPaused} />
       <Channels active={channelKey} onSelect={selectChannel} />
-      <Incident channelKey={channelKey} stage={stage} resolved={resolved} onStage={setStage} onResolved={setResolved} />
+      <Incident
+        channelKey={channelKey}
+        stage={stage}
+        resolved={resolved}
+        onStage={setStage}
+        onResolved={setResolved}
+      />
       <Team />
       <Built />
       <Close />

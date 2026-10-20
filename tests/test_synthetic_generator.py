@@ -1,3 +1,4 @@
+import random
 import unittest
 from collections import defaultdict
 from datetime import datetime
@@ -7,7 +8,6 @@ from fraudlens.data.synthetic_generator import (
     generate_synthetic_transactions,
     make_fraud_ring,
 )
-import random
 
 
 class SyntheticGeneratorTests(unittest.TestCase):
@@ -26,9 +26,14 @@ class SyntheticGeneratorTests(unittest.TestCase):
 
     def test_every_transaction_is_labeled(self) -> None:
         txns = generate_synthetic_transactions(
-            num_normal=20, num_high_amount=5, num_risky_merchant=5,
-            num_odd_hour=5, num_card_testing_bursts=2,
-            num_high_velocity_bursts=2, num_fraud_rings=1, seed=2,
+            num_normal=20,
+            num_high_amount=5,
+            num_risky_merchant=5,
+            num_odd_hour=5,
+            num_card_testing_bursts=2,
+            num_high_velocity_bursts=2,
+            num_fraud_rings=1,
+            seed=2,
         )
         for t in txns:
             self.assertIsInstance(t.is_fraud_demo_label, bool)
@@ -47,9 +52,14 @@ class SyntheticGeneratorTests(unittest.TestCase):
 
     def test_timestamps_are_parseable_iso(self) -> None:
         txns = generate_synthetic_transactions(
-            num_normal=5, num_high_amount=1, num_risky_merchant=1,
-            num_odd_hour=1, num_card_testing_bursts=1,
-            num_high_velocity_bursts=1, num_fraud_rings=1, seed=4,
+            num_normal=5,
+            num_high_amount=1,
+            num_risky_merchant=1,
+            num_odd_hour=1,
+            num_card_testing_bursts=1,
+            num_high_velocity_bursts=1,
+            num_fraud_rings=1,
+            seed=4,
         )
         for t in txns:
             datetime.fromisoformat(t.timestamp)
@@ -91,9 +101,14 @@ class SyntheticGeneratorTests(unittest.TestCase):
 
     def test_card_testing_burst_all_under_800_rupees(self) -> None:
         txns = generate_synthetic_transactions(
-            num_normal=0, num_high_amount=0, num_risky_merchant=0,
-            num_odd_hour=0, num_card_testing_bursts=3,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=8,
+            num_normal=0,
+            num_high_amount=0,
+            num_risky_merchant=0,
+            num_odd_hour=0,
+            num_card_testing_bursts=3,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=8,
         )
         self.assertTrue(txns)
         for t in txns:
@@ -102,9 +117,14 @@ class SyntheticGeneratorTests(unittest.TestCase):
 
     def test_zero_counts_produce_empty_dataset(self) -> None:
         txns = generate_synthetic_transactions(
-            num_normal=0, num_high_amount=0, num_risky_merchant=0,
-            num_odd_hour=0, num_card_testing_bursts=0,
-            num_high_velocity_bursts=0, num_fraud_rings=0, seed=9,
+            num_normal=0,
+            num_high_amount=0,
+            num_risky_merchant=0,
+            num_odd_hour=0,
+            num_card_testing_bursts=0,
+            num_high_velocity_bursts=0,
+            num_fraud_rings=0,
+            seed=9,
         )
         self.assertEqual(txns, [])
 

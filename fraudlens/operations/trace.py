@@ -1,4 +1,5 @@
 """Bounded FIFO attribution, in causal time order, without duplicating funds."""
+
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 
@@ -13,15 +14,22 @@ def trace_funds(transactions, reported_txn, *, max_hops=4, window_hours=24):
     reached = {}
 
     def arrive(account, amount, hop, txn_id):
-        row = reached.setdefault(account, dict(hop=hop, account_id=account, inbound_txn_ids=[], traced_minor=0, moved_minor=0))
+        row = reached.setdefault(
+            account, dict(hop=hop, account_id=account, inbound_txn_ids=[], traced_minor=0, moved_minor=0)
+        )
         row["hop"] = min(row["hop"], hop)
         if txn_id not in row["inbound_txn_ids"]:
             row["inbound_txn_ids"].append(txn_id)
         lots[account].append([amount, hop])
 
     arrive(beneficiary, reported_txn["amount_minor"], 1, reported_txn["txn_id"])
-    outgoing = [t for t in transactions if t["txn_id"] != reported_txn["txn_id"] and
-                t.get("payment_status") == "posted" and start <= datetime.fromisoformat(t["timestamp"]) < end]
+    outgoing = [
+        t
+        for t in transactions
+        if t["txn_id"] != reported_txn["txn_id"]
+        and t.get("payment_status") == "posted"
+        and start <= datetime.fromisoformat(t["timestamp"]) < end
+    ]
     for txn in sorted(outgoing, key=lambda t: (datetime.fromisoformat(t["timestamp"]), t["txn_id"])):
         sender, receiver = txn["account_id"], txn.get("beneficiary_id")
         if sender == receiver:
@@ -57,8 +65,13 @@ def trace_view(case, actions):
             if action["status"] == "confirmed":
                 hop["lien_minor"] = action["amount_minor"]
                 hop["outcome"] = "held" if hop["lien_minor"] == hop["traced_minor"] else "partially_recovered"
-                released = any(a["operation"] == "lien_release" and a["target_id"] == hop["account_id"] and
-                               a["status"] == "confirmed" and a["created_at"] >= action["created_at"] for a in actions)
+                released = any(
+                    a["operation"] == "lien_release"
+                    and a["target_id"] == hop["account_id"]
+                    and a["status"] == "confirmed"
+                    and a["created_at"] >= action["created_at"]
+                    for a in actions
+                )
                 if released:
                     hop.update(lien_minor=0, lien_status="released", outcome="released")
         result.append(hop)

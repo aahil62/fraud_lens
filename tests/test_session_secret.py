@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from fraudlens.bank_simulator.main import create_app
 from fraudlens.core.auth.security import load_session_secret
 from fraudlens.core.auth.store import AnalystStore
-from fraudlens.bank_simulator.main import create_app
 
 
 class SessionSecretTests(unittest.TestCase):
@@ -24,7 +24,9 @@ class SessionSecretTests(unittest.TestCase):
             for configured in (None, "short"):
                 with self.assertRaises(ValueError):
                     load_session_secret(Path(directory) / "key", configured=configured, mode="production")
-            self.assertEqual(load_session_secret(Path(directory) / "key", configured="z" * 48, mode="production"), "z" * 48)
+            self.assertEqual(
+                load_session_secret(Path(directory) / "key", configured="z" * 48, mode="production"), "z" * 48
+            )
 
     def test_non_demo_rejects_existing_public_demo_accounts(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -36,7 +38,10 @@ class SessionSecretTests(unittest.TestCase):
 
     def test_non_demo_rejects_public_simulator_key(self):
         with tempfile.TemporaryDirectory() as directory:
-            with patch.dict(os.environ, {"FRAUDLENS_MODE": "production", "FRAUDLENS_BANK_KEY": "fraudlens-local-simulator"}):
+            with patch.dict(
+                os.environ,
+                {"FRAUDLENS_MODE": "production", "FRAUDLENS_BANK_KEY": "fraudlens-local-simulator"},
+            ):
                 with self.assertRaises(ValueError):
                     create_app(db_path=Path(directory) / "bank.db")
 

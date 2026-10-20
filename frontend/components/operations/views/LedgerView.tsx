@@ -1,6 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CHANNELS, type Case, type Snapshot, type Transaction, channelName, claimCase, explainError, human, opsFetch } from "@/lib/operations";
+import {
+  CHANNELS,
+  type Case,
+  type Snapshot,
+  type Transaction,
+  channelName,
+  claimCase,
+  explainError,
+  human,
+  opsFetch,
+} from "@/lib/operations";
 import { useOperations } from "../OperationsProvider";
 import { useAnalyst } from "../useAnalyst";
 import { CaseTable, Loading, PageHeading, TransactionTable } from "../Primitives";
@@ -26,7 +36,15 @@ export function inQueueView(item: Case, view: QueueView, username?: string) {
   return true;
 }
 
-function StatusStrip({ snapshot, status, onSelect }: { snapshot: Snapshot | null; status: string; onSelect: (value: string) => void }) {
+function StatusStrip({
+  snapshot,
+  status,
+  onSelect,
+}: {
+  snapshot: Snapshot | null;
+  status: string;
+  onSelect: (value: string) => void;
+}) {
   const items = [
     { value: "", label: "All investigations", count: snapshot?.counts.cases },
     { value: "new", label: "Awaiting review", count: snapshot?.counts.pending_review },
@@ -50,10 +68,19 @@ function StreamContext({ snapshot }: { snapshot: Snapshot }) {
   const running = snapshot.simulation_state.running;
   return (
     <div className="ledger-context">
-      <span><span className={`connection-dot ${running ? "running" : ""}`} />Stream {running ? "running" : "paused"}</span>
-      <span><strong>{snapshot.counts.posted}</strong> posted</span>
-      <span><strong>{snapshot.counts.declined}</strong> declined</span>
-      <span><strong>{snapshot.counts.pending_payments}</strong> pending</span>
+      <span>
+        <span className={`connection-dot ${running ? "running" : ""}`} />
+        Stream {running ? "running" : "paused"}
+      </span>
+      <span>
+        <strong>{snapshot.counts.posted}</strong> posted
+      </span>
+      <span>
+        <strong>{snapshot.counts.declined}</strong> declined
+      </span>
+      <span>
+        <strong>{snapshot.counts.pending_payments}</strong> pending
+      </span>
     </div>
   );
 }
@@ -85,7 +112,9 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Could not load ledger.");
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [kind, channel, status, view, offset, snapshot?.cursor, reload]);
 
   async function claim(item: Case) {
@@ -111,18 +140,29 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
     <div className="workspace-view ledger-view">
       <PageHeading
         title={kind === "cases" ? "Investigation queue" : "Transaction ledger"}
-        description={kind === "cases"
-          ? "Review evidence, make a verdict, and track its protective action."
-          : "Continuous attempted payments and the bank simulator’s actual outcomes."}
+        description={
+          kind === "cases"
+            ? "Review evidence, make a verdict, and track its protective action."
+            : "Continuous attempted payments and the bank simulator’s actual outcomes."
+        }
       />
       {kind === "transactions" && <ScenarioControls />}
       {kind === "cases" && <StatusStrip snapshot={snapshot} status={status} onSelect={selectStatus} />}
       {kind === "cases" && (
         <div className="queue-view-filters" role="group" aria-label="Queue view">
           {QUEUE_VIEWS.map((item) => (
-            <button key={item.value} aria-pressed={view === item.value} onClick={() => { setView(item.value); setOffset(0); }}>
+            <button
+              key={item.value}
+              aria-pressed={view === item.value}
+              onClick={() => {
+                setView(item.value);
+                setOffset(0);
+              }}
+            >
               {item.label}
-              {item.value === "awaiting_approval" && snapshot?.approvals?.length ? <b>{snapshot.approvals.length}</b> : null}
+              {item.value === "awaiting_approval" && snapshot?.approvals?.length ? (
+                <b>{snapshot.approvals.length}</b>
+              ) : null}
             </button>
           ))}
           <span className="muted">Sorted by agent priority</span>
@@ -133,9 +173,19 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
         <div className="filter-bar">
           <label>
             Channel
-            <select value={channel} onChange={(e) => { setChannel(e.target.value); setOffset(0); }}>
+            <select
+              value={channel}
+              onChange={(e) => {
+                setChannel(e.target.value);
+                setOffset(0);
+              }}
+            >
               <option value="">All channels</option>
-              {CHANNELS.map((c) => <option key={c} value={c}>{channelName(c)}</option>)}
+              {CHANNELS.map((c) => (
+                <option key={c} value={c}>
+                  {channelName(c)}
+                </option>
+              ))}
             </select>
           </label>
           {kind === "cases" && (
@@ -143,28 +193,49 @@ export function LedgerView({ kind }: { kind: "cases" | "transactions" }) {
               Case status
               <select value={status} onChange={(e) => selectStatus(e.target.value)}>
                 <option value="">All statuses</option>
-                {["new", "investigating", "escalated", "resolved"].map((s) => <option key={s} value={s}>{human(s)}</option>)}
+                {["new", "investigating", "escalated", "resolved"].map((s) => (
+                  <option key={s} value={s}>
+                    {human(s)}
+                  </option>
+                ))}
               </select>
             </label>
           )}
           <p>{data ? `${data.total.toLocaleString("en-IN")} matching records` : "Loading records…"}</p>
         </div>
-        {error && <p className="form-error" role="alert">{error}</p>}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
         {!data ? (
           <Loading />
         ) : kind === "cases" ? (
           <CaseTable
             cases={(data.items as Case[]).filter((item) => inQueueView(item, view, analyst?.username))}
-            onClaim={(item) => { void claim(item); }}
+            onClaim={(item) => {
+              void claim(item);
+            }}
             busyId={claiming}
           />
         ) : (
           <TransactionTable transactions={data.items as Transaction[]} />
         )}
         <div className="pagination">
-          <span>{data?.total ? `${offset + 1}–${Math.min(offset + PAGE_SIZE, data.total)} of ${data.total}` : "0 records"}</span>
-          <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>Previous</button>
-          <button disabled={!data || offset + PAGE_SIZE >= data.total} onClick={() => setOffset(offset + PAGE_SIZE)}>Next</button>
+          <span>
+            {data?.total
+              ? `${offset + 1}–${Math.min(offset + PAGE_SIZE, data.total)} of ${data.total}`
+              : "0 records"}
+          </span>
+          <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
+            Previous
+          </button>
+          <button
+            disabled={!data || offset + PAGE_SIZE >= data.total}
+            onClick={() => setOffset(offset + PAGE_SIZE)}
+          >
+            Next
+          </button>
         </div>
       </section>
     </div>

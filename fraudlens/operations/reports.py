@@ -1,36 +1,64 @@
 """Timestamped operational reports; exports never claim an actual bank filing."""
+
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
-from .store import now
 from .money import inr
+from .store import now
 
 
 def report(case):
-    return {"case_id": case["case_id"], "generated_at": now(), "case_version": case["version"], "simulation": True,
-            "case": case, "disclaimer": "Simulated transactions and bank actions. Analyst verdict is not a regulatory classification or filing. Risk scores are not calibrated probabilities."}
+    return {
+        "case_id": case["case_id"],
+        "generated_at": now(),
+        "case_version": case["version"],
+        "simulation": True,
+        "case": case,
+        "disclaimer": "Simulated transactions and bank actions. Analyst verdict is not a regulatory classification or filing. Risk scores are not calibrated probabilities.",
+    }
 
 
 def markdown(value):
     case = value["case"]
-    lines = [f"# FraudLens investigation report: {case['case_id']}", "", value["disclaimer"], "",
-             f"Generated: {value['generated_at']} | Case version: {value['case_version']}", "",
-             f"Channel: {case['channel']} | Account reference: {case['account_id']}",
-             f"Amount: {inr(case['amount_minor'])} | Risk score: {case['score']:.3f}",
-             f"Case status: {case['status']} | Analyst verdict: {case['verdict']}",
-             f"Analyst: {case['assigned_to'] or 'Unassigned'}", f"Notes: {case['notes'] or 'No analyst notes yet.'}", "",
-             "## Detection evidence", ""]
+    lines = [
+        f"# FraudLens investigation report: {case['case_id']}",
+        "",
+        value["disclaimer"],
+        "",
+        f"Generated: {value['generated_at']} | Case version: {value['case_version']}",
+        "",
+        f"Channel: {case['channel']} | Account reference: {case['account_id']}",
+        f"Amount: {inr(case['amount_minor'])} | Risk score: {case['score']:.3f}",
+        f"Case status: {case['status']} | Analyst verdict: {case['verdict']}",
+        f"Analyst: {case['assigned_to'] or 'Unassigned'}",
+        f"Notes: {case['notes'] or 'No analyst notes yet.'}",
+        "",
+        "## Detection evidence",
+        "",
+    ]
     for signal in case["signals"]:
         lines.append(f"- {signal['name']} ({signal['score']:.3f}): {'; '.join(signal['reasons'])}")
     lines.extend(["", "## Bank actions", ""])
     for action in reversed(case["actions"]):
-        lines.append(f"- {action['created_at']}: {action['operation']} {action['target_type']} {action['target_id']}; {action['status']}; bank reference {action['bank_reference'] or 'not acknowledged'}")
+        lines.append(
+            f"- {action['created_at']}: {action['operation']} {action['target_type']} {action['target_id']}; {action['status']}; bank reference {action['bank_reference'] or 'not acknowledged'}"
+        )
     if case.get("trace") is not None:
-        lines.extend(["", "## Fund trail", "", f"Complaint: {case['complaint']['complaint_id']}",
-                      f"Confirmed held: {inr(case['held_total_minor'])}", ""])
+        lines.extend(
+            [
+                "",
+                "## Fund trail",
+                "",
+                f"Complaint: {case['complaint']['complaint_id']}",
+                f"Confirmed held: {inr(case['held_total_minor'])}",
+                "",
+            ]
+        )
         for hop in case["trace"]:
-            lines.append(f"- Hop {hop['hop']} | {hop['account_id']} | Traced {inr(hop['traced_minor'])} | "
-                         f"Held {inr(hop['lien_minor'])} | {hop['outcome']} | {hop['lien_status']}")
+            lines.append(
+                f"- Hop {hop['hop']} | {hop['account_id']} | Traced {inr(hop['traced_minor'])} | "
+                f"Held {inr(hop['lien_minor'])} | {hop['outcome']} | {hop['lien_status']}"
+            )
     lines.extend(["", "## Audit timeline", ""])
     for event in case["timeline"]:
         lines.append(f"- {event['occurred_at']} | {event['actor']} | {event['message']}")

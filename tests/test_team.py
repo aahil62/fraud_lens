@@ -1,4 +1,5 @@
 """Ownership and approval invariants against the transactional operations store."""
+
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -9,15 +10,20 @@ from unittest.mock import patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
-
 from fraudlens.bank_simulator.main import create_app
 from fraudlens.core.auth.store import AnalystStore
 from fraudlens.models.schemas import AnalystProfile
-from fraudlens.operations.models import (ApprovalDecisionInput, ApprovalRequestInput, AssignInput,
-                                         ClaimInput, DecisionInput, TransactionInput)
+from fraudlens.operations.models import (
+    ApprovalDecisionInput,
+    ApprovalRequestInput,
+    AssignInput,
+    ClaimInput,
+    DecisionInput,
+    TransactionInput,
+)
 from fraudlens.operations.service import ConflictError, OperationsService
 from fraudlens.operations.team import OperationError
+from pydantic import ValidationError
 
 
 class TeamTests(unittest.TestCase):
@@ -32,12 +38,25 @@ class TeamTests(unittest.TestCase):
         self.supervisor = self.profile("asharma")
         self.t = datetime(2026, 10, 18, 12, tzinfo=timezone.utc)
         self.path = root / "ops.sqlite"
-        self.bank = TestClient(create_app(root / "bank.sqlite", api_key="test"), headers={"X-Bank-Key": "test"})
+        self.bank = TestClient(
+            create_app(root / "bank.sqlite", api_key="test"), headers={"X-Bank-Key": "test"}
+        )
         self.addCleanup(self.bank.close)
-        self.service = OperationsService(self.path, bank_client=self.bank, analysts=self.analysts, clock=lambda: self.t)
-        self.case = self.service.ingest(TransactionInput(
-            txn_id="TEAM-TX", account_id="TEAM-ACCOUNT", channel="upi", amount_minor=8000000,
-            timestamp=self.t, new_device=True, new_beneficiary=True, failed_auth_attempts=4))["case"]
+        self.service = OperationsService(
+            self.path, bank_client=self.bank, analysts=self.analysts, clock=lambda: self.t
+        )
+        self.case = self.service.ingest(
+            TransactionInput(
+                txn_id="TEAM-TX",
+                account_id="TEAM-ACCOUNT",
+                channel="upi",
+                amount_minor=8000000,
+                timestamp=self.t,
+                new_device=True,
+                new_beneficiary=True,
+                failed_auth_attempts=4,
+            )
+        )["case"]
         self.cid = self.case["case_id"]
 
     def profile(self, username):
@@ -45,13 +64,24 @@ class TeamTests(unittest.TestCase):
         return AnalystProfile(username=account.username, display_name=account.display_name, role=account.role)
 
     def request(self, action, actor=None):
-        return self.service.request_approval(self.cid, ApprovalRequestInput(
-            action=action, expected_version=self.service.get_case(self.cid)["version"], notes="Review bank evidence"), actor or self.l1)
+        return self.service.request_approval(
+            self.cid,
+            ApprovalRequestInput(
+                action=action,
+                expected_version=self.service.get_case(self.cid)["version"],
+                notes="Review bank evidence",
+            ),
+            actor or self.l1,
+        )
 
     def test_l1_cannot_confirm_fraud_directly(self):
         before = self.service.get_case(self.cid)
         with self.assertRaises(OperationError) as caught:
-            self.service.decide(self.cid, DecisionInput(action="confirm_fraud", expected_version=before["version"], notes="Confirmed"), self.l1)
+            self.service.decide(
+                self.cid,
+                DecisionInput(action="confirm_fraud", expected_version=before["version"], notes="Confirmed"),
+                self.l1,
+            )
         self.assertEqual(caught.exception.status_code, 403)
         self.assertEqual(caught.exception.payload["required_role"], "l2_analyst")
         after = self.service.get_case(self.cid)
@@ -64,7 +94,9 @@ class TeamTests(unittest.TestCase):
         result = self.service.decide_approval(self.cid, ApprovalDecisionInput(approve=True), self.l2)
         self.assertEqual(result["verdict"], "fraud")
         self.assertIsNone(result["pending_approval"])
-        self.assertTrue(any("Approved by R. Iyer (requested by K. Mehta)" in e["message"] for e in result["timeline"]))
+        self.assertTrue(
+            any("Approved by R. Iyer (requested by K. Mehta)" in e["message"] for e in result["timeline"])
+        )
 
     def test_requester_cannot_approve_own_request(self):
         self.request("confirm_fraud")
@@ -74,10 +106,20 @@ class TeamTests(unittest.TestCase):
         self.assertIsNotNone(self.service.get_case(self.cid)["pending_approval"])
 
     def test_close_account_requires_supervisor(self):
-        case = self.service.decide(self.cid, DecisionInput(action="confirm_fraud", expected_version=self.case["version"], notes="Verified fraud"), self.l2)
+        self.service.decide(
+            self.cid,
+            DecisionInput(
+                action="confirm_fraud", expected_version=self.case["version"], notes="Verified fraud"
+            ),
+            self.l2,
+        )
         self.request("close_account", self.l2)
         with self.assertRaises(OperationError) as caught:
-            self.service.decide_approval(self.cid, ApprovalDecisionInput(approve=True), self.profile("riyer").model_copy(update={"username": "another-l2"}))
+            self.service.decide_approval(
+                self.cid,
+                ApprovalDecisionInput(approve=True),
+                self.profile("riyer").model_copy(update={"username": "another-l2"}),
+            )
         self.assertEqual(caught.exception.payload["required_role"], "supervisor")
         result = self.service.decide_approval(self.cid, ApprovalDecisionInput(approve=True), self.supervisor)
         self.assertEqual([a["operation"] for a in result["actions"]].count("close"), 1)
@@ -86,6 +128,7 @@ class TeamTests(unittest.TestCase):
     def test_concurrent_claims_one_wins(self):
         second = OperationsService(self.path, bank_client=self.bank, analysts=self.analysts)
         barrier = Barrier(2)
+
         def claim(service, actor):
             barrier.wait()
             try:
@@ -93,6 +136,7 @@ class TeamTests(unittest.TestCase):
                 return 200
             except ConflictError:
                 return 409
+
         with ThreadPoolExecutor(2) as pool:
             a = pool.submit(claim, self.service, self.l1)
             b = pool.submit(claim, second, self.profile("pnair"))
@@ -112,11 +156,15 @@ class TeamTests(unittest.TestCase):
         self.assertTrue(member["online"])
         self.assertEqual(member["current_case_id"], self.cid)
         self.t += timedelta(seconds=2)
-        self.assertFalse(next(t for t in self.service.snapshot()["team"] if t["username"] == "kmehta")["online"])
+        self.assertFalse(
+            next(t for t in self.service.snapshot()["team"] if t["username"] == "kmehta")["online"]
+        )
 
     def test_handled_by_lists_distinct_actors_in_order(self):
         case = self.service.claim(self.cid, ClaimInput(expected_version=self.case["version"]), self.l1)
-        case = self.service.decide(self.cid, DecisionInput(action="investigate", expected_version=case["version"]), self.l1)
+        case = self.service.decide(
+            self.cid, DecisionInput(action="investigate", expected_version=case["version"]), self.l1
+        )
         self.request("confirm_fraud")
         case = self.service.decide_approval(self.cid, ApprovalDecisionInput(approve=True), self.l2)
         self.assertEqual(case["handled_by"], ["kmehta", "riyer"])
@@ -125,7 +173,9 @@ class TeamTests(unittest.TestCase):
         self.request("confirm_fraud")
         with self.assertRaises(ValidationError):
             ApprovalDecisionInput(approve=False, notes=" ")
-        result = self.service.decide_approval(self.cid, ApprovalDecisionInput(approve=False, notes="Need customer evidence"), self.l2)
+        result = self.service.decide_approval(
+            self.cid, ApprovalDecisionInput(approve=False, notes="Need customer evidence"), self.l2
+        )
         self.assertIsNone(result["pending_approval"])
         self.assertEqual(result["verdict"], "unreviewed")
         self.assertIn("Need customer evidence", result["timeline"][-1]["message"])
@@ -140,18 +190,25 @@ class TeamTests(unittest.TestCase):
 
     def test_assignment_requires_l2_and_existing_target(self):
         with self.assertRaises(OperationError):
-            self.service.assign(self.cid, AssignInput(username="pnair", expected_version=self.case["version"]), self.l1)
-        case = self.service.assign(self.cid, AssignInput(username="pnair", expected_version=self.case["version"]), self.l2)
+            self.service.assign(
+                self.cid, AssignInput(username="pnair", expected_version=self.case["version"]), self.l1
+            )
+        case = self.service.assign(
+            self.cid, AssignInput(username="pnair", expected_version=self.case["version"]), self.l2
+        )
         self.assertEqual(case["assignee"], "pnair")
         member = next(t for t in self.service.snapshot()["team"] if t["username"] == "pnair")
         self.assertEqual(member["open_assigned"], 1)
         with self.assertRaises(OperationError):
-            self.service.assign(self.cid, AssignInput(username="missing", expected_version=case["version"]), self.l2)
+            self.service.assign(
+                self.cid, AssignInput(username="missing", expected_version=case["version"]), self.l2
+            )
 
     def test_http_role_denial_shape_and_no_body_role_escalation(self):
         from fraudlens.api.deps import get_current_analyst
         from fraudlens.api.routes.operations import router
         from fraudlens.api.state import state
+
         old = state.operations
         state.operations = self.service
         self.addCleanup(setattr, state, "operations", old)
@@ -160,10 +217,16 @@ class TeamTests(unittest.TestCase):
         app.dependency_overrides[get_current_analyst] = lambda: self.l1
         with TestClient(app) as client:
             for action, role in (("confirm_fraud", "l2_analyst"), ("close_account", "supervisor")):
-                response = client.post(f"/ops/cases/{self.cid}/decision", json=dict(action=action, expected_version=self.case["version"], notes="Crafted request"))
+                response = client.post(
+                    f"/ops/cases/{self.cid}/decision",
+                    json=dict(action=action, expected_version=self.case["version"], notes="Crafted request"),
+                )
                 self.assertEqual(response.status_code, 403)
                 self.assertEqual(response.json()["required_role"], role)
-            response = client.post(f"/ops/cases/{self.cid}/decision", json=dict(action="confirm_fraud", expected_version=1, notes="Crafted", role="supervisor"))
+            response = client.post(
+                f"/ops/cases/{self.cid}/decision",
+                json=dict(action="confirm_fraud", expected_version=1, notes="Crafted", role="supervisor"),
+            )
             self.assertEqual(response.status_code, 422)
         self.assertEqual(self.service.get_case(self.cid)["version"], self.case["version"])
 
@@ -186,8 +249,16 @@ class TeamTests(unittest.TestCase):
     def test_report_can_be_recorded_after_resolution(self):
         self.service.process_jobs()
         case = self.service.get_case(self.cid)
-        case = self.service.decide(self.cid, DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Verified fraud"), self.l2)
+        case = self.service.decide(
+            self.cid,
+            DecisionInput(action="confirm_fraud", expected_version=case["version"], notes="Verified fraud"),
+            self.l2,
+        )
         self.assertEqual(case["status"], "resolved")
-        case = self.service.decide(self.cid, DecisionInput(action="file_ncrp_report", expected_version=case["version"]), self.supervisor)
+        case = self.service.decide(
+            self.cid,
+            DecisionInput(action="file_ncrp_report", expected_version=case["version"]),
+            self.supervisor,
+        )
         self.assertEqual(case["status"], "resolved")
         self.assertEqual(case["ncrp_report"]["status"], "recorded_in_simulation")

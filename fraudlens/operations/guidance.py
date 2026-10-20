@@ -1,6 +1,5 @@
 """Source-linked design references, explicitly separate from certification."""
 
-
 PIB_CYBER_FRAUDS = "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2042130"
 VERIFIED = "Verified 2026-10-19 on the issuer's domain"
 # 1930 / NCRP and bank-side requirements, paraphrased. Only what the cited

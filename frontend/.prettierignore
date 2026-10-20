@@ -1,0 +1,7 @@
+# Copy of the Scrollcraft engine, kept byte-for-byte (see docs/design/scrollcraft/).
+components/landing/scrollcraft.js
+.next/
+node_modules/
+public/
+package-lock.json
+*.md

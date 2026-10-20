@@ -17,19 +17,27 @@ function DetectionCoverage({ snapshot }: { snapshot: Snapshot | null }) {
       <div className="section-heading">
         <div>
           <h2>Detection coverage</h2>
-          <p>Version {snapshot?.detection.version ?? "…"}. Transparent scenario coverage is not real-world accuracy.</p>
+          <p>
+            Version {snapshot?.detection.version ?? "…"}. Transparent scenario coverage is not real-world
+            accuracy.
+          </p>
         </div>
       </div>
       <div className="coverage-list coverage-disclosures">
         {snapshot?.detection.coverage.map((row, i) => (
           <details key={i}>
             <summary>
-              <span>{typeof row.channel === "string" ? channelName(row.channel) : `Detection coverage ${i + 1}`}</span>
+              <span>
+                {typeof row.channel === "string" ? channelName(row.channel) : `Detection coverage ${i + 1}`}
+              </span>
               <span>View supported signals</span>
             </summary>
             <div>
               {Object.entries(row).map(([key, value]) => (
-                <p key={key}><strong>{human(key)}: </strong>{formatValue(value)}</p>
+                <p key={key}>
+                  <strong>{human(key)}: </strong>
+                  {formatValue(value)}
+                </p>
               ))}
             </div>
           </details>
@@ -53,21 +61,38 @@ function Requirements({ requirements }: { requirements: NonNullable<Guidance["re
         <div key={issuer} className="guidance-issuer">
           <h3>{issuer}</h3>
           <div className="guidance-list">
-            {requirements.filter((row) => row.issuer === issuer).map((row) => (
-              <details key={row.source} className="guidance-disclosure">
-                <summary><span><strong>{row.source}</strong><small>{row.date} · {row.status}</small></span><span>Read mapping</span></summary>
-                <div className="guidance-detail">
-                  {row.url
-                    ? <a href={row.url} target="_blank" rel="noreferrer" className="guidance-source">Open source <ArrowUpRight size={15} /></a>
-                    : <p className="fine-print">No primary source verified.</p>}
-                  <dl>
-                    <dt>What it requires</dt><dd>{row.what_it_requires}</dd>
-                    <dt>How FraudLens models it</dt><dd>{row.how_fraudlens_models_it}</dd>
-                    <dt>Not covered</dt><dd>{row.not_covered}</dd>
-                  </dl>
-                </div>
-              </details>
-            ))}
+            {requirements
+              .filter((row) => row.issuer === issuer)
+              .map((row) => (
+                <details key={row.source} className="guidance-disclosure">
+                  <summary>
+                    <span>
+                      <strong>{row.source}</strong>
+                      <small>
+                        {row.date} · {row.status}
+                      </small>
+                    </span>
+                    <span>Read mapping</span>
+                  </summary>
+                  <div className="guidance-detail">
+                    {row.url ? (
+                      <a href={row.url} target="_blank" rel="noreferrer" className="guidance-source">
+                        Open source <ArrowUpRight size={15} />
+                      </a>
+                    ) : (
+                      <p className="fine-print">No primary source verified.</p>
+                    )}
+                    <dl>
+                      <dt>What it requires</dt>
+                      <dd>{row.what_it_requires}</dd>
+                      <dt>How FraudLens models it</dt>
+                      <dd>{row.how_fraudlens_models_it}</dd>
+                      <dt>Not covered</dt>
+                      <dd>{row.not_covered}</dd>
+                    </dl>
+                  </div>
+                </details>
+              ))}
           </div>
         </div>
       ))}
@@ -78,25 +103,46 @@ function Requirements({ requirements }: { requirements: NonNullable<Guidance["re
 function EvidenceMatrix({ guidance, error }: { guidance: Guidance | null; error: string }) {
   return (
     <section className="ops-section">
-      <div className="section-heading"><h2>Requirements-to-evidence matrix</h2></div>
-      {error && <p className="form-error" role="alert">{error}</p>}
+      <div className="section-heading">
+        <h2>Requirements-to-evidence matrix</h2>
+      </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
       {guidance ? (
         <div className="guidance-list">
           {guidance.references.map((row) => (
             <details key={row.id} className="guidance-disclosure">
-              <summary><span><strong>{row.title}</strong><small>{row.source_date} · {row.status}</small></span><span>Read control & evidence</span></summary>
+              <summary>
+                <span>
+                  <strong>{row.title}</strong>
+                  <small>
+                    {row.source_date} · {row.status}
+                  </small>
+                </span>
+                <span>Read control & evidence</span>
+              </summary>
               <div className="guidance-detail">
-                <a href={row.source_url} target="_blank" rel="noreferrer" className="guidance-source">Open source reference <ArrowUpRight size={15} /></a>
+                <a href={row.source_url} target="_blank" rel="noreferrer" className="guidance-source">
+                  Open source reference <ArrowUpRight size={15} />
+                </a>
                 <dl>
-                  <dt>Applicability</dt><dd>{row.applicability}</dd>
-                  <dt>Control</dt><dd>{row.control}</dd>
-                  <dt>Evidence</dt><dd>{row.test_evidence.join("; ") || "Not yet verified"}</dd>
+                  <dt>Applicability</dt>
+                  <dd>{row.applicability}</dd>
+                  <dt>Control</dt>
+                  <dd>{row.control}</dd>
+                  <dt>Evidence</dt>
+                  <dd>{row.test_evidence.join("; ") || "Not yet verified"}</dd>
                 </dl>
               </div>
             </details>
           ))}
         </div>
-      ) : !error && <Loading />}
+      ) : (
+        !error && <Loading />
+      )}
     </section>
   );
 }
@@ -108,9 +154,15 @@ export function GuidanceView() {
   useEffect(() => {
     let active = true;
     void opsFetch<Guidance>("/guidance")
-      .then((data) => { if (active) setGuidance(data); })
-      .catch((err) => { if (active) setError(err instanceof Error ? err.message : "Guidance unavailable."); });
-    return () => { active = false; };
+      .then((data) => {
+        if (active) setGuidance(data);
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : "Guidance unavailable.");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   return (
     <>
@@ -120,7 +172,10 @@ export function GuidanceView() {
       />
       <section className="boundary-note">
         <strong>Scope and limitations</strong>
-        <p>{guidance?.disclaimer ?? "Local synthetic showcase. Formal NPCI approval, regulatory certification and real-bank validation are not claimed."}</p>
+        <p>
+          {guidance?.disclaimer ??
+            "Local synthetic showcase. Formal NPCI approval, regulatory certification and real-bank validation are not claimed."}
+        </p>
       </section>
       <DetectionCoverage snapshot={snapshot} />
       {guidance?.requirements && <Requirements requirements={guidance.requirements} />}

@@ -30,12 +30,20 @@ function useDrawerFocus(
     const links = drawerRef.current?.querySelectorAll<HTMLAnchorElement>("a");
     links?.[0]?.focus();
     function trap(event: KeyboardEvent) {
-      if (event.key === "Escape") { close(); return; }
+      if (event.key === "Escape") {
+        close();
+        return;
+      }
       if (event.key !== "Tab" || !links?.length) return;
       const first = links[0];
       const last = links[links.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
     window.addEventListener("keydown", trap);
     return () => {
@@ -83,7 +91,9 @@ function Workspace({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="ops-shell">
-      <a className="skip-link" href="#workspace">Skip to workspace</a>
+      <a className="skip-link" href="#workspace">
+        Skip to workspace
+      </a>
       {menuOpen && <button className="menu-overlay" aria-label="Close navigation" onClick={closeMenu} />}
       <Sidebar
         open={menuOpen}
@@ -116,7 +126,13 @@ function Workspace({ children }: { children: React.ReactNode }) {
         {(error || (!connected && snapshot)) && (
           <div className="ops-warning" role="status">
             <span>{error ?? "Recovering live connection. Showing the latest available snapshot."}</span>
-            <button onClick={() => { void refresh().catch(() => {}); }}>Refresh</button>
+            <button
+              onClick={() => {
+                void refresh().catch(() => {});
+              }}
+            >
+              Refresh
+            </button>
             <Link href="/login">Sign in again</Link>
           </div>
         )}
@@ -128,11 +144,21 @@ function Workspace({ children }: { children: React.ReactNode }) {
           </footer>
         </main>
       </div>
-      <SearchDialog dialogRef={dialog} inputRef={search} snapshot={snapshot} query={query} onQueryChange={setQuery} />
+      <SearchDialog
+        dialogRef={dialog}
+        inputRef={search}
+        snapshot={snapshot}
+        query={query}
+        onQueryChange={setQuery}
+      />
     </div>
   );
 }
 
 export default function ConsoleShell({ children }: { children: React.ReactNode }) {
-  return <OperationsProvider><Workspace>{children}</Workspace></OperationsProvider>;
+  return (
+    <OperationsProvider>
+      <Workspace>{children}</Workspace>
+    </OperationsProvider>
+  );
 }

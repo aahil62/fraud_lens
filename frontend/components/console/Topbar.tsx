@@ -23,7 +23,12 @@ type TopbarProps = {
 };
 
 function initialsOf(name: string) {
-  return name.split(/[ .]+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("");
+  return name
+    .split(/[ .]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
 }
 
 function connectionLabel(live: boolean, snapshot: Snapshot | null, hasError: boolean) {
@@ -32,7 +37,8 @@ function connectionLabel(live: boolean, snapshot: Snapshot | null, hasError: boo
 }
 
 export function Topbar(props: TopbarProps) {
-  const { menuOpen, onToggleMenu, menuButtonRef, sectionLabel, analyst, snapshot, live, hasError, onSearch } = props;
+  const { menuOpen, onToggleMenu, menuButtonRef, sectionLabel, analyst, snapshot, live, hasError, onSearch } =
+    props;
   const router = useRouter();
   const name = analyst?.display_name ?? "Analyst";
 
@@ -54,22 +60,40 @@ export function Topbar(props: TopbarProps) {
       >
         {menuOpen ? <X size={22} /> : <List size={22} />}
       </button>
-      <Link href="/" className="mobile-brand"><LensMark size={22} />FraudLens</Link>
-      <div className="breadcrumbs"><span>Workspace</span><CaretRight size={12} /><strong>{sectionLabel}</strong></div>
+      <Link href="/" className="mobile-brand">
+        <LensMark size={22} />
+        FraudLens
+      </Link>
+      <div className="breadcrumbs">
+        <span>Workspace</span>
+        <CaretRight size={12} />
+        <strong>{sectionLabel}</strong>
+      </div>
       <div className="topbar-session">
         <button className="header-search" onClick={onSearch} aria-label="Search investigations">
-          <MagnifyingGlass size={15} /><span>Search investigations</span><kbd>⌘ K</kbd>
+          <MagnifyingGlass size={15} />
+          <span>Search investigations</span>
+          <kbd>⌘ K</kbd>
         </button>
         {snapshot?.team && <TeamPresence team={snapshot.team} />}
-        <span className={live ? "connection good" : "connection warning"}>{connectionLabel(live, snapshot, hasError)}</span>
+        <span className={live ? "connection good" : "connection warning"}>
+          {connectionLabel(live, snapshot, hasError)}
+        </span>
         <details className="analyst-menu">
           <summary aria-label={`Account: ${name}`}>
-            <span className="analyst-avatar">{initialsOf(name)}</span><span>{name}</span><CaretDown size={11} />
+            <span className="analyst-avatar">{initialsOf(name)}</span>
+            <span>{name}</span>
+            <CaretDown size={11} />
           </summary>
           <div className="analyst-dropdown">
             <strong>{name}</strong>
-            <small className="muted">{analyst?.role ? <RoleChip role={analyst.role} /> : null} Authenticated analyst</small>
-            <button onClick={() => void signOut()}><SignOut size={15} />Sign out</button>
+            <small className="muted">
+              {analyst?.role ? <RoleChip role={analyst.role} /> : null} Authenticated analyst
+            </small>
+            <button onClick={() => void signOut()}>
+              <SignOut size={15} />
+              Sign out
+            </button>
           </div>
         </details>
       </div>

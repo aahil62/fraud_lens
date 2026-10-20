@@ -25,21 +25,29 @@ function AccountPositions({ accounts }: { accounts: Account[] }) {
         <div>
           <h2>Simulated account positions</h2>
           <p>
-            Restrictions are owned by individual cases. Releasing one case preserves other active restrictions.
-            Frozen, closed and liened accounts are listed first.
+            Restrictions are owned by individual cases. Releasing one case preserves other active
+            restrictions. Frozen, closed and liened accounts are listed first.
           </p>
         </div>
       </div>
       <div className="table-scroll">
         <table>
           <thead>
-            <tr><th>Account</th><th>Status</th><th>Available / balance</th><th>Liens</th><th>Active restrictions</th></tr>
+            <tr>
+              <th>Account</th>
+              <th>Status</th>
+              <th>Available / balance</th>
+              <th>Liens</th>
+              <th>Active restrictions</th>
+            </tr>
           </thead>
           <tbody>
             {sorted.map((account) => (
               <tr key={account.account_id}>
                 <td className="identifier">{account.account_id}</td>
-                <td><span className={`account-status ${account.status}`}>{statusLabel(account.status)}</span></td>
+                <td>
+                  <span className={`account-status ${account.status}`}>{statusLabel(account.status)}</span>
+                </td>
                 <td className="numeric">
                   <strong>{money(account.available_minor)}</strong>
                   <small className="record-sub">of {money(account.balance_minor)}</small>
@@ -48,10 +56,15 @@ function AccountPositions({ accounts }: { accounts: Account[] }) {
                   {account.liens?.length ? (
                     <ul className="lien-list">
                       {account.liens.map((lien) => (
-                        <li key={lien.lien_id}><span className="numeric">{money(lien.amount_minor)}</span> <CaseLink id={lien.case_id} /></li>
+                        <li key={lien.lien_id}>
+                          <span className="numeric">{money(lien.amount_minor)}</span>{" "}
+                          <CaseLink id={lien.case_id} />
+                        </li>
                       ))}
                     </ul>
-                  ) : <span className="muted">None</span>}
+                  ) : (
+                    <span className="muted">None</span>
+                  )}
                 </td>
                 <td>{account.active_restrictions}</td>
               </tr>
@@ -78,21 +91,38 @@ export function BankView() {
           <Bank size={30} aria-hidden="true" />
           <span>
             <small>Simulator connection</small>
-            <strong className={snapshot.bank.connected ? "good" : "bad"}>{snapshot.bank.connected ? "Available" : "Unavailable"}</strong>
+            <strong className={snapshot.bank.connected ? "good" : "bad"}>
+              {snapshot.bank.connected ? "Available" : "Unavailable"}
+            </strong>
           </span>
         </div>
-        <div><small>Delivery mode</small><strong>{human(snapshot.bank.mode)}</strong></div>
-        <div><small>Awaiting acknowledgement</small><strong>{snapshot.counts.pending_actions}</strong></div>
+        <div>
+          <small>Delivery mode</small>
+          <strong>{human(snapshot.bank.mode)}</strong>
+        </div>
+        <div>
+          <small>Awaiting acknowledgement</small>
+          <strong>{snapshot.counts.pending_actions}</strong>
+        </div>
         <div>
           <small>Failed deliveries</small>
-          <strong className={snapshot.counts.failed_actions ? "bad" : ""}>{snapshot.counts.failed_actions}</strong>
+          <strong className={snapshot.counts.failed_actions ? "bad" : ""}>
+            {snapshot.counts.failed_actions}
+          </strong>
         </div>
       </div>
       <div className="bank-process-note">
         <ShieldCheck size={18} />
-        <p>A protective request becomes an enforced restriction only after the bank simulator acknowledges it. Failed deliveries can be retried below.</p>
+        <p>
+          A protective request becomes an enforced restriction only after the bank simulator acknowledges it.
+          Failed deliveries can be retried below.
+        </p>
       </div>
-      {snapshot.bank.last_error && <p className="form-error" role="alert">{snapshot.bank.last_error}</p>}
+      {snapshot.bank.last_error && (
+        <p className="form-error" role="alert">
+          {snapshot.bank.last_error}
+        </p>
+      )}
       <section className="ops-section">
         <div className="section-heading">
           <h2>Restriction and release deliveries</h2>

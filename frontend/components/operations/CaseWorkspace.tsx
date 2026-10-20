@@ -31,7 +31,12 @@ import { useAnalyst } from "./useAnalyst";
 
 export { DecisionPanel } from "./DecisionPanel";
 
-const NEEDS_RATIONALE: CaseAction[] = ["confirm_fraud", "false_positive", "close_account", "file_ncrp_report"];
+const NEEDS_RATIONALE: CaseAction[] = [
+  "confirm_fraud",
+  "false_positive",
+  "close_account",
+  "file_ncrp_report",
+];
 
 /** Loads the case and its agent brief, refreshing both when the snapshot moves on. */
 function useCase(caseId: string, cursor: number | undefined) {
@@ -42,16 +47,31 @@ function useCase(caseId: string, cursor: number | undefined) {
     if (!caseId) return;
     let active = true;
     void opsFetch<Case>(`/cases/${encodeURIComponent(caseId)}`)
-      .then((value) => { if (active) { setItem(value); setError(""); } })
-      .catch((err) => { if (active) setError(err instanceof Error ? err.message : "Case unavailable."); });
-    return () => { active = false; };
+      .then((value) => {
+        if (active) {
+          setItem(value);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : "Case unavailable.");
+      });
+    return () => {
+      active = false;
+    };
   }, [caseId, cursor]);
   const version = item?.version;
   useEffect(() => {
     if (!caseId || version === undefined) return;
     let active = true;
-    void getBrief(caseId).then((value) => { if (active) setBrief(value); }).catch(() => {});
-    return () => { active = false; };
+    void getBrief(caseId)
+      .then((value) => {
+        if (active) setBrief(value);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [caseId, version]);
   return { item, setItem, brief, error };
 }
@@ -63,7 +83,9 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [requesting, setRequesting] = useState<{ action: ApprovalAction; target: string | null } | null>(null);
+  const [requesting, setRequesting] = useState<{ action: ApprovalAction; target: string | null } | null>(
+    null,
+  );
   const [rationale, setRationale] = useState("");
 
   useEffect(() => {
@@ -75,8 +97,13 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
   if (!caseId) {
     return (
       <>
-        <PageHeading title="Investigation workspace" description="Choose a case to inspect evidence and record a decision." />
-        <Empty><Link href="/cases">Open the investigation queue →</Link></Empty>
+        <PageHeading
+          title="Investigation workspace"
+          description="Choose a case to inspect evidence and record a decision."
+        />
+        <Empty>
+          <Link href="/cases">Open the investigation queue →</Link>
+        </Empty>
       </>
     );
   }
@@ -122,7 +149,10 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
       setActionError("Add a rationale before recording this action.");
       return;
     }
-    const options = { amount_minor: action === "place_lien" ? shownBrief?.amount_minor : undefined, target_account_id: target };
+    const options = {
+      amount_minor: action === "place_lien" ? shownBrief?.amount_minor : undefined,
+      target_account_id: target,
+    };
     void perform(
       () => runCaseAction(current.case_id, action, current.version, rationale, options),
       `${ACTION_LABEL[action]} recorded. The bank's acknowledgement decides the outcome.`,
@@ -150,43 +180,68 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
         </button>
       );
     }
-    return <button disabled={busy || Boolean(approval)} onClick={() => ask("close_account", hop.account_id)}>Request closure of …{suffix}</button>;
+    return (
+      <button disabled={busy || Boolean(approval)} onClick={() => ask("close_account", hop.account_id)}>
+        Request closure of …{suffix}
+      </button>
+    );
   }
 
-  const showRationale = shownBrief && NEEDS_RATIONALE.includes(shownBrief.recommended_action) && can(analyst?.role, shownBrief.recommended_action);
+  const showRationale =
+    shownBrief &&
+    NEEDS_RATIONALE.includes(shownBrief.recommended_action) &&
+    can(analyst?.role, shownBrief.recommended_action);
 
   return (
     <>
       <CaseHeader item={item} brief={shownBrief} team={team} onChanged={setItem} />
-      {error && <p className="form-error" role="alert">{error}</p>}
-      {approval && (canDecideApproval ? (
-        <ApprovalPanel
-          mode="decide"
-          approval={approval}
-          requesterName={nameOf(team, approval.requested_by)}
-          busy={busy}
-          onDecide={(approve, notes) => {
-            void perform(
-              () => decideApproval(current.case_id, approve, notes),
-              approve ? "Approved. The action now runs under your name." : "Request rejected and recorded.",
-            );
-          }}
-        />
-      ) : (
-        <p className="approval-waiting" role="status">
-          Awaiting approval from {ROLE_SHORT[approval.required_role]}: {ACTION_LABEL[approval.action]} (requested by {nameOf(team, approval.requested_by)})
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
         </p>
-      ))}
+      )}
+      {approval &&
+        (canDecideApproval ? (
+          <ApprovalPanel
+            mode="decide"
+            approval={approval}
+            requesterName={nameOf(team, approval.requested_by)}
+            busy={busy}
+            onDecide={(approve, notes) => {
+              void perform(
+                () => decideApproval(current.case_id, approve, notes),
+                approve ? "Approved. The action now runs under your name." : "Request rejected and recorded.",
+              );
+            }}
+          />
+        ) : (
+          <p className="approval-waiting" role="status">
+            Awaiting approval from {ROLE_SHORT[approval.required_role]}: {ACTION_LABEL[approval.action]}{" "}
+            (requested by {nameOf(team, approval.requested_by)})
+          </p>
+        ))}
       <StateStrip item={item} />
       <div className="case-columns">
         <div>
           {shownBrief && (
-            <AgentBrief brief={shownBrief} role={analyst?.role} busy={busy} onRun={(action) => runRecommended(action)} onRequest={(action) => ask(action)} />
+            <AgentBrief
+              brief={shownBrief}
+              role={analyst?.role}
+              busy={busy}
+              onRun={(action) => runRecommended(action)}
+              onRequest={(action) => ask(action)}
+            />
           )}
           {showRationale && (
             <label className="brief-rationale">
               Rationale for {ACTION_LABEL[shownBrief.recommended_action].toLowerCase()}
-              <textarea rows={2} maxLength={3000} value={rationale} onChange={(e) => setRationale(e.target.value)} placeholder="Required. Recorded in the audit trail with your name." />
+              <textarea
+                rows={2}
+                maxLength={3000}
+                value={rationale}
+                onChange={(e) => setRationale(e.target.value)}
+                placeholder="Required. Recorded in the audit trail with your name."
+              />
             </label>
           )}
           {requesting && (
@@ -199,14 +254,23 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
               onSubmit={(notes) => {
                 const request = requesting;
                 void perform(
-                  () => requestApproval(current.case_id, request.action, current.version, notes, request.target),
+                  () =>
+                    requestApproval(current.case_id, request.action, current.version, notes, request.target),
                   `Approval requested from ${ROLE_SHORT[required(request.action)]}.`,
                 ).then(() => setRequesting(null));
               }}
             />
           )}
-          {actionError && <p className="form-error" role="alert">{actionError}</p>}
-          {actionMessage && <p className="success-message" role="status">{actionMessage}</p>}
+          {actionError && (
+            <p className="form-error" role="alert">
+              {actionError}
+            </p>
+          )}
+          {actionMessage && (
+            <p className="success-message" role="status">
+              {actionMessage}
+            </p>
+          )}
           {item.case_type === "complaint" && item.complaint && item.trace && (
             <FundTrail
               victimAccountId={item.complaint.victim_account_id}
@@ -220,24 +284,36 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
           <VerdictNote item={item} />
           <DecisionPanel key={item.case_id} item={item} onUpdated={setItem} />
           <section className="ops-section">
-            <div className="section-heading"><h2>Bank actions</h2></div>
+            <div className="section-heading">
+              <h2>Bank actions</h2>
+            </div>
             <ActionLedger actions={item.actions} />
           </section>
           <section className="ops-section">
-            <div className="section-heading"><h2>Related payment attempts</h2></div>
+            <div className="section-heading">
+              <h2>Related payment attempts</h2>
+            </div>
             <TransactionTable transactions={item.related_transactions} />
           </section>
         </div>
         <div>
           <section className="ops-section">
-            <div className="section-heading"><h2>Evidence connections</h2></div>
+            <div className="section-heading">
+              <h2>Evidence connections</h2>
+            </div>
             <EvidenceGraph cases={[item]} />
             <p className="fine-print graph-caption">
-              Connections show shared account, beneficiary or instrument identifiers present in the case evidence.
+              Connections show shared account, beneficiary or instrument identifiers present in the case
+              evidence.
             </p>
           </section>
           <section className="ops-section">
-            <div className="section-heading"><div><h2>Incident timeline</h2><p>Payment → protection → analyst review</p></div></div>
+            <div className="section-heading">
+              <div>
+                <h2>Incident timeline</h2>
+                <p>Payment → protection → analyst review</p>
+              </div>
+            </div>
             <Timeline events={[...item.timeline].sort((a, b) => a.id - b.id)} />
           </section>
         </div>

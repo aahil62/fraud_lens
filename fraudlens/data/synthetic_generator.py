@@ -28,24 +28,44 @@ from fraudlens.models.schemas import Transaction
 # ── Reference data ───────────────────────────────────────────────────────
 
 _NORMAL_MERCHANT_CATEGORIES = [
-    "groceries", "electronics", "restaurants", "gas_station", "pharmacy",
-    "clothing", "entertainment", "travel", "utilities", "subscription",
-    "home_improvement", "education",
+    "groceries",
+    "electronics",
+    "restaurants",
+    "gas_station",
+    "pharmacy",
+    "clothing",
+    "entertainment",
+    "travel",
+    "utilities",
+    "subscription",
+    "home_improvement",
+    "education",
 ]
 
 # Matches fraudlens.core.scoring.rule_agent's risky-category list so the
 # rule agent actually reacts to this data.
 _RISKY_MERCHANT_CATEGORIES = [
-    "crypto_exchange", "gambling", "gift_cards", "jewelry",
-    "luxury_goods", "money_transfer", "digital_goods",
+    "crypto_exchange",
+    "gambling",
+    "gift_cards",
+    "jewelry",
+    "luxury_goods",
+    "money_transfer",
+    "digital_goods",
 ]
 
 _NORMAL_LOCATIONS = ["us", "uk", "ca", "de", "fr", "in", "au", "jp", "br", "mx"]
 
 # Matches fraudlens.core.scoring.rule_agent's risky-location list.
 _RISKY_LOCATIONS = [
-    "nigeria", "russia", "north_korea", "iran", "offshore",
-    "anonymous_proxy", "tor_exit_node", "unknown",
+    "nigeria",
+    "russia",
+    "north_korea",
+    "iran",
+    "offshore",
+    "anonymous_proxy",
+    "tor_exit_node",
+    "unknown",
 ]
 
 _CHANNELS = ["online", "in_store", "mobile_app", "atm"]
@@ -88,6 +108,7 @@ FRAUD_PATTERN_TYPES = (
 
 # ── Small helpers ─────────────────────────────────────────────────────────
 
+
 def _rand_id(rng: random.Random, prefix: str, length: int = 8) -> str:
     return f"{prefix}-{''.join(rng.choices('0123456789ABCDEF', k=length))}"
 
@@ -111,18 +132,15 @@ def _random_timestamp(rng: random.Random, start: datetime, end: datetime) -> dat
 
 def _daytime_timestamp(rng: random.Random, day: datetime) -> datetime:
     """Normal customer activity skews toward waking hours, 7am-10pm."""
-    return day.replace(
-        hour=rng.randint(7, 22), minute=rng.randint(0, 59), second=rng.randint(0, 59)
-    )
+    return day.replace(hour=rng.randint(7, 22), minute=rng.randint(0, 59), second=rng.randint(0, 59))
 
 
 def _odd_hour_timestamp(rng: random.Random, day: datetime) -> datetime:
-    return day.replace(
-        hour=rng.randint(0, 3), minute=rng.randint(0, 59), second=rng.randint(0, 59)
-    )
+    return day.replace(hour=rng.randint(0, 3), minute=rng.randint(0, 59), second=rng.randint(0, 59))
 
 
 # ── Individual transaction builders ───────────────────────────────────────
+
 
 def make_normal_transaction(
     rng: random.Random,
@@ -220,20 +238,22 @@ def make_card_testing_burst(rng: random.Random, account_id: str, day: datetime) 
     elapsed = timedelta()
     for _ in range(count):
         elapsed += timedelta(minutes=rng.uniform(0.3, 2.0))
-        txns.append(Transaction(
-            txn_id=_new_txn_id(rng),
-            account_id=account_id,
-            amount=round(rng.uniform(40, 750), 2),
-            merchant_id=_rand_id(rng, "MER"),
-            merchant_category=rng.choice(_NORMAL_MERCHANT_CATEGORIES + ["digital_goods"]),
-            device_id=device_id,
-            ip_address=ip_address,
-            timestamp=_iso(start + elapsed),
-            location=rng.choice(_NORMAL_LOCATIONS),
-            channel="online",
-            is_fraud_demo_label=True,
-            fraud_pattern_type="card_testing",
-        ))
+        txns.append(
+            Transaction(
+                txn_id=_new_txn_id(rng),
+                account_id=account_id,
+                amount=round(rng.uniform(40, 750), 2),
+                merchant_id=_rand_id(rng, "MER"),
+                merchant_category=rng.choice(_NORMAL_MERCHANT_CATEGORIES + ["digital_goods"]),
+                device_id=device_id,
+                ip_address=ip_address,
+                timestamp=_iso(start + elapsed),
+                location=rng.choice(_NORMAL_LOCATIONS),
+                channel="online",
+                is_fraud_demo_label=True,
+                fraud_pattern_type="card_testing",
+            )
+        )
     return txns
 
 
@@ -249,20 +269,22 @@ def make_high_velocity_burst(rng: random.Random, account_id: str, day: datetime)
         elapsed += timedelta(minutes=rng.uniform(1, 8))
         category = rng.choice(_NORMAL_MERCHANT_CATEGORIES + _RISKY_MERCHANT_CATEGORIES)
         low, high = _AMOUNT_RANGES[category]
-        txns.append(Transaction(
-            txn_id=_new_txn_id(rng),
-            account_id=account_id,
-            amount=round(rng.uniform(low, high), 2),
-            merchant_id=_rand_id(rng, "MER"),
-            merchant_category=category,
-            device_id=device_id,
-            ip_address=ip_address,
-            timestamp=_iso(start + elapsed),
-            location=rng.choice(_NORMAL_LOCATIONS),
-            channel=rng.choice(_CHANNELS),
-            is_fraud_demo_label=True,
-            fraud_pattern_type="high_velocity",
-        ))
+        txns.append(
+            Transaction(
+                txn_id=_new_txn_id(rng),
+                account_id=account_id,
+                amount=round(rng.uniform(low, high), 2),
+                merchant_id=_rand_id(rng, "MER"),
+                merchant_category=category,
+                device_id=device_id,
+                ip_address=ip_address,
+                timestamp=_iso(start + elapsed),
+                location=rng.choice(_NORMAL_LOCATIONS),
+                channel=rng.choice(_CHANNELS),
+                is_fraud_demo_label=True,
+                fraud_pattern_type="high_velocity",
+            )
+        )
     return txns
 
 
@@ -281,24 +303,27 @@ def make_fraud_ring(rng: random.Random, ring_index: int, day: datetime) -> list[
         for _ in range(rng.randint(2, 4)):
             category = rng.choice(_RISKY_MERCHANT_CATEGORIES)
             low, high = _AMOUNT_RANGES[category]
-            txns.append(Transaction(
-                txn_id=_new_txn_id(rng),
-                account_id=account_id,
-                amount=round(rng.uniform(low, high), 2),
-                merchant_id=_rand_id(rng, "MER"),
-                merchant_category=category,
-                device_id=rng.choice(shared_devices),
-                ip_address=rng.choice(shared_ips),
-                timestamp=_iso(start + timedelta(minutes=rng.uniform(0, 240))),
-                location=rng.choice(_RISKY_LOCATIONS + _NORMAL_LOCATIONS),
-                channel="online",
-                is_fraud_demo_label=True,
-                fraud_pattern_type="fraud_ring",
-            ))
+            txns.append(
+                Transaction(
+                    txn_id=_new_txn_id(rng),
+                    account_id=account_id,
+                    amount=round(rng.uniform(low, high), 2),
+                    merchant_id=_rand_id(rng, "MER"),
+                    merchant_category=category,
+                    device_id=rng.choice(shared_devices),
+                    ip_address=rng.choice(shared_ips),
+                    timestamp=_iso(start + timedelta(minutes=rng.uniform(0, 240))),
+                    location=rng.choice(_RISKY_LOCATIONS + _NORMAL_LOCATIONS),
+                    channel="online",
+                    is_fraud_demo_label=True,
+                    fraud_pattern_type="fraud_ring",
+                )
+            )
     return txns
 
 
 # ── Full dataset ───────────────────────────────────────────────────────────
+
 
 def generate_synthetic_transactions(
     num_normal: int = 700,
@@ -318,9 +343,9 @@ def generate_synthetic_transactions(
     reproducible; pass None for non-deterministic generation.
     """
     rng = random.Random(seed)
-    window_start = datetime.now(timezone.utc).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    ) - timedelta(days=30)
+    window_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
+        days=30
+    )
 
     def _random_day() -> datetime:
         return window_start + timedelta(days=rng.randint(0, 29))

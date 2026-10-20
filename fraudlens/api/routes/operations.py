@@ -1,23 +1,36 @@
 """Authenticated authoritative operational interface."""
+
 import asyncio
 import json
 from typing import Literal
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
-from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.routing import APIRoute
 
 from fraudlens.api.deps import get_current_analyst
 from fraudlens.api.state import state
 from fraudlens.core.auth.security import decode_access_token
 from fraudlens.models.schemas import AnalystProfile
 from fraudlens.operations.guidance import guidance_response
-from fraudlens.operations.models import (Channel, ControlInput, DecisionInput, ScenarioInput, TransactionInput,
-                                         ClaimInput, AssignInput, ApprovalRequestInput, ApprovalDecisionInput, PresenceInput, ComplaintInput, AgentSettingsInput)
-from fraudlens.operations.team import OperationError
+from fraudlens.operations.models import (
+    AgentSettingsInput,
+    ApprovalDecisionInput,
+    ApprovalRequestInput,
+    AssignInput,
+    Channel,
+    ClaimInput,
+    ComplaintInput,
+    ControlInput,
+    DecisionInput,
+    PresenceInput,
+    ScenarioInput,
+    TransactionInput,
+)
 from fraudlens.operations.reports import markdown, pdf, report
 from fraudlens.operations.service import NotFoundError
+from fraudlens.operations.team import OperationError
 
 
 class OperationsRoute(APIRoute):
@@ -30,11 +43,16 @@ class OperationsRoute(APIRoute):
                 response.headers["Cache-Control"] = "no-store"
                 return response
             except OperationError as exc:
-                return JSONResponse(exc.payload, status_code=exc.status_code, headers={"Cache-Control": "no-store"})
+                return JSONResponse(
+                    exc.payload, status_code=exc.status_code, headers={"Cache-Control": "no-store"}
+                )
             except NotFoundError as exc:
                 raise HTTPException(404, str(exc)) from exc
             except httpx.HTTPError as exc:
-                raise HTTPException(503, "Bank simulator unavailable. The request was not confirmed.") from exc
+                raise HTTPException(
+                    503, "Bank simulator unavailable. The request was not confirmed."
+                ) from exc
+
         return guarded
 
 
@@ -52,8 +70,12 @@ class EventStreamResponse(StreamingResponse):
             pass
 
 
-router = APIRouter(prefix="/ops", tags=["live operations"], route_class=OperationsRoute,
-                   dependencies=[Depends(get_current_analyst)])
+router = APIRouter(
+    prefix="/ops",
+    tags=["live operations"],
+    route_class=OperationsRoute,
+    dependencies=[Depends(get_current_analyst)],
+)
 
 
 def service():
@@ -68,22 +90,30 @@ def snapshot():
 
 
 @router.post("/transactions")
-def ingest(payload: TransactionInput, response: Response, current: AnalystProfile = Depends(get_current_analyst)):
+def ingest(
+    payload: TransactionInput, response: Response, current: AnalystProfile = Depends(get_current_analyst)
+):
     result = service().ingest(payload, current.display_name)
     response.status_code = 200 if result["duplicate"] else 201
     return result
 
 
 @router.get("/transactions")
-def transactions(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), channel: Channel | None = None):
+def transactions(
+    limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), channel: Channel | None = None
+):
     return service().listing("transactions", limit, offset, channel)
 
 
 @router.get("/cases")
-def cases(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), channel: Channel | None = None,
-          status: Literal["new", "investigating", "escalated", "resolved"] | None = None,
-          view: Literal["all", "mine", "unassigned", "awaiting_approval", "complaints"] = "all",
-          current: AnalystProfile = Depends(get_current_analyst)):
+def cases(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    channel: Channel | None = None,
+    status: Literal["new", "investigating", "escalated", "resolved"] | None = None,
+    view: Literal["all", "mine", "unassigned", "awaiting_approval", "complaints"] = "all",
+    current: AnalystProfile = Depends(get_current_analyst),
+):
     return service().listing("cases", limit, offset, channel, status, view, current.username)
 
 
@@ -108,12 +138,16 @@ def assign(case_id: str, payload: AssignInput, current: AnalystProfile = Depends
 
 
 @router.post("/cases/{case_id}/approval-request")
-def request_approval(case_id: str, payload: ApprovalRequestInput, current: AnalystProfile = Depends(get_current_analyst)):
+def request_approval(
+    case_id: str, payload: ApprovalRequestInput, current: AnalystProfile = Depends(get_current_analyst)
+):
     return service().request_approval(case_id, payload, current)
 
 
 @router.post("/cases/{case_id}/approval")
-def decide_approval(case_id: str, payload: ApprovalDecisionInput, current: AnalystProfile = Depends(get_current_analyst)):
+def decide_approval(
+    case_id: str, payload: ApprovalDecisionInput, current: AnalystProfile = Depends(get_current_analyst)
+):
     return service().decide_approval(case_id, payload, current)
 
 
@@ -138,7 +172,9 @@ def case_report(case_id: str, format: Literal["json", "markdown", "pdf"] = "json
     value = report(service().get_case(case_id))
     if format == "json":
         return value
-    headers = {"Content-Disposition": f'attachment; filename="{value["case_id"]}.{ "pdf" if format == "pdf" else "md"}"'}
+    headers = {
+        "Content-Disposition": f'attachment; filename="{value["case_id"]}.{"pdf" if format == "pdf" else "md"}"'
+    }
     if format == "pdf":
         return Response(pdf(value), media_type="application/pdf", headers=headers)
     return Response(markdown(value), media_type="text/markdown; charset=utf-8", headers=headers)
@@ -174,7 +210,7 @@ async def events(request: Request, after: int = Query(0, ge=0)):
         heartbeat = 0
         while not await request.is_disconnected():
             if decode_access_token(token) is None:
-                yield 'event: auth_expired\ndata: {}\n\n'
+                yield "event: auth_expired\ndata: {}\n\n"
                 return
             current = await asyncio.to_thread(service().cursor)
             if current != cursor:
@@ -183,10 +219,13 @@ async def events(request: Request, after: int = Query(0, ge=0)):
             elif heartbeat % 10 == 0:
                 yield ": heartbeat\n\n"
             heartbeat += 1
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
 
-    return EventStreamResponse(stream(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+    return EventStreamResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/cases/{case_id}/brief")

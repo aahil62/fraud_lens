@@ -4,11 +4,29 @@ export function TeamPresence({ team, max = 5 }: { team: TeamMember[]; max?: numb
   const online = team.filter((member) => member.online);
   if (!online.length) return null;
   const overflow = online.length - max;
-  return <ul className="team-presence" aria-label={`${online.length} analysts online`}>
-    {online.slice(0, max).map((member) => {
-      const label = `${member.display_name} · ${member.role_label}${member.current_case_id ? ` · on ${member.current_case_id}` : ""}`;
-      return <li key={member.username} title={label}><span className="presence-avatar" aria-label={label}>{initials(member.display_name)}</span></li>;
-    })}
-    {overflow > 0 && <li className="presence-overflow" title={online.slice(max).map((m) => m.display_name).join(", ")}>+{overflow}</li>}
-  </ul>;
+  return (
+    <ul className="team-presence" aria-label={`${online.length} analysts online`}>
+      {online.slice(0, max).map((member) => {
+        const label = `${member.display_name} · ${member.role_label}${member.current_case_id ? ` · on ${member.current_case_id}` : ""}`;
+        return (
+          <li key={member.username} title={label}>
+            <span className="presence-avatar" aria-label={label}>
+              {initials(member.display_name)}
+            </span>
+          </li>
+        );
+      })}
+      {overflow > 0 && (
+        <li
+          className="presence-overflow"
+          title={online
+            .slice(max)
+            .map((m) => m.display_name)
+            .join(", ")}
+        >
+          +{overflow}
+        </li>
+      )}
+    </ul>
+  );
 }

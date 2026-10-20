@@ -5,7 +5,6 @@ from fraudlens.testing import use_isolated_data_dir
 use_isolated_data_dir()
 
 from fastapi.testclient import TestClient
-
 from fraudlens.api.main import app
 
 
@@ -39,7 +38,12 @@ class AuthTests(unittest.TestCase):
     def test_signup_creates_a_real_account_that_can_then_log_in(self) -> None:
         signup = self.client.post(
             "/auth/signup",
-            json={"username": "newanalyst", "display_name": "N. Verma", "password": "supersecret1", "role": "supervisor"},
+            json={
+                "username": "newanalyst",
+                "display_name": "N. Verma",
+                "password": "supersecret1",
+                "role": "supervisor",
+            },
         )
         self.assertEqual(signup.status_code, 200)
         self.assertEqual(signup.json()["analyst"]["display_name"], "N. Verma")
