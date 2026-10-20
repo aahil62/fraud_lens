@@ -17,6 +17,7 @@ export const ROLE_SHORT: Record<Role, string> = {
 };
 // Mirrors fraudlens/core/auth/roles.py ACTION_MIN_ROLE. The API enforces it;
 // the console only uses it to offer "Request approval" instead of a 403.
+// tests/test_role_parity.py fails if the two tables differ.
 export const ACTION_MIN_ROLE: Record<string, Role> = {
   claim: "l1_analyst",
   investigate: "l1_analyst",
