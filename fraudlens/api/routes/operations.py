@@ -13,6 +13,7 @@ from fraudlens.api.deps import get_current_analyst
 from fraudlens.api.state import state
 from fraudlens.core.auth.security import decode_access_token
 from fraudlens.models.schemas import AnalystProfile
+from fraudlens.operations.errors import NotFoundError, OperationError
 from fraudlens.operations.guidance import guidance_response
 from fraudlens.operations.models import (
     AgentSettingsInput,
@@ -29,8 +30,6 @@ from fraudlens.operations.models import (
     TransactionInput,
 )
 from fraudlens.operations.reports import markdown, pdf, report
-from fraudlens.operations.service import NotFoundError
-from fraudlens.operations.team import OperationError
 
 
 class OperationsRoute(APIRoute):

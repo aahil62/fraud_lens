@@ -77,6 +77,15 @@ class Store:
         assert table in self.TABLES
         return [json.loads(r[0]) for r in db.execute(f"SELECT data FROM {table} ORDER BY rowid DESC")]
 
+    def case_actions(self, db, case_id):
+        """One case's bank actions, newest first (the same order as records())."""
+        rows = db.execute("SELECT data FROM actions WHERE case_id=? ORDER BY rowid DESC", (case_id,))
+        return [json.loads(r[0]) for r in rows]
+
+    def cursor(self, db):
+        """Id of the latest audit event; it moves whenever anything is recorded."""
+        return db.execute("SELECT COALESCE(MAX(id),0) FROM events").fetchone()[0]
+
     def update(self, db, table, identifier, value):
         assert table in self.TABLES
         db.execute(f"UPDATE {table} SET data=? WHERE id=?", (dump(value), identifier))

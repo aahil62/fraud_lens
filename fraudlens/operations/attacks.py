@@ -9,10 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from fraudlens.models.schemas import AnalystProfile
 
+from .errors import NotFoundError, OperationError
 from .models import ComplaintInput
-from .service import NotFoundError
+from .snapshot import AUTOMATED_ACTORS
 from .store import dump, now
-from .team import OperationError
 
 
 class AttackInput(BaseModel):
@@ -88,9 +88,7 @@ class PublicAttacks:
             protection = [a for a in actions if a["operation"] in {"restrict", "lien", "close"}]
             confirmed = [a for a in protection if a["status"] == "confirmed"]
             human = [
-                e
-                for e in (primary["timeline"] if primary else [])
-                if e["actor"] not in {"system", "agent", "simulation", "attack-simulator"}
+                e for e in (primary["timeline"] if primary else []) if e["actor"] not in AUTOMATED_ACTORS
             ]
             picked = next((e for e in human if e["event_type"] in {"case_claimed", "analyst_decision"}), None)
             verdict = next(

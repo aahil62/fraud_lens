@@ -6,16 +6,11 @@ from zoneinfo import ZoneInfo
 from fraudlens.core.auth.roles import ROLE_LABEL, can, required_role
 from fraudlens.models.schemas import AnalystProfile
 
+from .errors import OperationError
+
 # An analyst is online while their last heartbeat is at most this old.
 ONLINE_SECONDS = 45
 INDIA = ZoneInfo("Asia/Kolkata")
-
-
-class OperationError(ValueError):
-    def __init__(self, detail, *, status_code=400, **fields):
-        super().__init__(detail)
-        self.status_code = status_code
-        self.payload = {"detail": detail, **fields}
 
 
 def require(actor, action):
