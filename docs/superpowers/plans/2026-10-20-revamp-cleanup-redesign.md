@@ -58,6 +58,58 @@
 
 Done when: no Python or TSX file in `fraudlens/operations`, `fraudlens/api`, `fraudlens/bank_simulator`, `scripts`, `frontend/components`, `frontend/app` has a line over 110 characters (except URLs/strings), no module over ~300 lines except tests, and all checks pass with the same test counts.
 
+### Stage C review findings (20 October 2026)
+
+Whole-repo review of `fraudlens/`, `scripts/` and `frontend/{app,components,lib,proxy.ts}` with `code-review` (high), `improve-codebase-architecture`, `simplify`, `vercel-react-best-practices` and `vibesec-skill`. Every file was read in full. "Fix" means it is done in the step named; "Keep" means recorded only, with the reason.
+
+**Correctness and security (fixed with a test each, in step C2):**
+- R1. Open redirect on sign-in: `/login?next=/%09/evil.com` passes the `//` check, and the URL parser drops the tab, so `router.push` leaves the site. Fix: accept `next` only when `new URL(next, origin)` keeps our origin.
+- R2. A live update can be lost: `refresh()` hands back the request already in flight, so an event that arrives during it never triggers a newer fetch (stale until the 10 s poll). Fix: mark a follow-up refresh and run it when the current one ends.
+- R3. A corrupt `analysts.json` is silently replaced by the seeded accounts, wiping every signed-up analyst. Fix: stop startup with a clear error instead of overwriting.
+- R4. Login timing shows which usernames exist: unknown names skip the 200k-iteration hash. Fix: verify against a fixed dummy hash when the name is unknown.
+- R5. The fund trail offers the per-hop "Close account" control on every hop, including the victim's own account if money was routed back to it (the API refuses it; the user's rule is never to act on the victim's account). Fix: never render the action for the victim hop.
+- R6. A failed approval request still closes the request panel and drops the typed justification. Fix: close it only on success.
+- R7. Session cookie is written without `Secure` on HTTPS. Fix: add `secure` when the page is served over HTTPS.
+- R8. "Resolved today" on the Team page uses the UTC day; for an Indian team it rolls over at 05:30 IST. Fix: compare the IST date.
+
+**Efficiency (fixed in the step named):**
+- E1. Every presence heartbeat (15 s per open console) writes an `analyst_presence` audit event. Each one moves the event cursor, so every console refetches the full snapshot, the open case and the ledger page, and the audit trail fills with noise. Presence is already stored in its own table. Fix (C2): heartbeats update presence only; sign-in/sign-out events stay.
+- E2. `snapshot()` rebuilds 200 cases through `_case()`, each re-reading every action, every transaction and its events. Fix (C3): `snapshot.py` loads the tables once and builds case views from the preloaded rows; `store.case_actions()` uses the existing `case_actions` index.
+- E3. `heartbeat()` builds a full case only to check that the id exists. Fix (C3): an existence query.
+- E4. Provider context value is a new object each render; `money()`, `rupees()` and `dateTime()` build a new `Intl` formatter per call (per table cell). Fix (C8): `useMemo` the value; hoist the formatters.
+- E5. The landing's GPU probe creates up to two WebGL contexts and never releases them. Fix (C8): release with `WEBGL_lose_context`.
+
+**Reuse and simplification (fixed in the step named):**
+- S1. The operation-to-permission maps (`restrict→restrict`, `lien→place_lien`, `close→close_account`, …) are written out four times in `service.py`; the victim check is duplicated in `decide`; the new-case dict is written twice (ingest and complaint); the set of non-human actors is duplicated in `service.py` and `attacks.py`; the cursor query is duplicated. Fix (C3): one constant or helper each.
+- S2. `PublicAttacks.limit` re-implements `LoginLimiter`'s sliding window and borrows the service's private lock. Fix (C4): one `SlidingWindowLimiter` in `api/limits.py` used by both, each with its own lock.
+- S3. `initials()` exists three times (useAnalyst, Topbar, Primitives); `ConsoleShell` re-implements `useAnalyst`; `decideCase` duplicates `runCaseAction`; Cmd+K re-implements `openSearch` (and so keeps the old query). Fix (C8).
+- S4. `agent.build_brief`: a branch that re-assigns the default and a `[:4]` slice of a three-item list. Fix (C6).
+- S5. The sign-out presence offset (46 s) and the online window (45 s) are unrelated literals. Fix (C3): one `ONLINE_SECONDS` constant in `team.py`.
+- S6. `cytoscape` and `@types/cytoscape` are dependencies nothing imports. Fix (C8): remove them.
+- S7. Stale comments: `auth.py` names two demo accounts (there are four); `security.py` mentions teammates and a deadline; `lib/auth.ts` and `proxy.ts` refer to `middleware.ts`; `schemas.py` refers to branches and a team prototype; `requirements.txt` says "Grand Finale build". Fix (C10).
+
+**Architecture (deepening, `improve-codebase-architecture`):** there is no `CONTEXT.md` or ADR folder, so module names follow the plan's Part 1 step 2. Candidates, strongest first: (A1, strong) one case read model in `snapshot.py`, replacing the four places that compute traced/held totals; (A2, strong) one protection-target policy in `decisions.py` (S1); (A3, strong) `_deliver_action` split into fetch/post and one function per outcome in `delivery.py`; (A4, worth exploring) the shared limiter (S2); (A5, speculative) a `useCaseAction` hook for the busy/error/message pattern repeated in six console components. A1–A4 are done in C3–C4; A5 is left out (it would touch every console component for little gain).
+
+**Recorded, not changed (with reason):**
+- K1. `process_jobs` holds the service lock while calling the bank (2 s timeout per job). Releasing it changes the concurrency model the delivery tests rely on; not a refactor.
+- K2. Audit `actor` is the display name on the ingest, scenario and control routes and the username elsewhere. Changing it changes visible audit copy.
+- K3. The token sits in `localStorage` and a non-httpOnly cookie, and logout does not revoke it (24 h expiry). Documented trade-off of the demo; moving to an httpOnly cookie is an auth redesign.
+- K4. Any signed-in analyst (including the public demo's L1 button) can switch bank mode or pause the stream for everyone. This is the simulation desk's purpose; restricting it is a role change.
+- K5. `EnsembleScorer`, `core/scoring/base.py`, the `Decision`/`ScoringResult`/`GraphEvidence` schemas and `AccountRestrictionStore` are reachable only from tests. Removing them deletes tests, which this stage does not do; candidate for a later cleanup.
+- K6. `GET /public/attacks/{id}` is unauthenticated and unthrottled and builds full case views. Attack ids are 48 random bits; E2 makes each call cheap.
+
+**Stage C steps (one commit each, all checks after each):**
+- C1. Formatting baseline (Part 1 step 1): `requirements-dev.txt` pins `ruff`; `pyproject.toml` sets `line-length = 110`; `ruff format` + `ruff check --fix` on `fraudlens/ scripts/ tests/`; `prettier` pinned in `frontend/package.json` with `printWidth: 110`, run on `app/ components/ lib/ proxy.ts`. Formatting only.
+- C2. Review fixes R1–R8 and E1, each with a test first.
+- C3. Split `service.py` (Part 1 step 2) into `ingest.py`, `decisions.py`, `delivery.py`, `complaints.py`, `snapshot.py`, with S1, S5, E2, E3.
+- C4. Shared sliding-window limiter (S2).
+- C5. `guidance.py` → `guidance_data.py` (Part 1 step 3).
+- C6. Detector: one function per rule; agent: `_typology`, `_recommendation`, `_narrative` (Part 1 step 4, S4).
+- C7. Bank simulator and attacks: named steps for the long expressions (Part 1 step 5).
+- C8. Frontend: split the remaining large or one-line components (`Primitives.tsx`, `EvidenceGraph.tsx`/`NetworkView`, `login`, `signup`, `attack`), S3, S6, E4, E5 (Part 1 step 6).
+- C9. Backend test that keeps `frontend/lib/operations.ts` `ACTION_MIN_ROLE` equal to `roles.py` (Part 1 step 7).
+- C10. Stale comments (S7) and a final line-length/module-size check.
+
 ---
 
 ## Part 2: Repository cleanup
