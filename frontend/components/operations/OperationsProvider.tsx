@@ -47,8 +47,19 @@ export function OperationsProvider({ children }: { children: React.ReactNode }) 
       document.removeEventListener("visibilitychange", beat);
     };
   }, [beat]);
-  const refresh = useCallback(() => {
-    if (inFlight.current) return inFlight.current;
+  const followUp = useRef<Promise<void> | null>(null);
+  const refresh = useCallback(function refresh(): Promise<void> {
+    // A request already running may have read the ledger before this call's change,
+    // so queue exactly one more fetch for when it ends.
+    if (inFlight.current) {
+      followUp.current ??= inFlight.current
+        .catch(() => {})
+        .then(() => {
+          followUp.current = null;
+          return refresh();
+        });
+      return followUp.current;
+    }
     const request = opsFetch<Snapshot>("/snapshot")
       .then((data) => {
         cursor.current = Math.max(cursor.current, data.cursor);
@@ -136,7 +147,6 @@ export function OperationsProvider({ children }: { children: React.ReactNode }) 
         method: "POST",
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      await inFlight.current?.catch(() => {});
       await refresh();
       return result;
     },

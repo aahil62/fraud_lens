@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
-import { AuthApiError, login } from "@/lib/auth";
+import { AuthApiError, login, safeNextPath } from "@/lib/auth";
 import AuthFrame from "@/components/AuthFrame";
 const DEMO_ROLES = [
   { username: "kmehta", label: "Continue as L1 Analyst (K. Mehta)" },
@@ -13,11 +13,6 @@ const DEMO_ROLES = [
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedNext = searchParams.get("next") || "/dashboard";
-  const next =
-    requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")
-      ? requestedNext
-      : "/dashboard";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +23,7 @@ function LoginForm() {
     setLoading(true);
     try {
       await login(name.trim().toLowerCase(), secret);
-      router.push(next);
+      router.push(safeNextPath(searchParams.get("next"), location.origin));
       router.refresh();
     } catch (err) {
       setError(err instanceof AuthApiError ? err.message : "Couldn't reach the server. Try again.");

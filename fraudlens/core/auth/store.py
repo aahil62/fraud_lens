@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 from datetime import datetime, timezone
+from functools import cache
 from typing import Optional
 
 from fraudlens.core.auth.security import hash_password, verify_password
@@ -41,6 +43,11 @@ def _seed_accounts() -> list[AnalystAccount]:
     ]
 
 
+@cache
+def _unknown_user_hash() -> str:
+    return hash_password(secrets.token_hex(16))
+
+
 class AnalystStore:
     def __init__(self, path: str = "fraudlens/data/analysts.json") -> None:
         self._path = path
@@ -72,9 +79,9 @@ class AnalystStore:
 
     def verify(self, username: str, password: str) -> Optional[AnalystAccount]:
         account = self._accounts.get(username)
-        if account is None:
-            return None
-        if not verify_password(password, account.password_hash):
+        # An unknown name still pays for one hash, so response time does not reveal which names exist.
+        stored_hash = account.password_hash if account else _unknown_user_hash()
+        if not verify_password(password, stored_hash) or account is None:
             return None
         return account
 
@@ -84,10 +91,13 @@ class AnalystStore:
                 with open(self._path, "r") as f:
                     data = json.load(f)
                 accounts = {item["username"]: AnalystAccount(**item) for item in data}
-                if accounts:
-                    self._accounts = accounts
-            except (json.JSONDecodeError, KeyError, TypeError):
-                pass
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+                # Rewriting the file with only the seeded accounts would delete every other analyst.
+                raise ValueError(
+                    f"{self._path} is unreadable ({exc}); repair or remove it, then restart"
+                ) from exc
+            if accounts:
+                self._accounts = accounts
         for seed in _seed_accounts():
             if seed.username in self._accounts:
                 self._accounts[seed.username].role = seed.role

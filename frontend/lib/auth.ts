@@ -13,9 +13,18 @@ const ANALYST_STORAGE_KEY = "fraudlens_analyst";
  * for this demo the token itself still only verifies against the backend's
  * real JWT secret — nothing here is a fake auth check. */
 export function setSession(token: string, analyst: AnalystProfile) {
-  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+  const secure = location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${60 * 60 * 24}; samesite=lax${secure}`;
   localStorage.setItem(TOKEN_COOKIE, token);
   localStorage.setItem(ANALYST_STORAGE_KEY, JSON.stringify(analyst));
+}
+
+/** The page to open after sign-in: `next` only when it stays on this origin. The URL parser
+ * drops tabs and newlines, so a string check alone lets `/\t/evil.com` through as `//evil.com`. */
+export function safeNextPath(requested: string | null, origin: string, fallback = "/dashboard") {
+  if (!requested?.startsWith("/")) return fallback;
+  const url = new URL(requested, origin);
+  return url.origin === origin ? `${url.pathname}${url.search}${url.hash}` : fallback;
 }
 
 export function clearSession() {

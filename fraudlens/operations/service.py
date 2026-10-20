@@ -16,7 +16,7 @@ from .agent import auto_assign, build_brief, polish_summary, priority
 from .detector import CHANNELS, COVERAGE, VERSION, detect
 from .models import DecisionInput, TransactionInput
 from .store import Store, dump, now
-from .team import OperationError, require, team_snapshot
+from .team import ONLINE_SECONDS, OperationError, require, team_snapshot
 from .trace import trace_funds, trace_view
 
 
@@ -606,13 +606,15 @@ class OperationsService:
 
     def heartbeat(self, actor, current_case_id=None):
         with self._lock, self.store.connect(write=True) as db:
-            if current_case_id:
-                self._case(db, current_case_id)
+            # Presence has its own table; an audit event here would move the cursor every 15 s
+            # and make every open console reload its snapshot.
+            if current_case_id and not self.store.get(db, "cases", current_case_id):
+                raise NotFoundError("Case not found")
             self._presence(db, actor, current_case_id)
-            self.store.event(db, "analyst_presence", f"{actor.display_name} is online.", actor=actor.username)
 
     def _presence(self, db, actor, current_case_id=None, signed_out=False):
-        seen = (self.clock() - timedelta(seconds=46) if signed_out else self.clock()).isoformat()
+        offline = timedelta(seconds=ONLINE_SECONDS + 1)
+        seen = (self.clock() - offline if signed_out else self.clock()).isoformat()
         db.execute(
             """INSERT INTO presence VALUES(?,?,?,?,?) ON CONFLICT(username) DO UPDATE SET
                    display_name=excluded.display_name,role=excluded.role,last_seen=excluded.last_seen,

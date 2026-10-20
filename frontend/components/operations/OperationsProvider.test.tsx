@@ -81,3 +81,31 @@ it("sends a presence heartbeat on mount and immediately when a case opens", asyn
   fireEvent.click(screen.getByRole("button", { name: "Open case" }));
   await waitFor(() => expect(beats()).toContainEqual({ current_case_id: "CASE-42" }));
 });
+it("fetches again when an update arrives while a snapshot request is in flight", async () => {
+  let release: (value: unknown) => void = () => {};
+  const first = new Promise((resolve) => {
+    release = resolve;
+  });
+  const snapshots = [
+    first,
+    Promise.resolve({
+      ok: true,
+      json: async () => ({ cursor: 2, counts: { transactions: 2, resolved: 1 } }),
+    }),
+  ];
+  const fetcher = vi.fn().mockImplementation(async (url: string) => {
+    if (url.includes("/events")) throw new Error("Stream interrupted");
+    if (url.includes("/presence/heartbeat")) return { ok: true, json: async () => ({ ok: true }) };
+    return snapshots.shift();
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(
+    <OperationsProvider>
+      <Consumer />
+    </OperationsProvider>,
+  );
+  await waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.includes("/snapshot"))).toBe(true));
+  fireEvent.click(screen.getByRole("button", { name: "Recover" }));
+  release({ ok: true, json: async () => ({ cursor: 1, counts: { transactions: 1, resolved: 0 } }) });
+  await waitFor(() => expect(screen.getByTestId("counts")).toHaveTextContent("2/1"));
+});

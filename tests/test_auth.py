@@ -1,4 +1,7 @@
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from fraudlens.testing import use_isolated_data_dir
 
@@ -6,6 +9,7 @@ use_isolated_data_dir()
 
 from fastapi.testclient import TestClient
 from fraudlens.api.main import app
+from fraudlens.core.auth.store import AnalystStore
 
 
 class AuthTests(unittest.TestCase):
@@ -84,3 +88,22 @@ class AuthTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnalystStoreTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = Path(self.tmp.name) / "analysts.json"
+
+    def test_unreadable_account_file_stops_startup_instead_of_being_overwritten(self) -> None:
+        self.path.write_text('[{"username": "new-analyst", ')
+        with self.assertRaisesRegex(ValueError, "analysts.json"):
+            AnalystStore(str(self.path))
+        self.assertEqual(self.path.read_text(), '[{"username": "new-analyst", ')
+
+    def test_unknown_username_still_runs_the_password_hash(self) -> None:
+        store = AnalystStore(str(self.path))
+        with patch("fraudlens.core.auth.store.verify_password", return_value=False) as verify:
+            self.assertIsNone(store.verify("nobody", "fraudlens123"))
+        verify.assert_called_once()

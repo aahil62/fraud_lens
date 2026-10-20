@@ -128,6 +128,7 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
     item.actions.filter((a) => a.operation === "close" && a.status !== "superseded").map((a) => a.target_id),
   );
 
+  /** Runs a case action; resolves true when it succeeded. */
   async function perform(task: () => Promise<Case>, done: string) {
     setBusy(true);
     setActionError("");
@@ -136,8 +137,10 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
       setItem(await task());
       setActionMessage(done);
       setRationale("");
+      return true;
     } catch (err) {
       setActionError(explainError(err, team));
+      return false;
     } finally {
       setBusy(false);
       await refresh().catch(() => {});
@@ -257,7 +260,7 @@ export default function CaseWorkspace({ caseId }: { caseId: string }) {
                   () =>
                     requestApproval(current.case_id, request.action, current.version, notes, request.target),
                   `Approval requested from ${ROLE_SHORT[required(request.action)]}.`,
-                ).then(() => setRequesting(null));
+                ).then((succeeded) => succeeded && setRequesting(null));
               }}
             />
           )}

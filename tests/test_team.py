@@ -160,6 +160,26 @@ class TeamTests(unittest.TestCase):
             next(t for t in self.service.snapshot()["team"] if t["username"] == "kmehta")["online"]
         )
 
+    def test_heartbeat_updates_presence_without_an_audit_event(self):
+        cursor = self.service.cursor()
+        self.service.heartbeat(self.l1, self.cid)
+        self.assertEqual(self.service.cursor(), cursor)
+        member = next(t for t in self.service.snapshot()["team"] if t["username"] == "kmehta")
+        self.assertTrue(member["online"])
+
+    def test_resolved_today_counts_the_india_calendar_day(self):
+        with self.service.store.connect(write=True) as db:
+            case = self.service.store.get(db, "cases", self.cid)
+            # 22:30 IST on 18 October.
+            case.update(assignee="kmehta", status="resolved", resolved_at="2026-10-18T17:00:00+00:00")
+            self.service.store.update(db, "cases", self.cid, case)
+        self.t = datetime(2026, 10, 18, 18, 0, tzinfo=timezone.utc)  # 23:30 IST, same day
+        member = next(t for t in self.service.snapshot()["team"] if t["username"] == "kmehta")
+        self.assertEqual(member["resolved_today"], 1)
+        self.t = datetime(2026, 10, 18, 19, 0, tzinfo=timezone.utc)  # 00:30 IST, the next day
+        member = next(t for t in self.service.snapshot()["team"] if t["username"] == "kmehta")
+        self.assertEqual(member["resolved_today"], 0)
+
     def test_handled_by_lists_distinct_actors_in_order(self):
         case = self.service.claim(self.cid, ClaimInput(expected_version=self.case["version"]), self.l1)
         case = self.service.decide(

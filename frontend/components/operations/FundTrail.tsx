@@ -82,7 +82,7 @@ export function FundTrail({
                 </div>
               </dl>
               <span className={`outcome-badge ${tone}`}>{label}</span>
-              {renderAction?.(hop)}
+              {hop.account_id !== victimAccountId && renderAction?.(hop)}
             </li>
           );
         })}

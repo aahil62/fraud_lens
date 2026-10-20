@@ -37,3 +37,18 @@ it("renders the victim, every hop, rupee amounts and outcome badges", () => {
   expect(screen.getByText("Partially recovered")).toHaveClass("warning");
   expect(screen.getByText("Funds moved")).toHaveClass("bad");
 });
+it("never offers a per-hop action on the victim's own account", () => {
+  render(
+    <FundTrail
+      victimAccountId="SIM-VICTIM-1234"
+      reportedMinor={4800000}
+      trace={[
+        hop(1, "SIM-M1-5678", 3000000, 0, "funds_moved"),
+        hop(2, "SIM-VICTIM-1234", 1800000, 0, "pending"),
+      ]}
+      renderAction={(item) => <button>Close {item.account_id}</button>}
+    />,
+  );
+  expect(screen.getByRole("button", { name: "Close SIM-M1-5678" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Close SIM-VICTIM-1234" })).toBeNull();
+});

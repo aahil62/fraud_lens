@@ -1,9 +1,14 @@
 """Permission and presence helpers; mutations stay in the service transaction."""
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fraudlens.core.auth.roles import ROLE_LABEL, can, required_role
 from fraudlens.models.schemas import AnalystProfile
+
+# An analyst is online while their last heartbeat is at most this old.
+ONLINE_SECONDS = 45
+INDIA = ZoneInfo("Asia/Kolkata")
 
 
 class OperationError(ValueError):
@@ -18,6 +23,10 @@ def require(actor, action):
         raise OperationError(
             "This action requires a higher analyst role", status_code=403, required_role=required_role(action)
         )
+
+
+def _india_date(timestamp):
+    return datetime.fromisoformat(timestamp).astimezone(INDIA).date()
 
 
 def team_snapshot(db, cases, analysts, clock):
@@ -38,7 +47,7 @@ def team_snapshot(db, cases, analysts, clock):
         seen = presence.get(username, {})
         online = bool(
             seen.get("last_seen")
-            and 0 <= (clock - datetime.fromisoformat(seen["last_seen"])).total_seconds() <= 45
+            and 0 <= (clock - datetime.fromisoformat(seen["last_seen"])).total_seconds() <= ONLINE_SECONDS
         )
         result.append(
             {
@@ -53,7 +62,7 @@ def team_snapshot(db, cases, analysts, clock):
                 "resolved_today": sum(
                     c.get("assignee") == username
                     and c["status"] == "resolved"
-                    and c.get("resolved_at", c["updated_at"])[:10] == clock.date().isoformat()
+                    and _india_date(c.get("resolved_at", c["updated_at"])) == clock.astimezone(INDIA).date()
                     for c in cases
                 ),
             }
