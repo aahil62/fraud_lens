@@ -1,5 +1,6 @@
 """Autonomous account-level velocity restriction — the second half of
-"bounded autonomous action" alongside auto-hold (see autonomous_action.py).
+"bounded autonomous action" alongside auto-hold (hackathon pipeline; see
+the legacy-hackathon tag).
 
 Auto-holding a single case is a label on one transaction. This module is a
 real, measurable consequence that follows an account forward in time:
@@ -14,9 +15,7 @@ changes the velocity agent's behavior on the next), not just a wider
 flag.
 
 Always reversible: releasing a restriction requires a human action
-(currently: the moment an analyst records any decision on the
-case that triggered it — see DecisionWorkflow.submit_decision), logged as
-its own audit event, exactly like the auto-hold reversal pattern.
+(store.release).
 """
 
 from __future__ import annotations

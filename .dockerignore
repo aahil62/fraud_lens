@@ -10,7 +10,4 @@ var
 work
 .env
 docs
-scrollcraft
-fraudlens/data/external
 fraudlens/data/*.json
-!fraudlens/data/ulb_validation.json

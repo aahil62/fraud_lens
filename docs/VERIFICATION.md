@@ -1,5 +1,16 @@
 # Verification record
 
+## Legacy pipeline removed (20 October 2026)
+
+Branch `feature/fraudlens-v3`. The hackathon pipeline is preserved at the local `legacy-hackathon` tag (not pushed). Removed: the legacy API routes (`/transactions`, `/cases`, `/reports`, `/decisions`, `/copilot`, `/stats`, `/console`, `/live`) and `case_cache.py`; `core/{compliance,copilot,dna,reports}`, `core/graph/builder.py`, `core/cases/{case_engine,decision_workflow,autonomous_action}.py`, `core/privacy.py`; `evaluation/{benchmark,validate_ulb}.py` and `data/ulb_validation.json`; `scripts/run_demo.py`, `scripts/setup_groq_key.sh`; dead frontend components and libraries; the redirect-only `/feed`, `/fraud-dna` and `/network/explore` pages; and the tests that covered only that code. Kept: `core/auth`, `core/scoring`, `core/graph/community.py` and `core/cases/account_restriction.py` (the detector's agents use them) and `data/synthetic_generator.py`.
+
+| Check | Observed result |
+| --- | --- |
+| Backend suite | **232 tests, OK, 0 skipped** (15.5 s). The former skip was the removed ULB dataset check. |
+| Frontend tests | **53 passed** (18 files); the 5 removed tests covered the deleted Copilot chat. |
+| Lint, types | `npm --prefix frontend run lint` and `npx tsc --noEmit` passed. |
+| Legacy route | With `scripts/dev.py` running, `GET :8001/transactions/recent` returns 404. |
+
 ## v3 operations centre (19 October 2026)
 
 Branch `feature/fraudlens-v3`, local machine only. Nothing was pushed or deployed. No CI run is claimed.

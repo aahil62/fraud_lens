@@ -32,7 +32,7 @@ def main():
     data.mkdir(parents=True, exist_ok=True)
     reset_data(data)
     env = os.environ.copy()
-    env.update({"FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
+    env.update({"FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
                 "FRAUDLENS_SIMULATION_RUNNING": "0", "FRAUDLENS_SIMULATION_INTERVAL": "8",
                 "FRAUDLENS_BANK_URL": "http://127.0.0.1:8002",
                 "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{port},http://localhost:{port}"})

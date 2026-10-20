@@ -1,4 +1,4 @@
-"""Analyst account store — persists to JSON like FraudDNAStore, auto-seeded
+"""Analyst account store — persists to JSON, auto-seeded
 with four fictional demonstration accounts so the console is usable
 immediately, without requiring signup before anyone can log in.
 """

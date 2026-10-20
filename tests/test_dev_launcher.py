@@ -29,7 +29,7 @@ class ApiShutdownTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         port = free_port()
-        env = {**os.environ, "FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
+        env = {**os.environ, "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
                "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}", "FRAUDLENS_BANK_KEY": "test",
                "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3", "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
                "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",
@@ -73,7 +73,7 @@ class RealServerClientIpTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         port = free_port()
-        env = {**os.environ, "FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
+        env = {**os.environ, "FRAUDLENS_SEED_DEMO": "1", "FRAUDLENS_MODE": "demo",
                "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{free_port()}", "FRAUDLENS_BANK_KEY": "test",
                "FRAUDLENS_BANK_DB": f"{tmp.name}/bank.sqlite3", "FRAUDLENS_OPS_DB": f"{tmp.name}/ops.sqlite3",
                "FRAUDLENS_SESSION_SECRET_PATH": f"{tmp.name}/session.key",

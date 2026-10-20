@@ -77,44 +77,6 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(resp.json()["username"], "riyer")
         self.assertEqual(resp.json()["role"], "l2_analyst")
 
-    def test_submit_decision_without_auth_is_rejected(self) -> None:
-        txn_id = self.client.get("/transactions/recent?limit=1").json()["transactions"][0]["txn_id"]
-        resp = self.client.post("/decisions", json={"txn_id": txn_id, "decision": "review"})
-        self.assertEqual(resp.status_code, 401)
-
-    def test_submit_decision_with_auth_records_the_real_authenticated_analyst(self) -> None:
-        login = self.client.post("/auth/login", json={"username": "asharma", "password": "fraudlens123"})
-        token = login.json()["access_token"]
-
-        txn_id = self.client.get("/transactions/recent?limit=2").json()["transactions"][1]["txn_id"]
-        resp = self.client.post(
-            "/decisions",
-            json={"txn_id": txn_id, "decision": "review", "notes": "checking in"},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        self.assertEqual(resp.status_code, 200)
-        # The analyst name comes from the authenticated session, not
-        # anything the client could have claimed in the request body —
-        # DecisionRequest no longer even accepts an `analyst` field.
-        self.assertEqual(resp.json()["analyst"], "A. Sharma")
-
-    def test_decision_request_ignores_any_client_supplied_analyst_field(self) -> None:
-        """Defense in depth: even if a client sends an `analyst` key in the
-        body (stale frontend, hand-crafted request), it must have zero
-        effect — the schema doesn't declare the field, so FastAPI/Pydantic
-        drops it, and the real identity always comes from the token."""
-        login = self.client.post("/auth/login", json={"username": "riyer", "password": "fraudlens123"})
-        token = login.json()["access_token"]
-
-        txn_id = self.client.get("/transactions/recent?limit=3").json()["transactions"][2]["txn_id"]
-        resp = self.client.post(
-            "/decisions",
-            json={"txn_id": txn_id, "decision": "clear", "analyst": "Someone Impersonated"},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["analyst"], "R. Iyer")
-
 
 if __name__ == "__main__":
     unittest.main()

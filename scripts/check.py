@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run focused operational checks and frontend verification; --full adds legacy tests."""
+"""Run focused operational checks and frontend verification; --full adds the complete backend suite."""
 
 import argparse
 import os
@@ -59,7 +59,7 @@ class LauncherChecks(unittest.TestCase):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--full", action="store_true", help="Also run the complete historical backend suite")
+    parser.add_argument("--full", action="store_true", help="Also run the complete backend suite")
     parser.add_argument("--skip-frontend", action="store_true", help="Only backend and launcher checks (safe while Next dev is running)")
     args = parser.parse_args()
     npm = shutil.which("npm")

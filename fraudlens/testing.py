@@ -1,6 +1,5 @@
-"""Test-only helper: redirect every persisted runtime file to a throwaway
-temp directory instead of the real fraudlens/data/*.json files the live
-demo server reads from.
+"""Test-only helper: redirect the analyst file and operations database to a throwaway
+temp directory instead of the files the live demo server reads from.
 
 Must be called before `from fraudlens.api.main import app` in any test
 module that builds a real app/TestClient — RuntimeConfig's path defaults
@@ -22,14 +21,9 @@ import tempfile
 
 
 def use_isolated_data_dir() -> None:
-    if "FRAUDLENS_CASES_PATH" in os.environ:
+    if "FRAUDLENS_ANALYSTS_PATH" in os.environ:
         return  # already isolated (e.g. called from more than one test module)
     data_dir = tempfile.mkdtemp(prefix="fraudlens-test-data-")
-    os.environ["FRAUDLENS_CASES_PATH"] = os.path.join(data_dir, "cases.json")
-    os.environ["FRAUDLENS_DNA_STORE_PATH"] = os.path.join(data_dir, "fraud_dna_library.json")
-    os.environ["FRAUDLENS_DECISIONS_PATH"] = os.path.join(data_dir, "analyst_decisions.json")
-    os.environ["FRAUDLENS_AUDIT_PATH"] = os.path.join(data_dir, "audit_log.json")
     os.environ["FRAUDLENS_ANALYSTS_PATH"] = os.path.join(data_dir, "analysts.json")
-    os.environ["FRAUDLENS_ACCOUNT_RESTRICTIONS_PATH"] = os.path.join(data_dir, "account_restrictions.json")
     os.environ["FRAUDLENS_OPS_DB"] = os.path.join(data_dir, "operations.sqlite3")
     os.environ["FRAUDLENS_SEED_DEMO"] = "0"

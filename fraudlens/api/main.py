@@ -15,17 +15,8 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from fraudlens.api.case_cache import all_cases
 from fraudlens.api.routes.auth import router as auth_router
-from fraudlens.api.routes.cases import router as cases_router
-from fraudlens.api.routes.console import router as console_router
-from fraudlens.api.routes.copilot import router as copilot_router
-from fraudlens.api.routes.decisions import router as decisions_router
 from fraudlens.api.routes.health import public_status_router, router as health_router
-from fraudlens.api.routes.live import router as live_router
-from fraudlens.api.routes.reports import router as reports_router
-from fraudlens.api.routes.stats import router as stats_router
-from fraudlens.api.routes.transactions import router as transactions_router
 from fraudlens.api.routes.operations import router as operations_router
 from fraudlens.api.state import state
 from fraudlens.runtime import build_runtime
@@ -65,10 +56,6 @@ async def operation_worker(operations):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     state.runtime = build_runtime()
-    # Operational screens never read the historical preloaded case cache.
-    # Only explicitly requested legacy demonstrations need to warm it.
-    if os.environ.get("FRAUDLENS_LEGACY_WARM_CACHE") == "1":
-        all_cases(state.runtime)
     state.operations = OperationsService(os.environ.get("FRAUDLENS_OPS_DB", "var/operations.sqlite3"),
         bank_url=os.environ.get("FRAUDLENS_BANK_URL", "http://127.0.0.1:8002"),
         bank_key=os.environ.get("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator"), analysts=state.runtime.analyst_store)
@@ -119,12 +106,6 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(health_router)
 app.include_router(public_status_router)
-if os.environ.get("FRAUDLENS_LEGACY_API", "1") == "1":
-    # Compatibility API for historical fixtures. The supported showcase
-    # runner disables it; /ops is the only console data source.
-    for legacy_router in (transactions_router, cases_router, reports_router, decisions_router,
-                          copilot_router, stats_router, console_router, live_router):
-        app.include_router(legacy_router)
 app.include_router(operations_router)
 
 mount_public_routes(app)

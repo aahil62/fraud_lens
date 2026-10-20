@@ -98,4 +98,4 @@ Results and what was checked by hand are in [docs/VERIFICATION.md](docs/VERIFICA
 
 ## Credits
 
-Built by [@aahil62](https://github.com/aahil62). FraudLens started as a hackathon project; this version — roles and approvals, the bank ladder, the 1930 fund trace, the attack console, the agent and the console redesign — is a solo rebuild.
+Built by [@aahil62](https://github.com/aahil62). FraudLens started as a hackathon project; this version — roles and approvals, the bank ladder, the 1930 fund trace, the attack console, the agent and the console redesign — is a solo rebuild. The original hackathon pipeline is preserved at the `legacy-hackathon` git tag.

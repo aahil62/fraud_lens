@@ -8,6 +8,6 @@ export const PROOF = {
   precision: 0.8462,
   recall: 0.8148,
   evaluationSamples: 376,
-  /** Backend unittest count from the last full run (updated in Task 15). */
-  backendTests: 425,
+  /** Backend unittest count from the last full run (updated after the legacy removal). */
+  backendTests: 232,
 };

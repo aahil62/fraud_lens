@@ -124,7 +124,7 @@ def main():
         raise RuntimeError("BANK_PORT, API_PORT, and FRONTEND_PORT must be integer ports") from error
     ensure_ports_available(ports)
     env = os.environ.copy()
-    env.update({"FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1",
+    env.update({"FRAUDLENS_SEED_DEMO": "1",
                 "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
                 "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{ports['bank']}",
                 "NEXT_PUBLIC_API_BASE": f"http://127.0.0.1:{ports['api']}",

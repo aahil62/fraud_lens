@@ -16,7 +16,7 @@ from fraudlens.models.schemas import AgentScore, Decision, ScoringResult
 # patterns. Unlisted agents fall back to a 0.25 weight below.
 #
 # ml_agent's weight (0.35, matching graph_agent) is benchmarked, not
-# guessed: fraudlens/evaluation/benchmark.py shows ensemble precision/
+# guessed: the hackathon benchmark (removed; see the legacy-hackathon tag) showed ensemble precision/
 # recall/F1 are flat from 0.20-0.50 (the critical-signal boost below
 # already dominates threshold-level decisions), but AUC-PR rises
 # 0.9500 -> 0.9654 at 0.35 and keeps climbing past it. Not pushed
