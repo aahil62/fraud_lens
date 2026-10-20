@@ -1,12 +1,12 @@
 """Public demo orchestration with a deliberately small, redacted read model."""
 
 import time
-from collections import deque
 from typing import Annotated, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
+from fraudlens.core.rate_limit import SlidingWindowLimiter
 from fraudlens.models.schemas import AnalystProfile
 
 from .errors import NotFoundError, OperationError
@@ -24,23 +24,12 @@ class AttackInput(BaseModel):
 class PublicAttacks:
     def __init__(self, service, *, clock=None):
         self.service = service
-        self.clock = clock or time.monotonic
-        self.limits = {}
+        # Ten simulated attacks per visitor every five minutes.
+        self.limiter = SlidingWindowLimiter(10, 300, clock or time.monotonic)
 
     def limit(self, client_ip):
-        with self.service._lock:
-            cutoff = self.clock() - 300
-            for ip, attempts in list(self.limits.items()):
-                while attempts and attempts[0] <= cutoff:
-                    attempts.popleft()
-                if not attempts:
-                    del self.limits[ip]
-            attempts = self.limits.setdefault(client_ip, deque())
-            if len(attempts) >= 10:
-                raise OperationError(
-                    "Too many simulated attacks. Try again in a few minutes.", status_code=429
-                )
-            attempts.append(self.clock())
+        if not self.limiter.allow(client_ip):
+            raise OperationError("Too many simulated attacks. Try again in a few minutes.", status_code=429)
 
     def _get(self, db, attack_id):
         attack = self.service.store.get(db, "attacks", attack_id)
