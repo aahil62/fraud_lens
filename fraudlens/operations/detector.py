@@ -5,7 +5,7 @@ ML is a reference model trained on a separate synthetic corpus. Current
 stream labels never enter inference; future events are excluded.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import lru_cache
 
 from fraudlens.core.scoring.behavioral_agent import BehavioralAgent
@@ -16,7 +16,7 @@ from fraudlens.core.scoring.velocity_agent import VelocityAgent
 from fraudlens.data.synthetic_generator import generate_synthetic_transactions
 from fraudlens.models.schemas import Transaction
 
-from .money import inr
+from .rules import History, channel_policy, shared_device_accounts
 
 VERSION = "showcase-policy-1.2"
 CHANNELS = ("upi", "net_banking", "card", "atm")
@@ -103,124 +103,7 @@ def detect(txn, history):
     signals = [
         a.score(current).model_dump() for a in (RuleAgent(), velocity, behavioral, graph, reference_model())
     ]
-    policy = 0.05
-    reasons = []
-
-    def flag(score, reason):
-        nonlocal policy
-        policy = max(policy, score)
-        reasons.append(reason)
-
-    recent = [
-        t
-        for t in prior
-        if t["account_id"] == txn["account_id"]
-        and current_time - timedelta(minutes=5) <= datetime.fromisoformat(t["timestamp"])
-    ]
-    if txn["failed_auth_attempts"] >= 3 and txn["new_device"]:
-        flag(0.94, "Repeated authentication failures followed by payment from a new device.")
-    if txn["new_device"] and txn["new_beneficiary"] and txn["amount_minor"] >= 2_000_000:
-        flag(0.91, "Large transfer to a new beneficiary from a new device.")
-    if txn["channel"] == "net_banking" and txn["failed_auth_attempts"] >= 3 and txn["new_beneficiary"]:
-        flag(0.95, "New beneficiary payment after repeated net-banking authentication failures.")
-    shared_accounts = {
-        t["account_id"]
-        for t in prior
-        if t["account_id"] != txn["account_id"] and t["device_id"] == txn["device_id"]
-    }
-    if (
-        txn["channel"] == "upi"
-        and len(shared_accounts) >= 2
-        and txn["new_beneficiary"]
-        and txn["amount_minor"] >= 1_000_000
-    ):
-        flag(0.90, "Large new-beneficiary payment from a device shared by three or more accounts.")
-    if len(recent) >= 4:
-        flag(0.87, f"{len(recent) + 1} attempted payments from this account within five minutes.")
-    if len({t["channel"] for t in recent} | {txn["channel"]}) >= 3 and (
-        txn["new_device"] or txn["failed_auth_attempts"]
-    ):
-        flag(0.93, "Rapid activity across three or more channels with device or authentication anomalies.")
-    if txn["channel"] == "card":
-        small = [
-            t
-            for t in recent
-            if t.get("instrument_id") == txn["instrument_id"] and t["amount_minor"] <= 80_000
-        ]
-        if len(small) >= 3 and txn["amount_minor"] <= 80_000:
-            flag(0.92, "Four or more small attempts on the same card suggest card testing.")
-    if txn["channel"] == "atm":
-        withdrawals = [t for t in recent if t["channel"] == "atm"]
-        if any(t["location"] != txn["location"] for t in withdrawals):
-            flag(
-                0.89 if txn["amount_minor"] >= 1_000_000 else 0.62,
-                "ATM withdrawal at a changed location within five minutes; amount determines protection versus review.",
-            )
-        if (
-            len(withdrawals) >= 2
-            and sum(t["amount_minor"] for t in withdrawals) + txn["amount_minor"] >= 3_000_000
-        ):
-            flag(0.90, "Rapid ATM withdrawals exceed the showcase withdrawal-burst threshold.")
-        if txn["new_device"] and txn["amount_minor"] >= 1_000_000:
-            flag(0.88, "High-value withdrawal at a new test terminal/device.")
-    if txn["new_device"] and txn["amount_minor"] >= 500_000 and policy < 0.8:
-        flag(0.58, "New-device payment requires analyst review; protective threshold not reached.")
-
-    fifteen = [
-        t for t in prior if current_time - timedelta(minutes=15) <= datetime.fromisoformat(t["timestamp"])
-    ]
-    if txn["new_beneficiary"]:
-        credits = [
-            t
-            for t in fifteen
-            if t.get("beneficiary_id") == txn["account_id"] and t.get("payment_status", "posted") == "posted"
-        ]
-        for credit in credits:
-            outgoing = (
-                sum(
-                    t["amount_minor"]
-                    for t in fifteen
-                    if t["account_id"] == txn["account_id"]
-                    and t.get("payment_status", "posted") == "posted"
-                    and datetime.fromisoformat(t["timestamp"]) >= datetime.fromisoformat(credit["timestamp"])
-                )
-                + txn["amount_minor"]
-            )
-            if outgoing * 100 >= credit["amount_minor"] * 80:
-                percentage = min(100, outgoing * 100 / credit["amount_minor"])
-                flag(
-                    0.86,
-                    f"Pass-through: received {inr(credit['amount_minor'])} and moved {percentage:.1f}% out within 15 minutes to a new beneficiary (including this attempt).",
-                )
-                break
-    if txn["new_device"] and txn["failed_auth_attempts"] >= 3 and txn["new_beneficiary"]:
-        flag(
-            0.92,
-            "SIM-swap takeover pattern: new device, repeated authentication failures and a new beneficiary.",
-        )
-    if txn["channel"] == "card":
-        small = [
-            t
-            for t in prior
-            if t["channel"] == "card"
-            and t.get("instrument_id") == txn["instrument_id"]
-            and t["amount_minor"] < 20000
-            and current_time - timedelta(minutes=10) <= datetime.fromisoformat(t["timestamp"])
-        ]
-        if len(small) >= 5 and txn["amount_minor"] > 500000:
-            flag(
-                0.91,
-                "Card testing: five or more sub-₹200 attempts on one instrument followed by a larger payment.",
-            )
-    if txn["channel"] == "atm":
-        withdrawals = [
-            t for t in fifteen if t["channel"] == "atm" and t.get("instrument_id") == txn["instrument_id"]
-        ] + [txn]
-        if len(withdrawals) >= 3 and len({t["device_id"] for t in withdrawals}) >= 2:
-            flag(
-                0.88,
-                "ATM burst across terminals: three or more withdrawals on one instrument across multiple terminals within 15 minutes.",
-            )
+    policy, reasons = channel_policy(txn, prior)
 
     signals.append(
         {
@@ -239,11 +122,5 @@ def detect(txn, history):
         "score": score,
         "signals": display,
         "reasons": reasons,
-        "related_accounts": sorted(
-            {
-                t["account_id"]
-                for t in prior
-                if t["account_id"] != txn["account_id"] and t["device_id"] == txn["device_id"]
-            }
-        )[:30],
+        "related_accounts": sorted(shared_device_accounts(History.build(txn, prior)))[:30],
     }
