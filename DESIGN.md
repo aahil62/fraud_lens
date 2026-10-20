@@ -29,8 +29,8 @@ Pending states (a request not yet acknowledged, an unresolved case) use a **dash
 
 | Role | Face | Source |
 | --- | --- | --- |
-| Landing and attack headlines | Tanker (condensed poster capitals) | Fontshare API (ITF Free Font License forbids redistributing the files from this repository) |
-| Page titles and section headings | Erode (1970s serif) | Fontshare API |
+| Landing and attack headlines | Tanker (condensed poster capitals) | Fontshare CDN, declared in `app/fonts.css` (the ITF Free Font License forbids redistributing the files from this repository) |
+| Page titles and section headings | Erode (1970s serif) | Fontshare CDN, declared in `app/fonts.css` |
 | Body and controls | Mona Sans Variable | bundled `@fontsource-variable/mona-sans` (OFL) |
 | IDs, amounts, scores, timestamps | Courier Prime (typewriter) | bundled `@fontsource/courier-prime` (OFL) |
 
@@ -50,7 +50,7 @@ Three radii by role: chips 4 px, controls 8 px, surfaces 14 px. Depth comes from
 
 ## Landing
 
-Chapters alternate graphite and stone: the opening, the sample incident (the page's peak) and the ending sit on graphite. The hero is three planes: brass light from the upper right with fine grain, the Three.js lens (blackened steel, brass bezel, smoky glass, studio reflections, colours read from the `--lens-*` tokens), and the Tanker headline crossing in front of it, with slight opposing parallax from the unchanged Scrollcraft engine. A complete SVG lens (`LensPoster.tsx`) shows when WebGL is absent, the visitor pauses 3D, or reduced motion is requested. Offscreen and hidden-page rendering stops; GPU resources are disposed on cleanup. Content is visible by default.
+Chapters alternate graphite and stone: the opening, the sample incident (the page's peak) and the ending sit on graphite. The hero is three planes: brass light from the upper right with fine grain, the Three.js lens (blackened steel, brass bezel, smoky glass, studio reflections, colours read from the `--lens-*` tokens), and the Tanker headline crossing in front of it, with slight opposing parallax from the unchanged Scrollcraft engine. A complete SVG lens (`LensPoster.tsx`) shows when WebGL is absent or software-rendered (no GPU), the visitor pauses 3D, or reduced motion is requested. Offscreen and hidden-page rendering stops; GPU resources are disposed on cleanup. Content is visible by default.
 
 ## Evidence and maintenance
 

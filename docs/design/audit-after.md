@@ -60,5 +60,6 @@ S3 (touch targets) is again excluded: mobile menu, search, account and primary c
 
 - **L1 (partial).** The hero no longer reads as the stock left-column stack: the poster headline is the bottom plane crossing in front of the lens, and the lead sits top-left. But the copy is fixed, so a kicker line ("Financial crime. In focus.") and a button-plus-link pair remain.
 - **Copy-level tells kept on purpose** (copy must not change in this stage): two em dashes in the golden-hour paragraph, the repeated agent-brief and "why flagged" reason lists on the case page, the "Inside an incident" and "The golden hour" kickers.
-- **Fonts load from Fontshare's API** at runtime; offline or blocked, Tanker and Erode fall back to Impact/Arial Narrow and Georgia.
-- Not checked: Lighthouse performance on the landing, a real phone, a screen reader, browsers other than Chromium.
+- **Fonts load from Fontshare's CDN** at runtime (declared in `app/fonts.css`); offline or blocked, Tanker and Erode fall back to Impact/Arial Narrow and Georgia. The first Stage B commit linked Fontshare's stylesheet with one combined request that returned only Tanker, so Erode was silently falling back to the system serif; the later fix declares each face directly.
+- **Mobile Lighthouse performance is lower than before the redesign** (see `docs/VERIFICATION.md`, Stage B): the third-party font origin delays first paint by about 0.9 s on simulated 4G, and the 3D lens costs main-thread time on a throttled CPU. Serving Tanker and Erode from our own origin (fetched at Docker build time, not committed) would remove the first cost.
+- Not checked: a real phone, a screen reader, browsers other than Chromium.

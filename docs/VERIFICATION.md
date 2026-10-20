@@ -1,5 +1,51 @@
 # Verification record
 
+## Visual redesign, Stage B (20 October 2026)
+
+Branch `feature/fraudlens-v3`, local machine only. Nothing was pushed or deployed. Graphite + brass palette with Tanker, Erode, Mona Sans and Courier Prime, chosen by the user from `docs/design/palette-concepts.html` and `docs/design/type-concepts.html`. Design record: [DESIGN.md](../DESIGN.md); audits: [before](design/audit-before.md), [after](design/audit-after.md).
+
+| Check | Command | Observed result |
+| --- | --- | --- |
+| Backend suite | `.venv/bin/python -m unittest discover -s tests` | **232 tests, OK, 0 skipped** (61.6 s). |
+| Frontend tests | `npm --prefix frontend run test` | **55 passed** (19 files), including `app/tokens.test.ts` (no raw colour outside `app/tokens.css`) and the software-WebGL fallback test in `LensScene.test.tsx`. |
+| Lint, types | `npm --prefix frontend run lint`, `cd frontend && npx tsc --noEmit` | Passed, no warnings. |
+| Production build | `npm --prefix frontend run build` (dev server stopped) | Passed; 15 routes (the redirect-only `/feed`, `/fraud-dna` and `/network/explore` were removed in Stage A). |
+| Design audit | `unslop:audit` checklist + `anti-slop` law | **59 → 97** (17/29 → 28/29 applicable checks). The remaining partial item is the hero's kicker and button-plus-link copy, which this stage could not change. |
+
+### Checked in the browser
+
+Scripted Playwright (Chromium headless shell) against `scripts/dev.py`, signed in as R. Iyer (L2); landing screenshots retaken with Chrome for Testing so the GPU lens renders. Screenshots: [docs/screenshots/v4/](screenshots/v4/).
+
+- **All 14 pages at 390 × 844 and 1280 × 800** (landing, login, signup, attack, dashboard, investigations, case, team, transactions, connections, bank, reports, audit, guidance): **0 px horizontal overflow and 0 console errors** on every page, rechecked after Erode started loading.
+- **Contrast.** Every token text/background pair passes WCAG AA; the lowest is caution on caution tint, 5.26:1 (full table in [audit-after.md](design/audit-after.md)). `contrast-check.mjs` on rendered `/`, `/attack` and `/login`: all sampled pairs pass (the landing had 2 failures before).
+- **Keyboard.** Tabbing landing, attack and dashboard at both widths: every focused element shows a 2 px ring (brass on graphite, dark brass on stone; two mobile top-bar items resolve to an ink ring, 15:1). The mobile drawer takes focus, traps Tab, closes on Escape and returns focus to the menu button.
+- **Reduced motion** (emulated `prefers-reduced-motion: reduce`): the landing shows the SVG lens and creates no WebGL canvas; parallax is off; the golden-hour locks are static. With motion allowed and a GPU (in-app browser, ANGLE Metal on Apple M4), the 3D lens renders. With software WebGL (SwiftShader), the static lens is kept.
+
+### Lighthouse on the landing
+
+Lighthouse 12.8.2 with Chrome for Testing 156 (headless, hardware GPU), against `next start` serving the production build on this machine. Default mobile settings (simulated slow 4G, 4× CPU throttle) and `--preset=desktop`. Scores are Performance / Accessibility / Best Practices / SEO; the pre-redesign landing (`70a9877`, built the same way in a temporary worktree) ran alternately in the same session, three runs each, because this machine's load made single runs noisy.
+
+| Landing | Mobile | Desktop | Mobile FCP / LCP | Mobile TBT |
+| --- | --- | --- | --- | --- |
+| Before Stage B (`70a9877`) | 38–57 / 97 / 100 / 91 | 83–95 / 97 / 100 / 91 | 1.7–2.9 s / 4.9–5.8 s | 1.1–4.1 s |
+| After Stage B (final) | 38–47 / **100** / 100 / 91 | 75–86 / **100** / 100 / 91 | 2.5–2.7 s / 5.5–12.1 s | 2.1–11.9 s |
+
+Fixes made after the first measurement (mobile 33, TBT 20 s, LCP 20 s):
+- Tanker and Erode are declared in `app/fonts.css` against Fontshare's CDN instead of linking Fontshare's stylesheet. This removed a render-blocking request to a second origin, and it fixed a real bug: the combined stylesheet request returned only Tanker, so Erode had been falling back to the system serif.
+- The lens skips WebGL when the browser reports a software renderer (no GPU) and keeps the complete SVG lens.
+- The studio-reflection environment renders at 64 px instead of 256 px.
+- Tried and reverted: starting the lens only once the browser was idle (it moved the work into the measured window and made desktop worse).
+
+Recorded, not fixed:
+- **Mobile performance is still below the old landing.** First paint is about 0.9 s later because the fonts come from a third-party origin, and the 3D lens costs main-thread time on a throttled CPU. Serving the two fonts from our own origin (downloaded during the Docker build, never committed, which the licence allows) would remove the first cost; it is a larger change than this stage allowed.
+- **SEO 91 before and after:** `/robots.txt` returns the app's HTML because the console proxy does not exclude it.
+- Accessibility rose from 97 to 100 (the old landing failed `color-contrast`).
+
+### Not verified
+
+- A real phone (performance of the 3D lens on a mobile GPU, touch scrolling), a screen-reader pass, and browsers other than Chromium.
+- Lighthouse on the deployed Render site (only local production builds were measured).
+
 ## Legacy pipeline removed (20 October 2026)
 
 Branch `feature/fraudlens-v3`. The hackathon pipeline is preserved at the local `legacy-hackathon` tag (not pushed). Removed: the legacy API routes (`/transactions`, `/cases`, `/reports`, `/decisions`, `/copilot`, `/stats`, `/console`, `/live`) and `case_cache.py`; `core/{compliance,copilot,dna,reports}`, `core/graph/builder.py`, `core/cases/{case_engine,decision_workflow,autonomous_action}.py`, `core/privacy.py`; `evaluation/{benchmark,validate_ulb}.py` and `data/ulb_validation.json`; `scripts/run_demo.py`, `scripts/setup_groq_key.sh`; dead frontend components and libraries; the redirect-only `/feed`, `/fraud-dna` and `/network/explore` pages; and the tests that covered only that code. Kept: `core/auth`, `core/scoring`, `core/graph/community.py` and `core/cases/account_restriction.py` (the detector's agents use them) and `data/synthetic_generator.py`.
