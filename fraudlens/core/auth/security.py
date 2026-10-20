@@ -1,10 +1,7 @@
 """Password hashing and JWT issuance for analyst authentication.
 
-Password hashing uses stdlib PBKDF2-HMAC-SHA256 (hashlib) — no bcrypt/
-passlib dependency, since those need C extensions that aren't guaranteed to
-build cleanly on every teammate's machine this close to a deadline.
-PBKDF2 with a per-password random salt and 200k iterations is a real,
-defensible choice, not a toy hash.
+Passwords use stdlib PBKDF2-HMAC-SHA256 with a per-password random salt and
+200,000 iterations, which needs no compiled dependency.
 """
 
 from __future__ import annotations
@@ -20,7 +17,7 @@ import jwt
 
 _PBKDF2_ITERATIONS = 200_000
 _JWT_ALGORITHM = "HS256"
-_JWT_TTL_SECONDS = 24 * 60 * 60  # 24h session — a hackathon demo, not a bank
+_JWT_TTL_SECONDS = 24 * 60 * 60  # 24 h sessions suit a demo, not a bank
 
 
 def load_session_secret(path, *, configured=None, mode="demo"):

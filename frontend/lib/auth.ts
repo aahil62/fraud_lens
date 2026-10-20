@@ -6,7 +6,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001";
 const TOKEN_COOKIE = "fraudlens_token";
 const ANALYST_STORAGE_KEY = "fraudlens_analyst";
 
-/** Stored as a plain (non-httpOnly) cookie so middleware.ts can read it at
+/** Stored as a plain (non-httpOnly) cookie so proxy.ts can read it at
  * the edge for route protection, and as localStorage so client components
  * can attach it to fetch() calls without parsing document.cookie every
  * time. A real production system would set this httpOnly from the server;

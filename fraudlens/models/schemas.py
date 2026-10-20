@@ -1,9 +1,4 @@
-"""Shared data contracts for FraudLens.
-
-Every branch builds against these models — they don't change per branch.
-Field names and semantics match the team's Level 1 prototype so results
-stay comparable across the rebuild.
-"""
+"""Shared data contracts: the scoring agents' transaction and score shapes, and analyst accounts."""
 
 from __future__ import annotations
 

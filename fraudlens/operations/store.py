@@ -31,7 +31,8 @@ class Store:
                 CREATE TABLE IF NOT EXISTS transactions (
                     id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS cases (
-                    id TEXT PRIMARY KEY, txn_id TEXT UNIQUE NOT NULL REFERENCES transactions(id), data TEXT NOT NULL);
+                    id TEXT PRIMARY KEY, txn_id TEXT UNIQUE NOT NULL REFERENCES transactions(id),
+                    data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS actions (
                     id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id), data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS jobs (

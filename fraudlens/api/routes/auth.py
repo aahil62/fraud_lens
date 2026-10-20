@@ -1,6 +1,8 @@
-"""Analyst signup/login — real JWT-based auth, not a demo stub. Seeded
-accounts (asharma / riyer, password "fraudlens123") exist so the console
-is usable immediately; signup lets a new analyst create their own account.
+"""Analyst sign-in, sign-up and sign-out with signed session tokens.
+
+In demo mode four fictional analysts are seeded (kmehta L1, pnair L1, riyer L2,
+asharma Supervisor; password "fraudlens123"). Sign-up is local-demo only and is
+turned off on the public demo.
 """
 
 from __future__ import annotations
