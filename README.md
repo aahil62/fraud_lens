@@ -2,7 +2,7 @@
 
 A real-time, multi-analyst fraud operations centre for an Indian bank — UPI, net banking, cards and ATMs — with an enforcing bank simulator, a 1930 "golden hour" fund trace and an AI agent that triages but never decides.
 
-![FraudLens case page: agent brief, owner, approvals](docs/screenshots/v3/case-agent-brief.png)
+![FraudLens landing: the lens brings four payment channels into focus](docs/screenshots/v4/landing-hero-1280.png)
 
 ## Why it matters
 
