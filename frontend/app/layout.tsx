@@ -18,10 +18,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        {/* Tanker and Erode come from Fontshare's CDN (see app/fonts.css). */}
-        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="anonymous" />
-      </head>
       <body>{children}</body>
     </html>
   );

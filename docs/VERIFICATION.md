@@ -1,5 +1,35 @@
 # Verification record
 
+## Same-origin display fonts (20 October 2026)
+
+Branch `feature/fraudlens-v3`, local machine only. Nothing was pushed or deployed. Tanker and Erode are now served from the console's own origin. `frontend/scripts/fetch-fonts.mjs` reads the faces from `app/fonts.css` and downloads them from Fontshare into `frontend/public/fonts/` (npm `predev` and `prebuild` hooks, so both `scripts/dev.py` and the Docker build run it). That folder is in `.gitignore` and `.dockerignore`: the ITF Free Font License allows self-hosting but not redistributing the files from the repository. Every `@font-face` lists `/fonts/<file>.woff2` first and the Fontshare CDN copy second, so a failed fetch falls back to the CDN. The Fontshare `preconnect` was removed, and `proxy.ts` now skips `/fonts/`; before this change a logged-out request for a font would have been redirected to `/login`.
+
+| Check | Command | Observed result |
+| --- | --- | --- |
+| Backend suite | `.venv/bin/python -m unittest discover -s tests` | **232 tests, OK** (63.8 s). |
+| Frontend tests | `npm --prefix frontend run test` | **57 passed** (20 files), including the new `app/fonts.test.ts`: four faces, each local first with a Fontshare fallback, and the proxy matcher skips `/fonts/`. |
+| Lint, types | `npm --prefix frontend run lint`, `cd frontend && npx tsc --noEmit` | Passed, no warnings. |
+| Production build | `npm --prefix frontend run build` (dev server stopped) | Passed; same 15 routes. The built CSS has `src:url(/fonts/tanker-400.woff2) format("woff2"),url(https://cdn.fontshare.com/…)`. |
+| Not tracked | `git check-ignore -v frontend/public/fonts/tanker-400.woff2` | Ignored by `.gitignore`; `git status` lists no font file. |
+| Dev | `scripts/dev.py`, landing in the in-app browser | `predev` logged the four files; `/fonts/tanker-400.woff2` and `/fonts/erode-700.woff2` returned 200 and no request went to `cdn.fontshare.com`. |
+| Fallback | Same, with `public/fonts/` renamed | `/fonts/*` returned 404 (not a redirect); the browser loaded both faces from `cdn.fontshare.com` and Tanker and Erode 700 reported `loaded`. |
+| Offline fetch | `fetch-fonts.mjs` with `fetch` forced to reject | Warned for each file ("the CDN copy will be used"), exit 0. |
+| Docker | `docker build .`, then `docker run -p 7861:7860` | The build logged `fonts: … fetched` for all four; the image has them in `frontend/.next/standalone/public/fonts/`, and `GET /fonts/tanker-400.woff2` returned 200 `font/woff2` (19 236 B). |
+
+### Lighthouse on the landing
+
+Same setup as Stage B: Lighthouse 12.8.2, Chrome for Testing 156 (headless), `next start`, default mobile settings. The first three runs after the change gave mobile **64 / 69 / 68** (Accessibility 100, Best Practices 100, SEO 91), FCP 2.6 s, LCP 5.5 s, TBT 310–470 ms. That looked like a large gain over Stage B's 38–47, so the previous commit (`b70f7ae`, CDN fonts) was built in a temporary worktree and both were run alternately in one session, six mobile and three desktop runs each:
+
+| Landing | Mobile (6 runs) | Mobile median | Median FCP / LCP / TBT | Desktop (3 runs) | Tanker download finished (observed, median) |
+| --- | --- | --- | --- | --- | --- |
+| CDN fonts (`b70f7ae`) | 32–71 | 44.5 | 2.6 s / 8.6 s / 1.6 s | 69–98 | 721 ms, second origin `cdn.fontshare.com` |
+| Same-origin fonts | 35–62 | 39 | 3.2 s / 11.6 s / 1.5 s | 81–99 | 246 ms, own origin only |
+
+What this shows:
+- **No measurable change to the mobile score.** Both builds are bimodal (LCP about 5.3 s or 11–12 s), and the spread between runs is larger than any difference between the builds. The score follows TBT, which is the 3D lens on a 4× throttled CPU, plus this machine's load. The 64–69 runs above happened to be quiet ones.
+- **The font cost Stage B blamed was overstated.** The faces use `font-display: swap`, so they never held back first paint; FCP is about 2.6 s either way. The fonts now finish downloading earlier and from one origin, which shortens the swap from the fallback face, but Lighthouse does not score that.
+- Recovering mobile performance needs work on the lens (deferring it, or a lighter path on slow CPUs), not more font work.
+
 ## Visual redesign, Stage B (20 October 2026)
 
 Branch `feature/fraudlens-v3`, local machine only. Nothing was pushed or deployed. Graphite + brass palette with Tanker, Erode, Mona Sans and Courier Prime, chosen by the user from `docs/design/palette-concepts.html` and `docs/design/type-concepts.html`. Design record: [DESIGN.md](../DESIGN.md); audits: [before](design/audit-before.md), [after](design/audit-after.md).
@@ -37,7 +67,7 @@ Fixes made after the first measurement (mobile 33, TBT 20 s, LCP 20 s):
 - Tried and reverted: starting the lens only once the browser was idle (it moved the work into the measured window and made desktop worse).
 
 Recorded, not fixed:
-- **Mobile performance is still below the old landing.** First paint is about 0.9 s later because the fonts come from a third-party origin, and the 3D lens costs main-thread time on a throttled CPU. Serving the two fonts from our own origin (downloaded during the Docker build, never committed, which the licence allows) would remove the first cost; it is a larger change than this stage allowed.
+- **Mobile performance is still below the old landing.** First paint is about 0.9 s later because the fonts come from a third-party origin, and the 3D lens costs main-thread time on a throttled CPU. Serving the two fonts from our own origin (downloaded during the Docker build, never committed, which the licence allows) would remove the first cost; it is a larger change than this stage allowed. (Done afterwards; it did not move the score. See "Same-origin display fonts" above.)
 - **SEO 91 before and after:** `/robots.txt` returns the app's HTML because the console proxy does not exclude it.
 - Accessibility rose from 97 to 100 (the old landing failed `color-contrast`).
 

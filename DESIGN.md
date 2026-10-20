@@ -29,8 +29,8 @@ Pending states (a request not yet acknowledged, an unresolved case) use a **dash
 
 | Role | Face | Source |
 | --- | --- | --- |
-| Landing and attack headlines | Tanker (condensed poster capitals) | Fontshare CDN, declared in `app/fonts.css` (the ITF Free Font License forbids redistributing the files from this repository) |
-| Page titles and section headings | Erode (1970s serif) | Fontshare CDN, declared in `app/fonts.css` |
+| Landing and attack headlines | Tanker (condensed poster capitals) | Fontshare, fetched at build time into the gitignored `public/fonts/` and served same-origin, CDN fallback (`app/fonts.css`; the ITF Free Font License forbids redistributing the files from this repository) |
+| Page titles and section headings | Erode (1970s serif) | Same as Tanker |
 | Body and controls | Mona Sans Variable | bundled `@fontsource-variable/mona-sans` (OFL) |
 | IDs, amounts, scores, timestamps | Courier Prime (typewriter) | bundled `@fontsource/courier-prime` (OFL) |
 

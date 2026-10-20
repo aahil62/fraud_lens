@@ -1,31 +1,36 @@
-/* Tanker and Erode are served by Fontshare's CDN: the ITF Free Font License allows
-   embedding them but not redistributing the files from this repository. Declaring the
-   faces here (instead of linking Fontshare's stylesheet) removes a render-blocking
-   request to a second origin. The files are the ones api.fontshare.com/v2/css returns. */
+/* Tanker and Erode (Fontshare, ITF Free Font License). The licence allows serving them
+   from our own servers but not redistributing the files from this repository, so
+   scripts/fetch-fonts.mjs downloads them into the gitignored public/fonts/ before
+   `npm run dev` and `npm run build`. Same-origin files avoid a second connection before
+   first paint; if the fetch failed, the browser falls back to Fontshare's CDN copy. */
 @font-face {
   font-family: "Tanker";
-  src: url("https://cdn.fontshare.com/wf/ATKS7EHYU4PKFTXRA4UFAHPY7XS75QMY/OYTCFLQCR7FVKK7FIO7TCJPY4YG22I3S/GKSURDSYOFIC3Y6F5SMWSENDSAB2YMKC.woff2") format("woff2");
+  src: url("/fonts/tanker-400.woff2") format("woff2"),
+    url("https://cdn.fontshare.com/wf/ATKS7EHYU4PKFTXRA4UFAHPY7XS75QMY/OYTCFLQCR7FVKK7FIO7TCJPY4YG22I3S/GKSURDSYOFIC3Y6F5SMWSENDSAB2YMKC.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Erode";
-  src: url("https://cdn.fontshare.com/wf/L3KUL2HSHIWQ5KJC2X2XEI4K2CVI23EN/BG3KS4N3WIOZY5QD635C3DVWM7NWSE3Q/RPYYUUA6FJVWJIL3CQP3LGB33YXVOOUV.woff2") format("woff2");
+  src: url("/fonts/erode-500.woff2") format("woff2"),
+    url("https://cdn.fontshare.com/wf/L3KUL2HSHIWQ5KJC2X2XEI4K2CVI23EN/BG3KS4N3WIOZY5QD635C3DVWM7NWSE3Q/RPYYUUA6FJVWJIL3CQP3LGB33YXVOOUV.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Erode";
-  src: url("https://cdn.fontshare.com/wf/D7VESJV4FFHSHNE2EEZ6KB4HZX56LNL6/FTJIXQI4AA2BQVKSC2JJO2XDBG3WG7YU/AL47FDSJFHTXHQ4H2QPW6HPE5NZMJPEX.woff2") format("woff2");
+  src: url("/fonts/erode-600.woff2") format("woff2"),
+    url("https://cdn.fontshare.com/wf/D7VESJV4FFHSHNE2EEZ6KB4HZX56LNL6/FTJIXQI4AA2BQVKSC2JJO2XDBG3WG7YU/AL47FDSJFHTXHQ4H2QPW6HPE5NZMJPEX.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Erode";
-  src: url("https://cdn.fontshare.com/wf/W4KADQUTXSBS5JFKL5R6O3OD5Y2HUMPK/FUANNLITZ24BKB6NQZP3QPJP2PCYZG4I/4MK6ECKUA53PDOTLFHJC57TECDKREBGM.woff2") format("woff2");
+  src: url("/fonts/erode-700.woff2") format("woff2"),
+    url("https://cdn.fontshare.com/wf/W4KADQUTXSBS5JFKL5R6O3OD5Y2HUMPK/FUANNLITZ24BKB6NQZP3QPJP2PCYZG4I/4MK6ECKUA53PDOTLFHJC57TECDKREBGM.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;

@@ -25,3 +25,6 @@ work/
 frontend/work-report.md
 *.tsbuildinfo
 .claude/
+
+# Fontshare files: fetched at build time, never committed (licence)
+frontend/public/fonts/

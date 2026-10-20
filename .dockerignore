@@ -11,3 +11,4 @@ work
 .env
 docs
 fraudlens/data/*.json
+frontend/public/fonts

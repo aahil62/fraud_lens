@@ -6,6 +6,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 ENV NEXT_PUBLIC_API_BASE=/backend NEXT_PUBLIC_DEMO_MODE=1 NEXT_PUBLIC_PUBLIC_DEMO=1 NEXT_TELEMETRY_DISABLED=1
+# prebuild fetches the Fontshare faces into public/fonts/ (never committed; see app/fonts.css).
 RUN npm run build \
  && cp -r public .next/standalone/public \
  && cp -r .next/static .next/standalone/.next/static
