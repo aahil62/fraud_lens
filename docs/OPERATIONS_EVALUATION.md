@@ -25,6 +25,20 @@ The evaluation deliberately includes **64 authorized unusual payments**. All rea
 
 It also contains **32 fraudulent payments indistinguishable from ordinary activity in the available telemetry**. All were missed. Scam-message context, customer intent, stolen credentials without observable anomalies, ATM cameras and skimmer hardware evidence are not available to the detector.
 
+## The ML classifier on its own
+
+The detector's gradient-boosted classifier (`MLAgent`) is one of its signals. Its own held-out quality, measured on the production reference model (trained on synthetic seed 173) against **10,399 transactions** (3,399 fraud) from ten other seeds it never saw:
+
+```bash
+.venv/bin/python -m fraudlens.evaluation.classifier
+```
+
+| Threshold | True positives | False positives | True negatives | False negatives | Precision | Recall | F1 | ROC-AUC | Average precision |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| score ≥0.5 | 2987 | 160 | 6840 | 412 | 0.9492 | 0.8788 | 0.9126 | 0.9463 | 0.9451 |
+
+Training and test data come from the same synthetic generator, so this measures how well the model learns the generator's patterns, not real-world fraud detection. Full output: [classifier-evaluation.json](verification/classifier-evaluation.json).
+
 ## Evidence boundary
 
 - Constructed frequencies are not real fraud prevalence. These precision/recall figures apply only to this fixed corpus.

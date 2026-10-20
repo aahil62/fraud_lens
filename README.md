@@ -85,6 +85,8 @@ Controlled synthetic corpus of 376 terminal payment attempts (eight seeds, four 
 
 The corpus deliberately includes authorised-but-unusual payments (false positives) and fraud that looks ordinary (false negatives). It is not real fraud prevalence; see [docs/OPERATIONS_EVALUATION.md](docs/OPERATIONS_EVALUATION.md).
 
+The gradient-boosted classifier on its own, scored on 10,399 transactions from synthetic seeds it never trained on: precision 0.9492, recall 0.8788, ROC-AUC 0.9463 (`python -m fraudlens.evaluation.classifier`; same generator for training and test, so not a real-world figure).
+
 ## Engineering notes
 
 - **Transactional outbox.** Payments, cases, bank jobs and audit events commit in one SQLite transaction; a worker delivers bank actions afterwards, so a crash never loses or duplicates an action.
