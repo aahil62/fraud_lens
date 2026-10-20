@@ -1,5 +1,46 @@
 # Verification record
 
+## Code review, refactor and repository tidy, Stages C and D (20 October 2026)
+
+Branch `feature/fraudlens-v3`, local machine. Not yet pushed or deployed (see the end of this section). Every Python, TypeScript and script file was reviewed with `code-review` (high), `improve-codebase-architecture`, `simplify`, `vercel-react-best-practices` and `vibesec-skill`; the findings and what happened to each are in the [revamp plan](superpowers/plans/2026-10-20-revamp-cleanup-redesign.md#stage-c-review-findings-20-october-2026) (R1–R8, E1–E5, S1–S7, K1–K7).
+
+| Check | Command | Observed result |
+| --- | --- | --- |
+| Backend suite | `.venv/bin/python -m unittest discover -s tests` | **238 tests, OK** (53.8 s). Six new: four for review fixes (R3, R4, R8, E1) and two that keep the console's role table equal to `roles.py`. |
+| Frontend tests | `npm --prefix frontend run test` | **64 passed** (22 files). Seven new: R1 open redirect, R7 Secure cookie, R5 victim hop, R6 approval panel, R2 lost update, and two for `robots.txt`. |
+| Lint, types, format | `npm --prefix frontend run lint`, `npx tsc --noEmit`, `npm --prefix frontend run format:check`, `ruff check` / `ruff format --check` on `fraudlens scripts tests` | All clean. ruff 0.16.10 and prettier 3.9.9 are pinned; CI now runs both. |
+| Production build | `npm --prefix frontend run build` (dev server stopped) | Passed; the same 15 routes plus `/robots.txt`. |
+| Production npm audit | `npm --prefix frontend audit --omit=dev` | 0 vulnerabilities. `cytoscape` (unused) was removed. |
+| Size and width | scripted check | No Python module outside `tests/` and no frontend module over 300 lines; no code line over 110 columns (long string literals, mostly UI copy and sources, excepted). `service.py` went from 1,228 formatted lines to 191, with seven focused modules. |
+
+Behaviour was held fixed by comparison, not only by the test suite:
+- **Operations read models.** A ledger with every scenario, a complaint, an approval, a fraud verdict and a reversal was built once; its snapshot, every case view and the case listing were byte-identical before and after the `service.py` split.
+- **Detector and agent.** Scores, signals and reasons for all 376 evaluation incidents, and the agent brief for each of them under three verdicts plus every case in that ledger, were identical before and after the rule and brief refactor. Regenerating the evaluation gives the committed corpus hash, overall metrics and per-record scores.
+- **Guidance.** `guidance_response()` returns the same JSON as before the move to `guidance_data.py`.
+- **Snapshot cost.** On a copy of the local ledger (836 payments, 101 cases, 3,629 events), one `snapshot()` took 2,054 ms with the old code and 47 ms with the new.
+
+### Checked in the browser
+
+`scripts/dev.py` through the preview tool; Playwright with full Chromium on the Apple M4 GPU (ANGLE Metal), signed in as R. Iyer. Screenshots: [docs/screenshots/v4/](screenshots/v4/) (1280 px and 390 px; console pages full-page).
+- **All 14 pages at 1280 × 800 and 390 × 844:** 0 px horizontal overflow and 0 console errors on every page.
+- **Landing:** the 3D lens renders after its split into `lensModel.ts` (in-app browser and headless GPU Chromium); no console errors.
+- **Case page and Connections:** the split case workspace, evidence column and evidence graph render as before.
+- **Dashboard "Latest activity"** now shows payments and bank events instead of a stream of "analyst presence" rows (E1).
+- **Public attack and 1930 report** (API): a mule-layering attack showed four of six steps done and waiting for an analyst; the report traced ₹28,000 across two hops with ₹20,000 cashed out, and both liens were held (₹28,000) once the bank acknowledged them.
+- **`/robots.txt`** returns 200 `text/plain` with the allow/disallow rules (it returned the sign-in page before).
+
+### Found and recorded, not fixed
+
+- **Detection slows as the ledger grows (K7).** Every simulated payment uses IP 127.0.0.1, so the graph agent's Louvain pass sees one clique of every simulated account. On the 836-payment local ledger one `detect()` took 6–10 s, 99% of it in Louvain; a public attack launch took 43 s. The code is unchanged by this stage; fixing it changes scores, so it is a separate task. The live demo resets its ledger on every boot and starts with the stream paused, which keeps it small.
+- **Occasional slow snapshot under load.** With the stream running every 5 s, snapshots took about 100 ms but spiked to about 3 s while a scenario was being scored (same cause as above).
+- K1–K6 in the plan: the service lock is held across bank calls; audit actors are display names on three routes; the token sits in `localStorage` and logout does not revoke it; any analyst can change the shared simulation controls; test-only scoring modules remain; the attack status route is unthrottled.
+
+### Not verified
+
+- `docker build` (Docker was not running on this machine). The only container-relevant change is that `frontend/public/` now holds just the fetched fonts, which `fetch-fonts.mjs` creates before the Dockerfile copies it.
+- Lighthouse was not re-run; the expected change is SEO now that `/robots.txt` is valid.
+- The deployed site: nothing is pushed until the user approves.
+
 ## Same-origin display fonts (20 October 2026)
 
 Branch `feature/fraudlens-v3`, local machine only. Nothing was pushed or deployed. Tanker and Erode are now served from the console's own origin. `frontend/scripts/fetch-fonts.mjs` reads the faces from `app/fonts.css` and downloads them from Fontshare into `frontend/public/fonts/` (npm `predev` and `prebuild` hooks, so both `scripts/dev.py` and the Docker build run it). That folder is in `.gitignore` and `.dockerignore`: the ITF Free Font License allows self-hosting but not redistributing the files from the repository. Every `@font-face` lists `/fonts/<file>.woff2` first and the Fontshare CDN copy second, so a failed fetch falls back to the CDN. The Fontshare `preconnect` was removed, and `proxy.ts` now skips `/fonts/`; before this change a logged-out request for a font would have been redirected to `/login`.
