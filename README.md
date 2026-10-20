@@ -2,7 +2,7 @@
 
 A real-time, multi-analyst fraud operations centre for an Indian bank — UPI, net banking, cards and ATMs — with an enforcing bank simulator, a 1930 "golden hour" fund trace and an AI agent that triages but never decides.
 
-![FraudLens case page: agent brief, owner, approvals](docs/screenshots/v3/case-agent-brief.png)
+![FraudLens landing: the lens brings four payment channels into focus](docs/screenshots/v4/landing-hero-1280.png)
 
 ## Why it matters
 
@@ -54,6 +54,26 @@ flowchart LR
   L -->|live events| C["Live console<br/>multi-analyst, roles + approvals"]
 ```
 
+## Structure
+
+```text
+fraudlens/
+  api/             FastAPI app: auth, the /ops router, public attack routes, client IP and limits
+  operations/      the operations service, split by concern (ingest, decisions, approvals,
+                   complaints, delivery, snapshot, simulation), detector + rules, agent, trace, store
+  bank_simulator/  the separate simulated bank: ledger and routes
+  core/            analyst accounts and roles, scoring agents, shared rate limiter
+  data/            synthetic training data for the reference ML model
+  evaluation/      the controlled detector evaluation
+frontend/          Next.js console, landing and /attack (see frontend/README.md)
+tests/             backend unittest suite
+scripts/           dev.py (local launcher), serve.py (container entry point), checks, HF upload
+deploy/            deployment notes; Render is live, the Hugging Face Space is optional
+docs/              architecture, API, guidance, evaluation, verification record (see docs/README.md)
+Dockerfile         the single-container image the live demo runs
+DESIGN.md          design system · PRODUCT.md product intent · AGENTS.md notes for coding agents
+```
+
 ## Evaluation
 
 Controlled synthetic corpus of 376 terminal payment attempts (eight seeds, four channels), from [docs/verification/operations-evaluation.json](docs/verification/operations-evaluation.json):
@@ -87,10 +107,12 @@ The corpus deliberately includes authorised-but-unusual payments (false positive
 ## Verify
 
 ```bash
-.venv/bin/python -m unittest discover -s tests
-npm --prefix frontend run test
+.venv/bin/python -m unittest discover -s tests     # 238 tests
+npm --prefix frontend run test                      # 64 tests
 npm --prefix frontend run lint
 (cd frontend && npx tsc --noEmit)
+.venv/bin/python -m pip install -r requirements-dev.txt && .venv/bin/ruff check fraudlens scripts tests
+npm --prefix frontend run format:check
 .venv/bin/python -m fraudlens.evaluation.operations
 ```
 
@@ -98,4 +120,4 @@ Results and what was checked by hand are in [docs/VERIFICATION.md](docs/VERIFICA
 
 ## Credits
 
-Built by [@aahil62](https://github.com/aahil62). FraudLens started as a hackathon project; this version — roles and approvals, the bank ladder, the 1930 fund trace, the attack console, the agent and the console redesign — is a solo rebuild.
+Built by [@aahil62](https://github.com/aahil62). FraudLens started as a hackathon project; this version — roles and approvals, the bank ladder, the 1930 fund trace, the attack console, the agent and the console redesign — is a solo rebuild. The original hackathon pipeline is preserved at the `legacy-hackathon` git tag.

@@ -1,16 +1,20 @@
 """Public demo orchestration with a deliberately small, redacted read model."""
+
 import time
-from collections import deque
+from dataclasses import dataclass
+from typing import Annotated, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
-from typing import Annotated, Literal
 
+from fraudlens.core.rate_limit import SlidingWindowLimiter
 from fraudlens.models.schemas import AnalystProfile
+
+from .decisions import PROTECTIVE_OPERATIONS
+from .errors import NotFoundError, OperationError
 from .models import ComplaintInput
-from .service import NotFoundError
+from .snapshot import AUTOMATED_ACTORS
 from .store import dump, now
-from .team import OperationError
 
 
 class AttackInput(BaseModel):
@@ -19,24 +23,110 @@ class AttackInput(BaseModel):
     victim_amount_minor: Annotated[StrictInt, Field(ge=100000, le=20000000)] = 4800000
 
 
+def _masked(identifier):
+    return f"…{identifier[-4:]}"
+
+
+def _step(label, done, at=None, blocked=False):
+    return {"label": label, "status": "blocked" if blocked else "done" if done else "pending", "at": at}
+
+
+def _funds_moved(typology, transactions):
+    """Money that left: in mule layering only the ATM withdrawal; otherwise every posted payment."""
+    return sum(
+        t["amount_minor"]
+        for t in transactions
+        if t["payment_status"] == "posted" and (typology != "mule_layering" or t["channel"] == "atm")
+    )
+
+
+def _redacted_trace(primary):
+    return [
+        {
+            "hop": h["hop"],
+            "account_ref": _masked(h["account_id"]),
+            "traced_minor": h["traced_minor"],
+            "lien_minor": h["lien_minor"],
+            "outcome": h["outcome"],
+        }
+        for h in (primary.get("trace", []) if primary else [])
+    ]
+
+
+@dataclass
+class _Progress:
+    """What the bank and analysts have done about an attack so far."""
+
+    protection: list
+    confirmed: list
+    picked: dict | None
+    verdict: dict | None
+
+    @classmethod
+    def of(cls, cases, primary):
+        actions = [a for case in cases for a in case["actions"]]
+        protection = [a for a in actions if a["operation"] in PROTECTIVE_OPERATIONS]
+        timeline = primary["timeline"] if primary else []
+        human = [e for e in timeline if e["actor"] not in AUTOMATED_ACTORS]
+        picked = next((e for e in human if e["event_type"] in {"case_claimed", "analyst_decision"}), None)
+        verdict = next(
+            (
+                e
+                for e in reversed(human)
+                if e["event_type"] == "analyst_decision"
+                and e["metadata"].get("action") in {"confirm_fraud", "false_positive"}
+            ),
+            None,
+        )
+        return cls(protection, [a for a in protection if a["status"] == "confirmed"], picked, verdict)
+
+    def steps(self, first, flagged):
+        """flagged: the cases detection opened (not a later complaint case)."""
+        return [
+            _step(
+                "Scam payment sent",
+                first["payment_status"] == "posted",
+                first["timestamp"],
+                first["payment_status"] == "declined",
+            ),
+            _step("FraudLens flagged it", bool(flagged), flagged[0]["created_at"] if flagged else None),
+            _step(
+                "Bank protection requested",
+                bool(self.protection),
+                min((a["created_at"] for a in self.protection), default=None),
+            ),
+            _step(
+                "Bank confirmed protection",
+                bool(self.confirmed),
+                min((a["updated_at"] for a in self.confirmed), default=None),
+            ),
+            _step(
+                "Analyst picked it up", bool(self.picked), self.picked["occurred_at"] if self.picked else None
+            ),
+            _step(
+                "Verdict recorded", bool(self.verdict), self.verdict["occurred_at"] if self.verdict else None
+            ),
+        ]
+
+    def outcome(self, primary, cases, transactions, moved):
+        if self.verdict and self.confirmed and primary["verdict"] == "fraud":
+            return "partially_caught" if moved else "caught"
+        if self.verdict and primary["verdict"] == "false_positive":
+            return "missed"
+        if not cases and all(t["payment_status"] != "pending" for t in transactions):
+            return "missed"
+        return "in_progress"
+
+
 class PublicAttacks:
     def __init__(self, service, *, clock=None):
         self.service = service
-        self.clock = clock or time.monotonic
-        self.limits = {}
+        # Ten simulated attacks per visitor every five minutes.
+        self.limiter = SlidingWindowLimiter(10, 300, clock or time.monotonic)
 
     def limit(self, client_ip):
-        with self.service._lock:
-            cutoff = self.clock() - 300
-            for ip, attempts in list(self.limits.items()):
-                while attempts and attempts[0] <= cutoff:
-                    attempts.popleft()
-                if not attempts:
-                    del self.limits[ip]
-            attempts = self.limits.setdefault(client_ip, deque())
-            if len(attempts) >= 10:
-                raise OperationError("Too many simulated attacks. Try again in a few minutes.", status_code=429)
-            attempts.append(self.clock())
+        if not self.limiter.allow(client_ip):
+            raise OperationError("Too many simulated attacks. Try again in a few minutes.", status_code=429)
 
     def _get(self, db, attack_id):
         attack = self.service.store.get(db, "attacks", attack_id)
@@ -45,60 +135,57 @@ class PublicAttacks:
         return attack
 
     def launch(self, request):
-        result = self.service.run_scenario("upi", request.typology, "attack-simulator",
-                                           victim_amount_minor=request.victim_amount_minor)
+        result = self.service.run_scenario(
+            "upi", request.typology, "attack-simulator", victim_amount_minor=request.victim_amount_minor
+        )
         attack_id = f"ATK-{uuid4().hex[:12]}"
-        attack = dict(attack_id=attack_id, typology=request.typology, created_at=now(),
-                      txn_ids=[t["txn_id"] for t in result["transactions"]], case_ids=result["case_ids"], report_input=None, complaint_case_id=None)
+        attack = dict(
+            attack_id=attack_id,
+            typology=request.typology,
+            created_at=now(),
+            txn_ids=[t["txn_id"] for t in result["transactions"]],
+            case_ids=result["case_ids"],
+            report_input=None,
+            complaint_case_id=None,
+        )
         with self.service.store.connect(write=True) as db:
             db.execute("INSERT INTO attacks VALUES(?,?)", (attack_id, dump(attack)))
-            self.service.store.event(db, "public_attack_launched", "A fictional public attack reached the operational ledger.", actor="attack-simulator",
-                                     metadata={"attack_id": attack_id, "typology": request.typology})
+            self.service.store.event(
+                db,
+                "public_attack_launched",
+                "A fictional public attack reached the operational ledger.",
+                actor="attack-simulator",
+                metadata={"attack_id": attack_id, "typology": request.typology},
+            )
         return {"attack_id": attack_id, "status_url": f"/public/attacks/{attack_id}"}
 
     def status(self, attack_id):
+        """The visitor's view of an attack: six steps, an outcome, and a redacted fund trail."""
         with self.service.store.connect() as db:
             attack = self._get(db, attack_id)
-            transactions = [self.service.store.get(db, "transactions", identifier) for identifier in attack["txn_ids"]]
-            cases = [self.service._case(db, identifier) for identifier in attack["case_ids"]]
+            transactions = [
+                self.service.store.get(db, "transactions", txn_id) for txn_id in attack["txn_ids"]
+            ]
+            flagged = [self.service._case(db, case_id) for case_id in attack["case_ids"]]
+            cases = list(flagged)
             primary_id = attack["complaint_case_id"] or next(iter(reversed(attack["case_ids"])), None)
             primary = self.service._case(db, primary_id) if primary_id else None
             if attack["complaint_case_id"]:
                 cases.append(primary)
-            actions = [a for case in cases for a in case["actions"]]
-            protection = [a for a in actions if a["operation"] in {"restrict", "lien", "close"}]
-            confirmed = [a for a in protection if a["status"] == "confirmed"]
-            human = [e for e in (primary["timeline"] if primary else []) if e["actor"] not in
-                     {"system", "agent", "simulation", "attack-simulator"}]
-            picked = next((e for e in human if e["event_type"] in {"case_claimed", "analyst_decision"}), None)
-            verdict = next((e for e in reversed(human) if e["event_type"] == "analyst_decision" and
-                            e["metadata"].get("action") in {"confirm_fraud", "false_positive"}), None)
-            def step(label, done, at=None, blocked=False):
-                return {"label": label, "status": "blocked" if blocked else "done" if done else "pending", "at": at}
-            first = transactions[0]
-            steps = [step("Scam payment sent", first["payment_status"] == "posted", first["timestamp"], first["payment_status"] == "declined"),
-                     step("FraudLens flagged it", bool(attack["case_ids"]), cases[0]["created_at"] if attack["case_ids"] else None),
-                     step("Bank protection requested", bool(protection), min((a["created_at"] for a in protection), default=None)),
-                     step("Bank confirmed protection", bool(confirmed), min((a["updated_at"] for a in confirmed), default=None)),
-                     step("Analyst picked it up", bool(picked), picked["occurred_at"] if picked else None),
-                     step("Verdict recorded", bool(verdict), verdict["occurred_at"] if verdict else None)]
-            moved = sum(t["amount_minor"] for t in transactions if t["payment_status"] == "posted" and
-                        (attack["typology"] != "mule_layering" or t["channel"] == "atm"))
-            outcome = "in_progress"
-            if verdict and confirmed and primary["verdict"] == "fraud":
-                outcome = "partially_caught" if moved else "caught"
-            elif verdict and primary["verdict"] == "false_positive":
-                outcome = "missed"
-            elif not cases and all(t["payment_status"] != "pending" for t in transactions):
-                outcome = "missed"
-            trace = primary.get("trace", []) if primary else []
-            return dict(attack_id=attack_id, typology=attack["typology"], steps=steps, outcome=outcome,
-                        case_id_masked=f"…{primary_id[-4:]}" if primary_id else None,
-                        complaint_id=attack["report_input"]["complaint_id"] if attack["report_input"] else None,
-                        traced_total_minor=primary.get("traced_total_minor", 0) if primary else 0,
-                        held_total_minor=primary.get("held_total_minor", 0) if primary else 0, funds_moved_total_minor=moved,
-                        trace=[{"hop": h["hop"], "account_ref": f"…{h['account_id'][-4:]}", "traced_minor": h["traced_minor"],
-                                "lien_minor": h["lien_minor"], "outcome": h["outcome"]} for h in trace])
+            progress = _Progress.of(cases, primary)
+            moved = _funds_moved(attack["typology"], transactions)
+            return dict(
+                attack_id=attack_id,
+                typology=attack["typology"],
+                steps=progress.steps(transactions[0], flagged),
+                outcome=progress.outcome(primary, cases, transactions, moved),
+                case_id_masked=_masked(primary_id) if primary_id else None,
+                complaint_id=attack["report_input"]["complaint_id"] if attack["report_input"] else None,
+                traced_total_minor=primary.get("traced_total_minor", 0) if primary else 0,
+                held_total_minor=primary.get("held_total_minor", 0) if primary else 0,
+                funds_moved_total_minor=moved,
+                trace=_redacted_trace(primary),
+            )
 
     def report_1930(self, attack_id):
         with self.service._lock:
@@ -108,19 +195,40 @@ class PublicAttacks:
                     raise OperationError("1930 fund tracing is available for the mule-layering simulation")
                 if attack["report_input"] is None:
                     root = self.service.store.get(db, "transactions", attack["txn_ids"][0])
-                    sequence = max(time.time_ns() // 1000 % 100000000000000, self.service.store.setting(db, "complaint_sequence", 0) + 1)
+                    sequence = max(
+                        time.time_ns() // 1000 % 100000000000000,
+                        self.service.store.setting(db, "complaint_sequence", 0) + 1,
+                    )
                     self.service.store.set_setting(db, "complaint_sequence", sequence)
-                    attack["report_input"] = dict(complaint_id=f"NCRP-{sequence:014d}", source="1930_helpline",
-                        victim_account_id=root["account_id"], reported_txn_id=root["txn_id"], reported_at=now())
+                    attack["report_input"] = dict(
+                        complaint_id=f"NCRP-{sequence:014d}",
+                        source="1930_helpline",
+                        victim_account_id=root["account_id"],
+                        reported_txn_id=root["txn_id"],
+                        reported_at=now(),
+                    )
                     self.service.store.update(db, "attacks", attack_id, attack)
-                    self.service.store.event(db, "public_complaint_requested", "A simulated 1930 report was requested.",
-                                             actor="attack-simulator", metadata={"attack_id": attack_id})
-            actor = AnalystProfile(username="attack-simulator", display_name="Simulated 1930 report", role="l1_analyst")
+                    self.service.store.event(
+                        db,
+                        "public_complaint_requested",
+                        "A simulated 1930 report was requested.",
+                        actor="attack-simulator",
+                        metadata={"attack_id": attack_id},
+                    )
+            actor = AnalystProfile(
+                username="attack-simulator", display_name="Simulated 1930 report", role="l1_analyst"
+            )
             case = self.service.file_complaint(ComplaintInput(**attack["report_input"]), actor)
             if attack["complaint_case_id"] != case["case_id"]:
                 with self.service.store.connect(write=True) as db:
                     attack["complaint_case_id"] = case["case_id"]
                     self.service.store.update(db, "attacks", attack_id, attack)
-                    self.service.store.event(db, "public_complaint_linked", "Simulated report linked to its investigation.",
-                                             case_id=case["case_id"], actor="attack-simulator", metadata={"attack_id": attack_id})
+                    self.service.store.event(
+                        db,
+                        "public_complaint_linked",
+                        "Simulated report linked to its investigation.",
+                        case_id=case["case_id"],
+                        actor="attack-simulator",
+                        metadata={"attack_id": attack_id},
+                    )
             return self.status(attack_id)

@@ -3,6 +3,7 @@
 JSON payloads preserve the API contract; SQL enforces unique identities and
 foreign keys. The showcase supports a single operational API worker.
 """
+
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -30,7 +31,8 @@ class Store:
                 CREATE TABLE IF NOT EXISTS transactions (
                     id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS cases (
-                    id TEXT PRIMARY KEY, txn_id TEXT UNIQUE NOT NULL REFERENCES transactions(id), data TEXT NOT NULL);
+                    id TEXT PRIMARY KEY, txn_id TEXT UNIQUE NOT NULL REFERENCES transactions(id),
+                    data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS actions (
                     id TEXT PRIMARY KEY, case_id TEXT NOT NULL REFERENCES cases(id), data TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS jobs (
@@ -76,23 +78,44 @@ class Store:
         assert table in self.TABLES
         return [json.loads(r[0]) for r in db.execute(f"SELECT data FROM {table} ORDER BY rowid DESC")]
 
+    def case_actions(self, db, case_id):
+        """One case's bank actions, newest first (the same order as records())."""
+        rows = db.execute("SELECT data FROM actions WHERE case_id=? ORDER BY rowid DESC", (case_id,))
+        return [json.loads(r[0]) for r in rows]
+
+    def cursor(self, db):
+        """Id of the latest audit event; it moves whenever anything is recorded."""
+        return db.execute("SELECT COALESCE(MAX(id),0) FROM events").fetchone()[0]
+
     def update(self, db, table, identifier, value):
         assert table in self.TABLES
         db.execute(f"UPDATE {table} SET data=? WHERE id=?", (dump(value), identifier))
 
     def event(self, db, event_type, message, *, case_id=None, txn_id=None, actor="system", metadata=None):
-        value = dict(event_type=event_type, message=message, case_id=case_id, txn_id=txn_id,
-                     actor=actor, occurred_at=now(), metadata=metadata or {})
+        value = dict(
+            event_type=event_type,
+            message=message,
+            case_id=case_id,
+            txn_id=txn_id,
+            actor=actor,
+            occurred_at=now(),
+            metadata=metadata or {},
+        )
         cursor = db.execute("INSERT INTO events(data) VALUES(?)", (dump(value),)).lastrowid
         return {"id": cursor, **value}
 
     def events(self, db, limit=200):
-        return [{"id": row[0], **json.loads(row[1])}
-                for row in db.execute("SELECT id,data FROM events ORDER BY id DESC LIMIT ?", (limit,))]
+        return [
+            {"id": row[0], **json.loads(row[1])}
+            for row in db.execute("SELECT id,data FROM events ORDER BY id DESC LIMIT ?", (limit,))
+        ]
 
     def setting(self, db, key, default=None):
         row = db.execute("SELECT data FROM settings WHERE key=?", (key,)).fetchone()
         return json.loads(row[0]) if row else default
 
     def set_setting(self, db, key, value):
-        db.execute("INSERT INTO settings VALUES(?,?) ON CONFLICT(key) DO UPDATE SET data=excluded.data", (key, dump(value)))
+        db.execute(
+            "INSERT INTO settings VALUES(?,?) ON CONFLICT(key) DO UPDATE SET data=excluded.data",
+            (key, dump(value)),
+        )

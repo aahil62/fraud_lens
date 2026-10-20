@@ -13,7 +13,10 @@ export type AttackStatus = {
   held_total_minor: number;
 };
 export class AttackError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
     super(message);
     this.name = "AttackError";
   }
@@ -22,7 +25,8 @@ async function call<T>(path: string, method: "GET" | "POST" = "GET", body?: unkn
   let response: Response;
   try {
     response = await fetch(`${API_BASE}/public${path}`, {
-      method, cache: "no-store",
+      method,
+      cache: "no-store",
       headers: body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -31,11 +35,17 @@ async function call<T>(path: string, method: "GET" | "POST" = "GET", body?: unkn
   }
   const data = await response.json().catch(() => null);
   if (!response.ok)
-    throw new AttackError(response.status, typeof data?.detail === "string" ? data.detail : `Request failed (${response.status}).`);
+    throw new AttackError(
+      response.status,
+      typeof data?.detail === "string" ? data.detail : `Request failed (${response.status}).`,
+    );
   return data as T;
 }
 export const launchAttack = (typology: Typology, victimAmountMinor: number) =>
-  call<{ attack_id: string; status_url: string }>("/attacks", "POST", { typology, victim_amount_minor: victimAmountMinor });
+  call<{ attack_id: string; status_url: string }>("/attacks", "POST", {
+    typology,
+    victim_amount_minor: victimAmountMinor,
+  });
 export const getAttack = (attackId: string) => call<AttackStatus>(`/attacks/${encodeURIComponent(attackId)}`);
 export const reportTo1930 = (attackId: string) =>
   call<AttackStatus>(`/attacks/${encodeURIComponent(attackId)}/report-1930`, "POST");

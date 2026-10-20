@@ -6,16 +6,25 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001";
 const TOKEN_COOKIE = "fraudlens_token";
 const ANALYST_STORAGE_KEY = "fraudlens_analyst";
 
-/** Stored as a plain (non-httpOnly) cookie so middleware.ts can read it at
+/** Stored as a plain (non-httpOnly) cookie so proxy.ts can read it at
  * the edge for route protection, and as localStorage so client components
  * can attach it to fetch() calls without parsing document.cookie every
  * time. A real production system would set this httpOnly from the server;
  * for this demo the token itself still only verifies against the backend's
  * real JWT secret — nothing here is a fake auth check. */
 export function setSession(token: string, analyst: AnalystProfile) {
-  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+  const secure = location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${60 * 60 * 24}; samesite=lax${secure}`;
   localStorage.setItem(TOKEN_COOKIE, token);
   localStorage.setItem(ANALYST_STORAGE_KEY, JSON.stringify(analyst));
+}
+
+/** The page to open after sign-in: `next` only when it stays on this origin. The URL parser
+ * drops tabs and newlines, so a string check alone lets `/\t/evil.com` through as `//evil.com`. */
+export function safeNextPath(requested: string | null, origin: string, fallback = "/dashboard") {
+  if (!requested?.startsWith("/")) return fallback;
+  const url = new URL(requested, origin);
+  return url.origin === origin ? `${url.pathname}${url.search}${url.hash}` : fallback;
 }
 
 export function clearSession() {
@@ -92,7 +101,7 @@ export async function login(username: string, password: string): Promise<TokenRe
 export async function signup(
   username: string,
   displayName: string,
-  password: string
+  password: string,
 ): Promise<TokenResponse> {
   const result = await authFetch("/auth/signup", {
     username,
@@ -106,12 +115,13 @@ export async function signup(
 export async function logout(): Promise<void> {
   const token = getToken();
   try {
-    if (token) await fetch(`${API_BASE}/auth/logout`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(3000),
-    });
+    if (token)
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(3000),
+      });
   } catch {
     // Local sign-out still works while the API is unavailable.
   } finally {

@@ -64,10 +64,7 @@ class VelocityAgentTests(unittest.TestCase):
         self.assertIn("last hour", joined)
 
     def test_high_frequency_24h_window_scores(self) -> None:
-        history = [
-            _txn(f"TXN-H{i}", "ACC-3", 20.0, f"2026-09-03T{i:02d}:00:00+00:00")
-            for i in range(0, 10)
-        ]
+        history = [_txn(f"TXN-H{i}", "ACC-3", 20.0, f"2026-09-03T{i:02d}:00:00+00:00") for i in range(0, 10)]
         self.agent.set_transactions(history)
 
         txn = _txn("TXN-004", "ACC-3", 20.0, "2026-09-03T23:00:00+00:00")

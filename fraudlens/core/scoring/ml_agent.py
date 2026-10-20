@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
-from typing import Any
 
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.utils.class_weight import compute_sample_weight
@@ -28,15 +27,30 @@ from fraudlens.models.schemas import AgentScore, Transaction
 # Mirrors fraudlens.core.scoring.rule_agent's risky-category/location sets.
 # Duplicated rather than imported so this agent's feature set stays
 # self-contained and doesn't couple to rule_agent's internals.
-_RISKY_MERCHANT_CATEGORIES = frozenset({
-    "crypto_exchange", "gambling", "gift_cards", "jewelry",
-    "luxury_goods", "money_transfer", "digital_goods",
-})
+_RISKY_MERCHANT_CATEGORIES = frozenset(
+    {
+        "crypto_exchange",
+        "gambling",
+        "gift_cards",
+        "jewelry",
+        "luxury_goods",
+        "money_transfer",
+        "digital_goods",
+    }
+)
 
-_RISKY_LOCATIONS = frozenset({
-    "unknown", "nigeria", "russia", "north_korea", "iran",
-    "offshore", "anonymous_proxy", "tor_exit_node",
-})
+_RISKY_LOCATIONS = frozenset(
+    {
+        "unknown",
+        "nigeria",
+        "russia",
+        "north_korea",
+        "iran",
+        "offshore",
+        "anonymous_proxy",
+        "tor_exit_node",
+    }
+)
 
 _NIGHT_HOURS = frozenset(range(0, 4))
 
@@ -148,9 +162,7 @@ class MLAgent:
     def _explain(self, proba: float) -> str:
         if proba < 0.3:
             return f"Model predicts low fraud probability ({proba:.0%})"
-        top_features = sorted(
-            self._feature_importances.items(), key=lambda kv: kv[1], reverse=True
-        )[:3]
+        top_features = sorted(self._feature_importances.items(), key=lambda kv: kv[1], reverse=True)[:3]
         top_names = ", ".join(name for name, _ in top_features)
         return f"Model predicts {proba:.0%} fraud probability (top signals: {top_names})"
 

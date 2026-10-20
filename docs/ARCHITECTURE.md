@@ -62,3 +62,23 @@ holds. Closing a card-fraud case always targets its account; card restrictions r
 The operations outbox carries lien amounts and reconciles uncertain acknowledgements by action id.
 A false-positive reversal releases both freezes and liens and resolves only after all releases
 are confirmed. Once final closure is requested, contradictory verdicts are blocked pending reconciliation.
+
+## Code map
+
+| Module | Responsibility |
+| --- | --- |
+| `fraudlens/api/` | FastAPI app, auth routes, the authenticated `/ops` router, public attack routes, client-IP and rate limits. |
+| `fraudlens/operations/service.py` | `OperationsService`, assembled from the modules below; adds agent triage and presence. |
+| `operations/ingest.py` | Payment attempts and the cases detection opens. |
+| `operations/decisions.py` | Analyst decisions, the protection-target policy and the bank actions they queue. |
+| `operations/approvals.py` | Claim, assign and the L1 → L2 → Supervisor approval flow. |
+| `operations/complaints.py`, `trace.py` | 1930 complaints, FIFO fund tracing and golden-hour liens. |
+| `operations/delivery.py` | The job worker: bank delivery, retries and reconciliation. |
+| `operations/snapshot.py` | Case views, the console snapshot and paged listings. |
+| `operations/detector.py`, `rules.py` | Model signals plus one function per channel-control rule. |
+| `operations/agent.py` | Priority, the case brief and auto-assignment; it recommends, never decides. |
+| `operations/attacks.py` | The public attack console and its redacted read model. |
+| `operations/store.py` | The SQLite document store with the transactional outbox. |
+| `fraudlens/bank_simulator/` | The separate bank: `ledger.py` (accounts, liens, restrictions), `app.py` (routes). |
+| `fraudlens/core/` | Analyst accounts and roles (`auth/`), the scoring agents (`scoring/`), the shared rate limiter. |
+| `fraudlens/evaluation/` | The synthetic evaluation (`fixtures.py`, `operations.py`). |

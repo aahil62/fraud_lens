@@ -1,0 +1,195 @@
+/* FraudLens design tokens: the only file allowed to hold raw colour values
+   (tokens.test.ts enforces this). Three layers:
+   1. primitives: raw values, named by what they are;
+   2. semantic: named by what they mean (ink, surface, risk, held);
+   3. component: per-component choices, built from semantic tokens.
+   Palette: warm graphite chrome, stone work surfaces, one brass accent.
+   Status colours carry meaning only. Pending is a dashed outline, not a hue,
+   so a request never looks like its confirmed effect. */
+
+:root {
+  /* ── 1. Primitives ─────────────────────────────────────────────── */
+  --graphite-975: #0f0f0e;
+  --graphite-950: #151513;
+  --graphite-900: #201f1c;
+  --graphite-850: #2a2925;
+  --graphite-800: #34332e;
+  --graphite-700: #3c3a35;
+  --graphite-600: #57554e;
+  --graphite-500: #77746b;
+  --graphite-400: #a9a69c;
+  --graphite-300: #c4c1b7;
+  --graphite-200: #d8d6ce;
+  --graphite-150: #e2e0d9;
+  --graphite-100: #e9e8e3;
+  --graphite-50: #f2f1ed;
+  --graphite-25: #f7f6f3;
+  --paper: #fcfbf9;
+  --ink-900: #1d1c19;
+  --ink-600: #5c5a53;
+  --bone: #f1efe9;
+
+  --brass-100: #f1e7d2;
+  --brass-200: #e6d3a8;
+  --brass-400: #d2a756;
+  --brass-500: #c39a4a;
+  --brass-700: #7a5717;
+  --brass-800: #5c4211;
+  --brass-ink: #1a1712;
+
+  --oxide-100: #f6e3df;
+  --oxide-300: #e8806f;
+  --oxide-700: #a3362e;
+  --oxide-800: #862a23;
+  --steel-100: #e3e8e8;
+  --steel-300: #a6b6ba;
+  --steel-700: #4d5d62;
+  --leaf-100: #e1eee5;
+  --leaf-300: #74b98a;
+  --leaf-700: #2c6a47;
+  --ochre-100: #f3ebdc;
+  --ochre-300: #d9a548;
+  --ochre-700: #835812;
+
+  --white: #ffffff;
+  --shade-10: rgb(21 21 19 / 0.1);
+  --shade-18: rgb(21 21 19 / 0.18);
+  --shade-40: rgb(15 15 14 / 0.4);
+  --shade-60: rgb(15 15 14 / 0.6);
+  --light-8: rgb(255 255 255 / 0.08);
+  --light-14: rgb(255 255 255 / 0.14);
+  --brass-glow: rgb(195 154 74 / 0.16);
+
+  /* Type families. Tanker and Erode load from the Fontshare API (licence
+     forbids redistributing the files); Mona Sans and Courier Prime are
+     bundled OFL packages. */
+  --family-poster: "Tanker", "Haettenschweiler", "Impact", "Arial Narrow", sans-serif;
+  --family-serif: "Erode", "Iowan Old Style", Georgia, serif;
+  --family-sans: "Mona Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --family-mono: "Courier Prime", "Courier New", ui-monospace, monospace;
+
+  /* Type scale (12 px floor for running text). */
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-16: 16px;
+  --text-18: 18px;
+  --text-22: 22px;
+  --text-28: 28px;
+  --text-36: 36px;
+  --text-48: 48px;
+  --text-64: 64px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* 4 px spacing scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Three radii, by role. */
+  --radius-chip: 4px;
+  --radius-control: 8px;
+  --radius-surface: 14px;
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+
+  /* ── 2. Semantic ───────────────────────────────────────────────── */
+  --canvas: var(--graphite-100);
+  --surface: var(--graphite-25);
+  --surface-raised: var(--paper);
+  --surface-sunken: var(--graphite-50);
+  --line: var(--graphite-200);
+  --line-strong: var(--graphite-300);
+  --ink: var(--ink-900);
+  --muted: var(--ink-600);
+  --accent: var(--brass-500);
+  --accent-hover: var(--brass-400);
+  --accent-ink: var(--brass-ink);
+  --accent-text: var(--brass-700);
+  --accent-text-hover: var(--brass-800);
+  --accent-soft: var(--brass-100);
+  --focus: var(--brass-700);
+
+  --dark: var(--graphite-950);
+  --dark-deep: var(--graphite-975);
+  --dark-raised: var(--graphite-900);
+  --dark-raised-2: var(--graphite-850);
+  --dark-line: var(--graphite-700);
+  --on-dark: var(--bone);
+  --on-dark-muted: var(--graphite-400);
+  --accent-on-dark: var(--brass-400);
+  --focus-on-dark: var(--brass-400);
+
+  --risk: var(--oxide-700);
+  --risk-strong: var(--oxide-800);
+  --risk-soft: var(--oxide-100);
+  --risk-on-dark: var(--oxide-300);
+  --frozen: var(--steel-700);
+  --frozen-soft: var(--steel-100);
+  --held: var(--leaf-700);
+  --held-soft: var(--leaf-100);
+  --held-on-dark: var(--leaf-300);
+  --closed: var(--ink-900);
+  --caution: var(--ochre-700);
+  --caution-soft: var(--ochre-100);
+  --caution-on-dark: var(--ochre-300);
+  --pending-line: var(--ink-600);
+  --frozen-on-dark: var(--steel-300);
+
+  --shadow-raised: 0 1px 2px var(--shade-10), 0 12px 28px -18px var(--shade-18);
+  --shadow-overlay: 0 24px 60px -24px var(--shade-40);
+  --scrim: var(--shade-60);
+
+  --font-poster: var(--family-poster);
+  --font-display: var(--family-serif);
+  --font-sans: var(--family-sans);
+  --font-mono: var(--family-mono);
+
+  /* ── 3. Component ──────────────────────────────────────────────── */
+  --button-bg: var(--surface-raised);
+  --button-border: var(--line-strong);
+  --button-hover-bg: var(--surface-sunken);
+  --button-primary-bg: var(--accent);
+  --button-primary-hover: var(--accent-hover);
+  --button-primary-ink: var(--accent-ink);
+  --button-danger-ink: var(--risk);
+  --button-danger-bg: var(--risk-soft);
+  --input-bg: var(--surface-raised);
+  --input-border: var(--line-strong);
+  --chip-height: 22px;
+  --rail-bg: var(--dark);
+  --rail-item-hover: var(--dark-raised);
+  --rail-item-current: var(--dark-raised-2);
+  --rail-width: 232px;
+  --table-head-bg: var(--surface-sunken);
+  --row-hover: var(--surface-sunken);
+  --meter-track: var(--graphite-150);
+  --meter-fill: var(--ink);
+  --chart-bar: var(--graphite-700);
+  --chart-bar-current: var(--accent);
+  --selection-bg: var(--brass-200);
+
+  /* Lens scene materials (read at runtime by LensScene). */
+  --lens-glass: var(--graphite-800);
+  --lens-rim: var(--brass-400);
+  --lens-metal: var(--graphite-600);
+  --lens-path: var(--graphite-500);
+  --lens-signal: var(--brass-400);
+  --lens-risk: var(--oxide-300);
+  --lens-bg: var(--graphite-950);
+}

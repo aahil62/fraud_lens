@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FraudLens palette concepts</title>
+<style>
+/* Static palette mockups for the Stage B decision. Not shipped with the app.
+   Shared neutrals and semantic colours; only --accent* changes per concept. */
+@font-face { font-family: "Mona Sans"; src: url("../../frontend/node_modules/@fontsource-variable/mona-sans/files/mona-sans-latin-wght-normal.woff2") format("woff2-variations"); font-weight: 200 900; }
+:root {
+  --g-950: #151513; --g-900: #201f1c; --g-850: #2a2925; --g-700: #3c3a35;
+  --on-dark: #f1efe9; --on-dark-muted: #a9a69c;
+  --stone: #e9e8e3; --surface: #f7f6f3; --line: #d8d6ce;
+  --ink: #1d1c19; --muted: #5c5a53;
+  --risk: #a3362e; --risk-on-dark: #e8806f; --frozen: #4d5d62; --held: #2c6a47; --held-on-dark: #74b98a; --closed: #4a4842;
+  --sans: "Mona Sans", ui-sans-serif, system-ui, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.brass   { --accent: #c39a4a; --accent-ink: #1a1712; --accent-text: #7a5717; --accent-on-dark: #d2a756; }
+.emerald { --accent: #1d6650; --accent-ink: #ffffff; --accent-text: #1d6650; --accent-on-dark: #63b896; --held: #556d1b; }
+.verm    { --accent: #b8422a; --accent-ink: #ffffff; --accent-text: #a83c25; --accent-on-dark: #e5795f; }
+* { box-sizing: border-box; margin: 0; }
+body { background: #0f0f0e; color: var(--on-dark); font: 400 14px/1.55 var(--sans); padding: 40px 16px 64px; }
+.page { max-width: 1600px; margin: 0 auto; }
+.page > header { max-width: 760px; margin-bottom: 40px; }
+.page > header h1 { font-size: 28px; font-weight: 700; font-stretch: 112%; letter-spacing: -0.02em; }
+.page > header p { color: var(--on-dark-muted); margin-top: 8px; }
+.concept { border-top: 1px solid var(--g-700); padding: 32px 0 48px; }
+.concept-head { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 32px; align-items: end; margin-bottom: 24px; }
+.concept-head h2 { font-size: 22px; font-weight: 700; font-stretch: 112%; letter-spacing: -0.01em; }
+.concept-head h2 span { color: var(--accent-on-dark); }
+.concept-head p { color: var(--on-dark-muted); max-width: 64ch; margin-top: 4px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.sw { display: grid; gap: 4px; font: 500 11px/1.3 var(--mono); color: var(--on-dark-muted); }
+.sw i { display: block; width: 52px; height: 32px; border-radius: 6px; border: 1px solid #ffffff1a; }
+.frames { display: grid; grid-template-columns: 1.25fr 1.25fr 0.9fr; gap: 16px; }
+@media (max-width: 1180px) { .frames { grid-template-columns: minmax(0, 1fr); } .concept-head { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .console { grid-template-columns: minmax(0, 1fr); } .rail { display: none; } .hero h3 { font-size: 44px; } .lens { opacity: .55; } .two, .strip { grid-template-columns: minmax(0, 1fr); } }
+.frame { border-radius: 14px; overflow: hidden; min-width: 0; border: 1px solid #ffffff14; }
+.frame-label { font-size: 12px; color: var(--on-dark-muted); margin: 0 0 8px 2px; }
+
+/* Landing hero */
+.hero { position: relative; background: var(--g-950); color: var(--on-dark); min-height: 420px; padding: 20px 24px 24px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+.hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 85% 10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%); pointer-events: none; }
+.nav { position: relative; display: flex; align-items: center; gap: 20px; font-size: 12px; color: var(--on-dark-muted); }
+.brand { display: flex; align-items: center; gap: 8px; color: var(--on-dark); font-weight: 650; font-size: 13px; margin-right: auto; }
+.nav a { color: inherit; text-decoration: none; white-space: nowrap; }
+@media (max-width: 1500px) { .nav a:not(.attack-link) { display: none; } }
+.nav .attack-link { color: var(--on-dark); }
+.lens { position: absolute; right: -40px; top: 40px; width: 360px; height: 300px; }
+.hero-lead { position: relative; align-self: start; margin-top: 40px; max-width: 220px; color: var(--on-dark-muted); font-size: 13px; }
+.hero-lead .btn { margin-top: 16px; }
+.hero h3 { position: relative; font-size: 64px; line-height: 0.95; font-weight: 800; font-stretch: 125%; letter-spacing: -0.035em; max-width: 9ch; }
+.hero-foot { position: relative; display: flex; justify-content: space-between; margin-top: 16px; font-size: 11px; color: var(--on-dark-muted); border-top: 1px solid var(--g-700); padding-top: 10px; }
+.btn { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font: 600 12px/1 var(--sans); border: 0; }
+.btn svg { width: 14px; height: 14px; }
+
+/* Case page */
+.console { display: grid; grid-template-columns: 132px 1fr; background: var(--stone); color: var(--ink); min-height: 420px; font-size: 11px; }
+.rail { background: var(--g-950); color: var(--on-dark-muted); padding: 16px 10px; display: grid; align-content: start; gap: 2px; }
+.rail .brand { margin: 0 6px 16px; font-size: 12px; }
+.rail span { padding: 6px 8px; border-radius: 6px; }
+.rail .on { background: var(--g-850); color: var(--on-dark); box-shadow: inset 2px 0 0 var(--accent-on-dark); }
+.work { padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.crumb { color: var(--muted); }
+.case-title { font-size: 17px; font-weight: 700; font-stretch: 108%; letter-spacing: -0.015em; line-height: 1.2; }
+.case-title code { font: 500 12px var(--mono); color: var(--muted); display: block; margin-top: 2px; letter-spacing: 0; }
+.strip { display: grid; grid-template-columns: auto 1fr 1fr; gap: 1px; background: var(--line); border-radius: 10px; overflow: hidden; }
+.strip > div { background: var(--surface); padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
+.strip small { color: var(--muted); font-size: 10.5px; }
+.score { font: 700 22px/1 var(--sans); font-variant-numeric: tabular-nums; color: var(--risk); letter-spacing: -0.02em; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 4px; font-weight: 600; font-size: 10.5px; color: #fff; }
+.chip.held { background: var(--held); } .chip.frozen { background: var(--frozen); } .chip.closed { background: var(--closed); } .chip.risk { background: var(--risk); }
+.chip.pending { background: transparent; color: var(--ink); border: 1px dashed var(--muted); }
+.two { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; }
+.panel { background: var(--surface); border-radius: 10px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+/* The notched corner: the one bespoke silhouette, used on the agent brief and the selected scam. */
+.notch { clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
+.panel h4 { font-size: 12px; font-weight: 650; }
+.panel .agent { color: var(--accent-text); font-weight: 650; font-size: 10.5px; }
+.panel p { color: var(--muted); }
+.rec { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding-top: 8px; font-weight: 600; }
+.rec .btn { height: 28px; font-size: 11px; }
+.signal { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; }
+.signal b { font-weight: 600; } .signal span { font-variant-numeric: tabular-nums; }
+.bar { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink); border-radius: 2px; }
+.bar.hot i { background: var(--risk); }
+
+/* Attack page */
+.attack { background: var(--g-950); color: var(--on-dark); min-height: 420px; padding: 18px 18px 22px; display: grid; gap: 12px; align-content: start; }
+.attack .top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.attack .top em { font-style: normal; color: var(--on-dark-muted); font-size: 11px; border: 1px dashed var(--g-700); padding: 2px 8px; border-radius: 4px; }
+.attack h3 { font-size: 26px; line-height: 1.02; font-weight: 800; font-stretch: 118%; letter-spacing: -0.03em; }
+.attack p { color: var(--on-dark-muted); font-size: 12px; }
+.scam { background: var(--g-900); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; font-size: 11px; }
+.scam b { font-size: 12.5px; font-weight: 650; }
+.scam span { color: var(--on-dark-muted); }
+.scam.sel { background: var(--g-850); box-shadow: inset 3px 0 0 var(--accent-on-dark); }
+.amount { display: grid; grid-template-columns: 1fr auto; font-size: 12px; gap: 6px; }
+.amount b { font-variant-numeric: tabular-nums; }
+.track { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--g-700); }
+.track i { display: block; width: 24%; height: 100%; background: var(--accent-on-dark); border-radius: 2px; position: relative; }
+.track i::after { content: ""; position: absolute; right: -7px; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: var(--on-dark); }
+.attack .btn { height: 40px; justify-content: center; font-size: 13px; }
+.mark { width: 18px; height: 18px; }
+.tradeoff { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 24px; color: var(--on-dark-muted); font-size: 13px; }
+.tradeoff strong { color: var(--on-dark); font-weight: 600; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <h1>FraudLens palette concepts</h1>
+    <p>Same layout, type and semantic colours in all three. Only the accent changes. Status colours: risk, frozen, held, closed; pending is a dashed outline rather than a colour, so a request and its confirmed effect never look alike.</p>
+  </header>
+  <div id="concepts"></div>
+</main>
+<template id="concept">
+  <section class="concept">
+    <div class="concept-head">
+      <div><h2 data-name></h2><p data-mood></p></div>
+      <div class="swatches" data-swatches></div>
+    </div>
+    <div class="frames">
+      <div><p class="frame-label">Landing hero, 1280 px</p>
+        <div class="frame hero">
+          <nav class="nav"><span class="brand"><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>FraudLens</span><a>The golden hour</a><a>The channels</a><a>How it’s built</a><a class="attack-link">Launch a live attack</a></nav>
+          <svg class="lens" viewBox="0 0 360 300" aria-hidden="true">
+            <defs>
+              <radialGradient id="glass-ID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#3a3933"/><stop offset=".7" stop-color="#1c1b18"/><stop offset="1" stop-color="#121210"/></radialGradient>
+              <linearGradient id="rim-ID" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent-on-dark)"/><stop offset=".5" stop-color="#5a574e"/><stop offset="1" stop-color="#2a2925"/></linearGradient>
+            </defs>
+            <g fill="none" stroke="#4a4842" stroke-width="1">
+              <path d="M-20 120 C 80 120, 120 132, 190 140 S 300 150, 380 150"/>
+              <path d="M-20 165 C 80 165, 130 158, 190 155 S 300 160, 380 170"/>
+              <path d="M-20 205 C 90 205, 140 190, 190 175 S 290 190, 380 210"/>
+            </g>
+            <ellipse cx="200" cy="155" rx="92" ry="112" fill="url(#glass-ID)" stroke="url(#rim-ID)" stroke-width="3"/>
+            <ellipse cx="200" cy="155" rx="70" ry="88" fill="none" stroke="#ffffff14"/>
+            <ellipse cx="200" cy="155" rx="44" ry="56" fill="none" stroke="#ffffff1f"/>
+            <path d="M150 92 C 175 70, 220 66, 250 84" stroke="#ffffff38" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M-20 140 C 90 140, 150 150, 200 150 C 250 150, 260 96, 330 70" fill="none" stroke="var(--accent-on-dark)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="200" cy="150" r="4" fill="var(--accent-on-dark)"/>
+            <circle cx="96" cy="142" r="3" fill="var(--on-dark)"/><circle cx="60" cy="165" r="2.5" fill="#8a877e"/><circle cx="120" cy="198" r="2.5" fill="#8a877e"/>
+          </svg>
+          <div class="hero-lead">From a suspicious payment to a decision you can explain.<br><span class="btn">Open the operations centre <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+          <div><h3>Follow the signal.</h3>
+          <div class="hero-foot"><span>Detection, protection, investigation</span><span>Synthetic-data showcase</span></div></div>
+        </div>
+      </div>
+      <div><p class="frame-label">Case page, 1280 px</p>
+        <div class="frame console">
+          <aside class="rail"><span class="brand"><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>FraudLens</span><span>Overview</span><span class="on">Investigations</span><span>Team</span><span>Transactions</span><span>Connections</span><span>Bank actions</span><span>Reports</span><span>Audit trail</span></aside>
+          <div class="work">
+            <span class="crumb">Investigation queue</span>
+            <div class="case-title">SIM-swap account takeover<code>CASE-0D4E573825B3 · Net banking · ₹80,000.00</code></div>
+            <div class="strip">
+              <div><small>Detection score</small><span class="score">95.0</span></div>
+              <div><small>Protection</small><div class="chips"><span class="chip frozen">Restrict confirmed</span><span class="chip pending">Lien pending</span></div></div>
+              <div><small>Accounts</small><div class="chips"><span class="chip held">Held</span><span class="chip closed">Closed</span><span class="chip risk">Fraud</span></div></div>
+            </div>
+            <div class="two">
+              <div class="panel notch"><span class="agent">FraudLens Agent</span><h4>SIM-swap account takeover</h4><p>Repeated authentication failures, then a large transfer to a new beneficiary from a new device.</p><div class="rec">Recommended: Confirm fraud (L2)<span class="btn">Confirm fraud</span></div></div>
+              <div class="panel"><h4>Why this payment was flagged</h4>
+                <div class="signal"><b>Graph agent</b><span>95.0</span><div class="bar hot"><i style="width:95%"></i></div></div>
+                <div class="signal"><b>ML agent</b><span>98.0</span><div class="bar hot"><i style="width:98%"></i></div></div>
+                <div class="signal"><b>Rule agent</b><span>25.0</span><div class="bar"><i style="width:25%"></i></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div><p class="frame-label">Attack page, 390 px</p>
+        <div class="frame attack">
+          <div class="top"><span class="brand"><svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>Attack console</span><em>Fictional money only</em></div>
+          <h3>Launch a scam. Watch the bank react.</h3>
+          <p>Every payment here is fictional and runs against a simulated bank.</p>
+          <div class="scam sel notch"><b>Mule layering</b><span>A victim is tricked into a UPI payment; the money hops through mule accounts.</span></div>
+          <div class="scam"><b>SIM-swap takeover</b><span>An attacker ports the victim’s number, then moves a large sum.</span></div>
+          <div class="scam"><b>Card testing</b><span>Small charges probe a stolen card before one big purchase.</span></div>
+          <div class="amount"><span>Scam amount</span><b>₹48,000</b><div class="track"><i></i></div></div>
+          <span class="btn">Launch attack</span>
+        </div>
+      </div>
+    </div>
+    <div class="tradeoff" data-tradeoff></div>
+  </section>
+</template>
+<script>
+const concepts = [
+  { cls: "brass", name: "1. Graphite + <span>brass</span>", mood: "A vault or control room. Brass marks the brand, the current selection and the one primary action; it is the warmest of the three and the least alarming.",
+    sw: [["Graphite", "#151513"], ["Stone", "#e9e8e3"], ["Surface", "#f7f6f3"], ["Brass", "#c39a4a"], ["Brass text", "#7a5717"]],
+    pro: "Most distinct from every status colour; dark ink on brass buttons (6.8:1) feels like a physical key.", con: "Brass text on light surfaces must use the darker #7a5717; the bright brass only works as a fill or on graphite." },
+  { cls: "emerald", name: "2. Graphite + <span>deep emerald</span>", mood: "Calm and money-coded. Reads as a bank before it reads as fraud.",
+    sw: [["Graphite", "#151513"], ["Stone", "#e9e8e3"], ["Surface", "#f7f6f3"], ["Emerald", "#1d6650"], ["On dark", "#63b896"]],
+    pro: "White on emerald buttons is 6.8:1; the quietest of the three in long console sessions.", con: "Collides with “held”: held has to move to a moss green (#556d1b, shown above), so two greens share the console." },
+  { cls: "verm", name: "3. Graphite + <span>signal vermilion</span>", mood: "The most “fraud” in feel. The accent is the risk colour itself, with green kept for held/safe.",
+    sw: [["Graphite", "#151513"], ["Stone", "#e9e8e3"], ["Surface", "#f7f6f3"], ["Vermilion", "#b8422a"], ["On dark", "#e5795f"]],
+    pro: "Strongest attack-page mood; brand and risk tell one story.", con: "Primary buttons, risk scores and the fraud chip are all red, so “act” and “danger” look alike. A near-black page with one vermilion accent is also a common generated look." },
+];
+const tpl = document.getElementById("concept");
+concepts.forEach((c, i) => {
+  const node = tpl.content.cloneNode(true);
+  const section = node.querySelector(".concept");
+  section.classList.add(c.cls);
+  node.querySelector("[data-name]").innerHTML = c.name;
+  node.querySelector("[data-mood]").textContent = c.mood;
+  node.querySelector("[data-swatches]").innerHTML = c.sw.map(([n, h]) => `<span class="sw"><i style="background:${h}"></i>${n}<br>${h}</span>`).join("");
+  node.querySelector("[data-tradeoff]").innerHTML = `<p><strong>For:</strong> ${c.pro}</p><p><strong>Against:</strong> ${c.con}</p>`;
+  section.innerHTML = section.innerHTML.replaceAll("-ID", "-" + c.cls);
+  document.getElementById("concepts").appendChild(node);
+});
+</script>
+</body>
+</html>

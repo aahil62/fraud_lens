@@ -1,9 +1,12 @@
-"""Analyst signup/login — real JWT-based auth, not a demo stub. Seeded
-accounts (asharma / riyer, password "fraudlens123") exist so the console
-is usable immediately; signup lets a new analyst create their own account.
+"""Analyst sign-in, sign-up and sign-out with signed session tokens.
+
+In demo mode four fictional analysts are seeded (kmehta L1, pnair L1, riyer L2,
+asharma Supervisor; password "fraudlens123"). Sign-up is local-demo only and is
+turned off on the public demo.
 """
 
 from __future__ import annotations
+
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -20,9 +23,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/signup", response_model=TokenResponse)
 def signup(payload: SignupRequest) -> TokenResponse:
     if os.environ.get("FRAUDLENS_MODE", "demo") != "demo":
-        raise HTTPException(403, "Self-service analyst registration is available only in the local demonstration")
+        raise HTTPException(
+            403, "Self-service analyst registration is available only in the local demonstration"
+        )
     if os.environ.get("FRAUDLENS_PUBLIC_DEMO") == "1":
-        raise HTTPException(403, "Sign-up is turned off on the public demo. Use a demo role on the sign-in page.")
+        raise HTTPException(
+            403, "Sign-up is turned off on the public demo. Use a demo role on the sign-in page."
+        )
     store = state.runtime.analyst_store
     username = payload.username.strip().lower()
     if not username or not payload.password:

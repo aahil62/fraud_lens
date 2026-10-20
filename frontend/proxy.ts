@@ -3,14 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 const TOKEN_COOKIE = "fraudlens_token";
 const PUBLIC_PATHS = ["/", "/login", "/signup", "/attack"];
 
-/** Gates every analyst-console page behind a session cookie set at login
- * (see lib/auth.ts's setSession). The landing page and auth pages stay
- * public — everything else (dashboard, feed, case, cases, network,
- * fraud-dna, reports, audit, insights) redirects to /login without a
- * valid-looking session. The token itself is still verified for real by
- * the backend on every write (see fraudlens/api/deps.py) — this
- * middleware only keeps a logged-out visitor from landing on analyst
- * pages in the first place. */
+/** Sends a visitor without a session cookie (set at sign-in, see lib/auth.ts) from any console page to
+ * /login. The landing, sign-in, sign-up and attack pages stay public. This is navigation only: the API
+ * verifies the token on every request (fraudlens/api/deps.py). */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (PUBLIC_PATHS.includes(pathname)) {
@@ -28,5 +23,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|backend/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|fonts/|backend/).*)"],
 };

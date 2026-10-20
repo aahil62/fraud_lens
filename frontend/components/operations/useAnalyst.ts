@@ -7,4 +7,9 @@ export function useAnalyst() {
   return useSyncExternalStore(subscribe, getStoredAnalyst, () => null);
 }
 export const initials = (name: string) =>
-  name.split(/[ .]+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("");
+  name
+    .split(/[ .]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((x) => x[0])
+    .join("");

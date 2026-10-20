@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Verify actual local HTTP effects; no external hosts or real bank operations."""
+
 import argparse
 import json
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -36,8 +36,16 @@ def main():
     call("/simulation/control", {"running": False, "bank_mode": "normal"})
     checks = []
     prefix = "VERIFY-" + uuid4().hex[:10]
-    payment = dict(txn_id=prefix, account_id=prefix, channel="upi", amount_minor=8_000_000,
-                   timestamp=datetime.now(timezone.utc).isoformat(), new_device=True, new_beneficiary=True, failed_auth_attempts=4)
+    payment = dict(
+        txn_id=prefix,
+        account_id=prefix,
+        channel="upi",
+        amount_minor=8_000_000,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        new_device=True,
+        new_beneficiary=True,
+        failed_auth_attempts=4,
+    )
     try:
         result = call("/transactions", payment)
         case_id = result["case"]["case_id"]
@@ -45,14 +53,30 @@ def main():
         case = call(f"/cases/{case_id}", method="GET")
         assert any(a["status"] == "confirmed" and a["operation"] == "restrict" for a in case["actions"])
         checks.append("Restrict request acknowledged by separate bank process")
-        followup = {**payment, "txn_id": prefix + "-blocked", "amount_minor": 25000,
-                    "new_device": False, "new_beneficiary": False, "failed_auth_attempts": 0}
+        followup = {
+            **payment,
+            "txn_id": prefix + "-blocked",
+            "amount_minor": 25000,
+            "new_device": False,
+            "new_beneficiary": False,
+            "failed_auth_attempts": 0,
+        }
         call("/transactions", followup)
         call("/process")
         snap = call("/snapshot", method="GET")
-        assert next(t for t in snap["transactions"] if t["txn_id"] == followup["txn_id"])["payment_status"] == "declined"
+        assert (
+            next(t for t in snap["transactions"] if t["txn_id"] == followup["txn_id"])["payment_status"]
+            == "declined"
+        )
         checks.append("Subsequent payment actually declined while restricted")
-        call(f"/cases/{case_id}/decision", {"action": "false_positive", "expected_version": case["version"], "notes": "Live HTTP test: synthetic customer-authorized transaction."})
+        call(
+            f"/cases/{case_id}/decision",
+            {
+                "action": "false_positive",
+                "expected_version": case["version"],
+                "notes": "Live HTTP test: synthetic customer-authorized transaction.",
+            },
+        )
         call("/process")
         resolved = call(f"/cases/{case_id}", method="GET")
         assert resolved["status"] == "resolved" and resolved["verdict"] == "false_positive"
@@ -60,7 +84,10 @@ def main():
         call("/transactions", allowed)
         call("/process")
         snap = call("/snapshot", method="GET")
-        assert next(t for t in snap["transactions"] if t["txn_id"] == allowed["txn_id"])["payment_status"] == "posted"
+        assert (
+            next(t for t in snap["transactions"] if t["txn_id"] == allowed["txn_id"])["payment_status"]
+            == "posted"
+        )
         checks.append("Analyst reversal acknowledged; subsequent payment actually posted")
         before_duplicate = snap["counts"]["transactions"]
         assert call("/transactions", allowed)["duplicate"]
@@ -85,8 +112,14 @@ def main():
         assert snap["counts"]["transactions"] == sum(c["transactions"] for c in snap["channels"])
         assert snap["counts"]["cases"] == sum(c["cases"] for c in snap["channels"])
         checks.append("Overall and channel counts reconcile")
-        output = {"checked_at": datetime.now(timezone.utc).isoformat(), "simulation": True,
-                  "checks": checks, "case_id": case_id, "case_version": resolved["version"], "counts": snap["counts"]}
+        output = {
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "simulation": True,
+            "checks": checks,
+            "case_id": case_id,
+            "case_version": resolved["version"],
+            "counts": snap["counts"],
+        }
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(output, indent=2) + "\n")
         print(json.dumps(output, indent=2))

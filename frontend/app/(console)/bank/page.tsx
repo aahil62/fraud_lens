@@ -1,2 +1,4 @@
 import { BankView } from "@/components/operations/OperationsViews";
-export default function Page() { return <BankView/>; }
+export default function Page() {
+  return <BankView />;
+}

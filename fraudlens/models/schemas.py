@@ -1,13 +1,7 @@
-"""Shared data contracts for FraudLens.
-
-Every branch builds against these models — they don't change per branch.
-Field names and semantics match the team's Level 1 prototype so results
-stay comparable across the rebuild.
-"""
+"""Shared data contracts: the scoring agents' transaction and score shapes, and analyst accounts."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
@@ -15,12 +9,8 @@ from pydantic import BaseModel, Field
 
 from fraudlens.core.auth.roles import Role
 
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
 # ── Enums ─────────────────────────────────────────────────────────────────
+
 
 class Decision(str, Enum):
     CLEAR = "clear"
@@ -30,6 +20,7 @@ class Decision(str, Enum):
 
 
 # ── Transaction ───────────────────────────────────────────────────────────
+
 
 class Transaction(BaseModel):
     txn_id: str
@@ -50,46 +41,25 @@ class Transaction(BaseModel):
 
 # ── Scoring ───────────────────────────────────────────────────────────────
 
+
 class AgentScore(BaseModel):
     """Output from a single scoring agent — the contract every agent implements."""
+
     agent_name: str
-    score: float                        # 0.0 - 1.0
-    confidence: float = 0.8             # 0.0 - 1.0
+    score: float  # 0.0 - 1.0
+    confidence: float = 0.8  # 0.0 - 1.0
     reasons: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ScoringResult(BaseModel):
     """Combined output from the ensemble scorer."""
+
     final_score: float
     decision: Decision
     confidence: float
     agent_scores: list[AgentScore]
     explanation_reasons: list[str]
-
-
-# ── Graph (populated by feature/graph-behavioral in Stage B) ────────────────
-
-class GraphNode(BaseModel):
-    node_id: str
-    node_type: str  # account, device, ip, merchant
-    label: str
-    is_suspicious: bool = False
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
-class GraphEdge(BaseModel):
-    source: str
-    target: str
-    edge_type: str
-    weight: float = 1.0
-
-
-class FraudGraph(BaseModel):
-    nodes: list[GraphNode]
-    edges: list[GraphEdge]
-    ring_id: Optional[str] = None
-    ring_size: int = 0
 
 
 class GraphEvidence(BaseModel):
@@ -104,100 +74,13 @@ class GraphEvidence(BaseModel):
     evidence_summary: str = ""
 
 
-# ── Fraud DNA (populated by feature/graph-behavioral in Stage B) ────────────
-
-class FraudDNAProfile(BaseModel):
-    ring_id: str
-    ring_size: int
-    shared_devices: int
-    shared_ips: int
-    avg_amount: float
-    max_amount: float
-    merchant_category_count: int
-    velocity_score: float
-    graph_density: float
-    fraud_type: str
-    modus_operandi: str
-    first_detected: str
-    description: str = ""
-
-
-class FraudDNAMatch(BaseModel):
-    matched_ring_id: str
-    similarity_score: float             # 0.0 - 1.0
-    fraud_type: str
-    modus_operandi: str
-    recommendation: str
-    matched_profile: FraudDNAProfile
-    description: str = ""
-
-
-# ── Fraud Case — the core output of the engine ──────────────────────────────
-
-class FraudCase(BaseModel):
-    case_id: str
-    txn_id: str
-    transaction: Transaction
-    final_score: float
-    decision: Decision
-    confidence: float
-    agent_scores: list[AgentScore]
-    explanation_reasons: list[str]
-    graph_evidence: Optional[GraphEvidence] = None
-    fraud_dna_match: Optional[FraudDNAMatch] = None
-    recommended_action: str = ""
-    created_at: str = Field(default_factory=_now_iso)
-    # Bounded autonomous action (see fraudlens/core/cases/autonomous_action.py).
-    # "auto_held" when the case cleared every corroborating-signal threshold
-    # at once; never a claim that a real payment was stopped. Always
-    # overridable — set back to None, with system_action_overridden_at
-    # stamped, the moment an analyst records any decision on the case via
-    # DecisionWorkflow.submit_decision().
-    system_action: Optional[str] = None
-    system_action_overridden_at: Optional[str] = None
-    # True when this transaction's account is currently under the bounded
-    # autonomous velocity restriction (see
-    # fraudlens/core/cases/account_restriction.py) — never exposes the raw
-    # account_id, just the fact that a restriction is active.
-    account_restricted: bool = False
-
-
-# ── Analyst workflow (populated by feature/graph-behavioral in Stage B) ─────
-
-class AnalystDecision(BaseModel):
-    id: int
-    case_id: str
-    txn_id: str
-    decision: str
-    analyst: Optional[str] = None
-    notes: Optional[str] = None
-    decided_at: str
-    is_override: bool = False
-    # A flagged case (review/block/block_and_report) an analyst investigated
-    # and confirmed did NOT represent actual fraud — a distinct fact from
-    # `decision` itself (always "clear" when this is True; see
-    # DecisionWorkflow.submit_decision's validation), so a false-positive
-    # correction is never conflated with an ordinary clear that was never
-    # flagged in the first place. See fraudlens/core/cases/decision_workflow.py.
-    is_false_positive: bool = False
-
-
-class AuditEvent(BaseModel):
-    id: int
-    case_id: str
-    txn_id: Optional[str] = None
-    event_type: str
-    actor: str
-    occurred_at: str
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
 # ── Autonomous account restriction ───────────────────────────────────────
 #
 # The second half of "bounded autonomous action": alongside auto-holding a
 # single case, the system can tighten an account's velocity thresholds
 # going forward — a real, measurable consequence, not just another label.
 # See fraudlens/core/cases/account_restriction.py.
+
 
 class AccountRestriction(BaseModel):
     account_id: str
@@ -212,76 +95,13 @@ class AccountRestriction(BaseModel):
         return self.released_at is None
 
 
-# ── Regulatory context (populated by main in Stage C) ────────────────────
-#
-# Reference-only mapping to real Indian regulatory frameworks (RBI, PMLA,
-# CERT-In) — see fraudlens/core/compliance/regulatory_matrix.py. Never a
-# record of an actual filing: FraudLens does not submit anything to RBI,
-# FIU-IND, or CERT-In. `hedge` always carries the "typically reportable
-# under..." framing so a report can't be misread as a compliance action log.
-
-class RegulatoryReference(BaseModel):
-    framework: str
-    citation: str
-    relevance: str
-    hedge: str
-
-
-# ── Report (populated by main in Stage B) ────────────────────────────────
-
-class FraudReport(BaseModel):
-    report_id: str
-    case_id: str
-    txn_id: str
-    account_id: str
-    risk_score: float
-    decision: str
-    engine_recommendation: str
-    analyst_decision: Optional[str] = None
-    analyst: Optional[str] = None
-    analyst_notes: Optional[str] = None
-    confidence: float
-    agent_scores: list[AgentScore]
-    graph_evidence: Optional[GraphEvidence] = None
-    fraud_dna_match: Optional[FraudDNAMatch] = None
-    recommended_action: str
-    system_action: Optional[str] = None
-    regulatory_context: list[RegulatoryReference] = Field(default_factory=list)
-    is_false_positive: bool = False
-    report_status: str = "draft"
-    generated_at: str = Field(default_factory=_now_iso)
-    report_text: str = ""
-
-
-# ── Copilot (populated by feature/rules-velocity in Stage C) ────────────────
-
-class CopilotToolCall(BaseModel):
-    """One real backend call Copilot made while answering — the audit trail
-    that proves an answer traces back to actual data, not a guess."""
-    tool: str
-    input: dict[str, Any] = Field(default_factory=dict)
-    output: dict[str, Any] = Field(default_factory=dict)
-
-
-class CopilotRequest(BaseModel):
-    question: str
-    txn_id: Optional[str] = None
-
-
-class CopilotResponse(BaseModel):
-    answer: str
-    tool_calls: list[CopilotToolCall] = Field(default_factory=list)
-    # True whenever every fact in `answer` traces back to a `tool_calls`
-    # entry — guaranteed by construction in CopilotAgent, never asserted by
-    # the LLM itself.
-    grounded: bool = True
-
-
 # ── Analyst authentication ───────────────────────────────────────────────
+
 
 class AnalystAccount(BaseModel):
     """Internal record — password_hash never leaves the backend. See
     AnalystProfile for what an API response is allowed to expose."""
+
     username: str
     display_name: str
     password_hash: str
@@ -291,6 +111,7 @@ class AnalystAccount(BaseModel):
 
 class AnalystProfile(BaseModel):
     """The public-safe view of an AnalystAccount — no password_hash."""
+
     username: str
     display_name: str
     role: Role

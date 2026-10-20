@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/fetch-fonts.mjs",
     "dev": "next dev --webpack",
+    "prebuild": "node scripts/fetch-fonts.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@fontsource-variable/mona-sans": "^5.3.0",
+    "@fontsource/courier-prime": "^5.2.8",
     "@phosphor-icons/react": "^2.1.10",
-    "@types/cytoscape": "^3.21.9",
-    "cytoscape": "^3.34.2",
     "next": "^16.4.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -32,6 +35,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.4.2",
     "jsdom": "^25.0.1",
+    "prettier": "3.9.9",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",

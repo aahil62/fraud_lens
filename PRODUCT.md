@@ -14,7 +14,7 @@ Connect detection evidence, case review, protective requests, bank acknowledgeme
 
 ## Brand and design
 
-A precise optical instrument, with a bright analyst workbench. The landing page demonstrates the idea through a dimensional lens and an interactive, clearly labelled sample incident. The console prioritizes reading, state clarity and useful density. See [DESIGN.md](DESIGN.md) for the current visual system and [docs/UI-REDESIGN.md](docs/UI-REDESIGN.md) for the overhaul's design decisions.
+A precise optical instrument in a bank vault's control room: warm graphite, stone work surfaces, one brass accent and retro ledger type. The landing page demonstrates the idea through a dimensional lens and an interactive, clearly labelled sample incident. The console prioritizes reading, state clarity and useful density. See [DESIGN.md](DESIGN.md) for the current visual system and [docs/history/UI-REDESIGN.md](docs/history/UI-REDESIGN.md) for the overhaul's design decisions.
 
 ## Principles
 

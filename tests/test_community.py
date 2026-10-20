@@ -24,8 +24,12 @@ class DetectCommunitiesTests(unittest.TestCase):
         # should keep the triangles separate rather than merging them into
         # one over-counted ring the way plain connected-components would.
         edges = [
-            ("A1", "A2", 5.0), ("A2", "A3", 5.0), ("A1", "A3", 5.0),
-            ("B1", "B2", 5.0), ("B2", "B3", 5.0), ("B1", "B3", 5.0),
+            ("A1", "A2", 5.0),
+            ("A2", "A3", 5.0),
+            ("A1", "A3", 5.0),
+            ("B1", "B2", 5.0),
+            ("B2", "B3", 5.0),
+            ("B1", "B3", 5.0),
             ("A3", "B1", 1.0),
         ]
         nodes = ["A1", "A2", "A3", "B1", "B2", "B3"]

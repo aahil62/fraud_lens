@@ -1,4 +1,5 @@
 """Unauthenticated, rate-limited fiction only; absent outside demo mode."""
+
 import os
 
 from fastapi import APIRouter, HTTPException, Request

@@ -1,9 +1,6 @@
 """The contract every scoring agent implements.
 
-Deliberately a Protocol, not a base class: feature/rules-velocity and
-feature/graph-behavioral each add agents independently, and nothing here
-should force them to import from a shared parent that the other branch
-might also be touching.
+A Protocol rather than a base class, so each agent stays independent of the others.
 """
 
 from __future__ import annotations

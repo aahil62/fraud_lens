@@ -3,16 +3,15 @@
 
 import argparse
 import os
-from pathlib import Path
 import shutil
 import signal
 import socket
 import subprocess
 import sys
 import time
+from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
-
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
@@ -41,8 +40,10 @@ def ensure_ports_available(ports, wait=5):
     for name, port in ports.items():
         while not port_free(port):
             if time.monotonic() >= deadline:
-                raise RuntimeError(f"{name} port {port} is unavailable. Stop its owner or choose another port in .env.")
-            time.sleep(.25)
+                raise RuntimeError(
+                    f"{name} port {port} is unavailable. Stop its owner or choose another port in .env."
+                )
+            time.sleep(0.25)
 
 
 def uvicorn_command(python, app, port):
@@ -52,8 +53,19 @@ def uvicorn_command(python, app, port):
     # reconnect to the stream on their own.
     # --no-proxy-headers: uvicorn would otherwise replace the loopback peer with the
     # X-Forwarded-For value, bypassing fraudlens.api.limits.client_ip's trust rules.
-    return [str(python), "-m", "uvicorn", app, "--host", "127.0.0.1", "--port", str(port),
-            "--timeout-graceful-shutdown", "1", "--no-proxy-headers"]
+    return [
+        str(python),
+        "-m",
+        "uvicorn",
+        app,
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+        "--timeout-graceful-shutdown",
+        "1",
+        "--no-proxy-headers",
+    ]
 
 
 def start_process(command, cwd, env):
@@ -89,12 +101,12 @@ def wait_ready(url, process, timeout=120):
         if process.poll() is not None:
             raise RuntimeError(f"Service exited with code {process.returncode} while waiting for {url}")
         try:
-            with urlopen(url, timeout=min(2, max(.1, deadline - time.monotonic()))) as response:
+            with urlopen(url, timeout=min(2, max(0.1, deadline - time.monotonic()))) as response:
                 if response.status == 200:
                     return
         except (URLError, TimeoutError, OSError):
             pass
-        time.sleep(.25)
+        time.sleep(0.25)
     raise RuntimeError(f"Service did not become ready within {timeout}s: {url}")
 
 
@@ -113,23 +125,32 @@ def main():
     if sys.version_info[:2] != (3, 12):
         raise RuntimeError("This showcase supports Python 3.12; recreate .venv using Python 3.12")
     from dotenv import load_dotenv
+
     load_dotenv(ROOT / ".env", override=False)
     npm = shutil.which("npm")
     if not npm or not (ROOT / "frontend/node_modules/next").is_dir():
         raise RuntimeError("Install Node.js 24+ and run npm ci in frontend/ before starting")
     try:
-        ports = {"bank": int(os.getenv("BANK_PORT", "8002")), "api": int(os.getenv("API_PORT", "8001")),
-                 "frontend": int(os.getenv("FRONTEND_PORT", "3000"))}
+        ports = {
+            "bank": int(os.getenv("BANK_PORT", "8002")),
+            "api": int(os.getenv("API_PORT", "8001")),
+            "frontend": int(os.getenv("FRONTEND_PORT", "3000")),
+        }
     except ValueError as error:
         raise RuntimeError("BANK_PORT, API_PORT, and FRONTEND_PORT must be integer ports") from error
     ensure_ports_available(ports)
     env = os.environ.copy()
-    env.update({"FRAUDLENS_LEGACY_API": "0", "FRAUDLENS_SEED_DEMO": "1",
-                "FRAUDLENS_MODE": "demo", "PYTHONUNBUFFERED": "1",
-                "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{ports['bank']}",
-                "NEXT_PUBLIC_API_BASE": f"http://127.0.0.1:{ports['api']}",
-                "NEXT_PUBLIC_DEMO_MODE": "1",
-                "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{ports['frontend']},http://localhost:{ports['frontend']}"})
+    env.update(
+        {
+            "FRAUDLENS_SEED_DEMO": "1",
+            "FRAUDLENS_MODE": "demo",
+            "PYTHONUNBUFFERED": "1",
+            "FRAUDLENS_BANK_URL": f"http://127.0.0.1:{ports['bank']}",
+            "NEXT_PUBLIC_API_BASE": f"http://127.0.0.1:{ports['api']}",
+            "NEXT_PUBLIC_DEMO_MODE": "1",
+            "FRAUDLENS_CORS_ORIGINS": f"http://127.0.0.1:{ports['frontend']},http://localhost:{ports['frontend']}",
+        }
+    )
     env.setdefault("FRAUDLENS_BANK_KEY", "fraudlens-local-simulator")
     env.setdefault("FRAUDLENS_BANK_DB", str(ROOT / "var/bank.sqlite3"))
     env.setdefault("FRAUDLENS_OPS_DB", str(ROOT / "var/operations.sqlite3"))
@@ -141,9 +162,25 @@ def main():
 
     signal.signal(signal.SIGTERM, interrupt)
     services = [
-        ("Bank simulator", uvicorn_command(PYTHON, "fraudlens.bank_simulator.main:app", ports["bank"]), ROOT, f"http://127.0.0.1:{ports['bank']}/health"),
-        ("API", uvicorn_command(PYTHON, "fraudlens.api.main:app", ports["api"]), ROOT, f"http://127.0.0.1:{ports['api']}/health"),
-        ("Console", [npm, "run", "dev", "--", "--hostname", "127.0.0.1", "--port", str(ports["frontend"])], ROOT / "frontend", f"http://127.0.0.1:{ports['frontend']}")]
+        (
+            "Bank simulator",
+            uvicorn_command(PYTHON, "fraudlens.bank_simulator.main:app", ports["bank"]),
+            ROOT,
+            f"http://127.0.0.1:{ports['bank']}/health",
+        ),
+        (
+            "API",
+            uvicorn_command(PYTHON, "fraudlens.api.main:app", ports["api"]),
+            ROOT,
+            f"http://127.0.0.1:{ports['api']}/health",
+        ),
+        (
+            "Console",
+            [npm, "run", "dev", "--", "--hostname", "127.0.0.1", "--port", str(ports["frontend"])],
+            ROOT / "frontend",
+            f"http://127.0.0.1:{ports['frontend']}",
+        ),
+    ]
     try:
         for label, command, cwd, url in services:
             print(f"Starting {label}: {url}", flush=True)
@@ -154,8 +191,10 @@ def main():
         while True:
             for process in processes:
                 if process.poll() is not None:
-                    raise RuntimeError(f"A service exited with code {process.returncode}; stopping this launch")
-            time.sleep(.5)
+                    raise RuntimeError(
+                        f"A service exited with code {process.returncode}; stopping this launch"
+                    )
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("\nStopping FraudLens services...", flush=True)
     finally:

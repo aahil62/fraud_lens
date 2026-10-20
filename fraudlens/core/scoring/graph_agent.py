@@ -18,7 +18,7 @@ from typing import Any
 from fraudlens.core.graph.community import detect_communities
 from fraudlens.models.schemas import AgentScore, Transaction
 
-_DEVICE_SHARE_MAJOR = 3   # other accounts sharing the device/IP
+_DEVICE_SHARE_MAJOR = 3  # other accounts sharing the device/IP
 _DEVICE_SHARE_MINOR = 1
 _MANY_DEVICES_THRESHOLD = 4  # distinct devices used by one account
 
@@ -87,33 +87,23 @@ class GraphAgent:
         signal_scores: list[float] = []
         metadata: dict[str, Any] = {}
 
-        other_device_accounts = len(
-            self._device_accounts.get(txn.device_id, set()) - {txn.account_id}
-        )
+        other_device_accounts = len(self._device_accounts.get(txn.device_id, set()) - {txn.account_id})
         metadata["other_accounts_on_device"] = other_device_accounts
         if other_device_accounts >= _DEVICE_SHARE_MAJOR:
             signal_scores.append(0.85)
-            reasons.append(
-                f"Device {txn.device_id} shared with {other_device_accounts} other accounts"
-            )
+            reasons.append(f"Device {txn.device_id} shared with {other_device_accounts} other accounts")
         elif other_device_accounts >= _DEVICE_SHARE_MINOR:
             signal_scores.append(0.5)
-            reasons.append(
-                f"Device {txn.device_id} shared with {other_device_accounts} other account(s)"
-            )
+            reasons.append(f"Device {txn.device_id} shared with {other_device_accounts} other account(s)")
 
         other_ip_accounts = len(self._ip_accounts.get(txn.ip_address, set()) - {txn.account_id})
         metadata["other_accounts_on_ip"] = other_ip_accounts
         if other_ip_accounts >= _DEVICE_SHARE_MAJOR:
             signal_scores.append(0.85)
-            reasons.append(
-                f"IP {txn.ip_address} shared with {other_ip_accounts} other accounts"
-            )
+            reasons.append(f"IP {txn.ip_address} shared with {other_ip_accounts} other accounts")
         elif other_ip_accounts >= _DEVICE_SHARE_MINOR:
             signal_scores.append(0.5)
-            reasons.append(
-                f"IP {txn.ip_address} shared with {other_ip_accounts} other account(s)"
-            )
+            reasons.append(f"IP {txn.ip_address} shared with {other_ip_accounts} other account(s)")
 
         device_count = len(self._account_devices.get(txn.account_id, {txn.device_id}))
         metadata["account_device_count"] = device_count

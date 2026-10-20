@@ -20,26 +20,30 @@ from fraudlens.models.schemas import AgentScore, Transaction
 _MAJOR_AMOUNT_THRESHOLD = 400_000.0
 _MINOR_AMOUNT_THRESHOLD = 150_000.0
 
-_RISKY_MERCHANT_CATEGORIES = frozenset({
-    "crypto_exchange",
-    "gambling",
-    "gift_cards",
-    "jewelry",
-    "luxury_goods",
-    "money_transfer",
-    "digital_goods",
-})
+_RISKY_MERCHANT_CATEGORIES = frozenset(
+    {
+        "crypto_exchange",
+        "gambling",
+        "gift_cards",
+        "jewelry",
+        "luxury_goods",
+        "money_transfer",
+        "digital_goods",
+    }
+)
 
-_RISKY_LOCATIONS = frozenset({
-    "unknown",
-    "nigeria",
-    "russia",
-    "north_korea",
-    "iran",
-    "offshore",
-    "anonymous_proxy",
-    "tor_exit_node",
-})
+_RISKY_LOCATIONS = frozenset(
+    {
+        "unknown",
+        "nigeria",
+        "russia",
+        "north_korea",
+        "iran",
+        "offshore",
+        "anonymous_proxy",
+        "tor_exit_node",
+    }
+)
 
 _RISKY_HOURS = frozenset(range(0, 4))  # midnight-4am, inclusive of 0..3
 
@@ -83,20 +87,16 @@ class RuleAgent:
         )
 
     @staticmethod
-    def _check_amount(
-        txn: Transaction, points: float, reasons: list[str]
-    ) -> tuple[float, list[str]]:
+    def _check_amount(txn: Transaction, points: float, reasons: list[str]) -> tuple[float, list[str]]:
         if txn.amount > _MAJOR_AMOUNT_THRESHOLD:
             points += 0.5
             reasons.append(
-                f"Amount ₹{txn.amount:,.2f} exceeds major threshold "
-                f"(₹{_MAJOR_AMOUNT_THRESHOLD:,.0f})"
+                f"Amount ₹{txn.amount:,.2f} exceeds major threshold (₹{_MAJOR_AMOUNT_THRESHOLD:,.0f})"
             )
         elif txn.amount > _MINOR_AMOUNT_THRESHOLD:
             points += 0.25
             reasons.append(
-                f"Amount ₹{txn.amount:,.2f} exceeds minor threshold "
-                f"(₹{_MINOR_AMOUNT_THRESHOLD:,.0f})"
+                f"Amount ₹{txn.amount:,.2f} exceeds minor threshold (₹{_MINOR_AMOUNT_THRESHOLD:,.0f})"
             )
         return points, reasons
 
@@ -111,9 +111,7 @@ class RuleAgent:
         return points, reasons
 
     @staticmethod
-    def _check_location(
-        txn: Transaction, points: float, reasons: list[str]
-    ) -> tuple[float, list[str]]:
+    def _check_location(txn: Transaction, points: float, reasons: list[str]) -> tuple[float, list[str]]:
         location = (txn.location or "").strip().lower()
         if location in _RISKY_LOCATIONS:
             points += 0.25
@@ -121,9 +119,7 @@ class RuleAgent:
         return points, reasons
 
     @staticmethod
-    def _check_hour(
-        txn: Transaction, points: float, reasons: list[str]
-    ) -> tuple[float, list[str]]:
+    def _check_hour(txn: Transaction, points: float, reasons: list[str]) -> tuple[float, list[str]]:
         hour = _parse_hour(txn.timestamp)
         if hour is not None and hour in _RISKY_HOURS:
             points += 0.15
@@ -137,9 +133,7 @@ class RuleAgent:
         channel = (txn.channel or "").strip().lower()
         if channel == "online" and txn.amount > _ONLINE_HIGH_AMOUNT_THRESHOLD:
             points += 0.15
-            reasons.append(
-                f"High-value online transaction (₹{txn.amount:,.2f} via {channel})"
-            )
+            reasons.append(f"High-value online transaction (₹{txn.amount:,.2f} via {channel})")
         return points, reasons
 
     @staticmethod

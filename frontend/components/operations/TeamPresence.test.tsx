@@ -3,8 +3,15 @@ import { expect, it } from "vitest";
 import type { TeamMember } from "@/lib/operations";
 import { TeamPresence } from "./TeamPresence";
 const member = (i: number, online = true): TeamMember => ({
-  username: `user${i}`, display_name: `A${i}. Analyst`, role: "l1_analyst", role_label: "L1 Analyst", online,
-  last_seen: null, current_case_id: i === 0 ? "CASE-1234" : null, open_assigned: 0, resolved_today: 0,
+  username: `user${i}`,
+  display_name: `A${i}. Analyst`,
+  role: "l1_analyst",
+  role_label: "L1 Analyst",
+  online,
+  last_seen: null,
+  current_case_id: i === 0 ? "CASE-1234" : null,
+  open_assigned: 0,
+  resolved_today: 0,
 });
 it("shows only online analysts", () => {
   render(<TeamPresence team={[member(0), member(1, false)]} />);
