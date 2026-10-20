@@ -51,7 +51,15 @@ Behaviour was held fixed by comparison, not only by the test suite:
 
 - `docker build` (Docker was not running on this machine). The only container-relevant change is that `frontend/public/` now holds just the fetched fonts, which `fetch-fonts.mjs` creates before the Dockerfile copies it.
 - Lighthouse was not re-run; the expected change is SEO now that `/robots.txt` is valid.
-- The deployed site: nothing is pushed until the user approves.
+- The detector fix in the section above is not deployed yet (it came after the push).
+
+### Live site (after the user approved the push)
+
+`feature/fraudlens-v3` was merged into `main` with `--no-ff` (`bea4981`; the merge tree equals the branch tip, so nothing on `main` was dropped) and pushed; Render served the new build about 90 s later (`started_at` 2026-10-20T14:05:55Z). Checked at 1280 × 800 with GPU Chromium against https://fraud-lens-r3t0.onrender.com:
+- Landing (3D lens rendered), `/attack`, `/login`, demo sign-in as R. Iyer, dashboard, investigation queue and a case page: **0 px overflow and 0 console errors** on each.
+- `/robots.txt` returns the robots rules instead of the sign-in page.
+- A mule-layering attack launched in 1 s and showed four of six steps done, waiting for an analyst. "Report it to 1930" (1 s) traced ₹28,000 across two hops with ₹20,000 cashed out, and both liens were held (₹28,000) after the bank acknowledged them.
+- Not checked on the live site: a phone, a second analyst session, or Lighthouse.
 
 ## Same-origin display fonts (20 October 2026)
 
