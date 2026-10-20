@@ -51,7 +51,7 @@ Behaviour was held fixed by comparison, not only by the test suite:
 
 - `docker build` (Docker was not running on this machine). The only container-relevant change is that `frontend/public/` now holds just the fetched fonts, which `fetch-fonts.mjs` creates before the Dockerfile copies it.
 - Lighthouse was not re-run; the expected change is SEO now that `/robots.txt` is valid.
-- The detector fix in the section above is not deployed yet (it came after the push).
+- The detector fix in the section above was deployed in a second push (`67e2a19`, live 2026-10-20T14:16Z); afterwards a live mule-layering attack and its 1930 report again traced and held ₹28,000, and `/robots.txt` returned 200.
 
 ### Live site (after the user approved the push)
 
