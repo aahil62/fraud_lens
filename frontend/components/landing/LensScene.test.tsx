@@ -32,7 +32,8 @@ it("keeps the static optic when the browser only has software WebGL", async () =
     vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
   );
   const gl = {
-    getExtension: () => ({ UNMASKED_RENDERER_WEBGL: 1 }),
+    getExtension: (name: string) =>
+      name === "WEBGL_debug_renderer_info" ? { UNMASKED_RENDERER_WEBGL: 1 } : null,
     getParameter: () => "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device))",
   };
   const getContext = vi
